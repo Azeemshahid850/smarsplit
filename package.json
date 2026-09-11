@@ -1,0 +1,14 @@
+{
+  "name": "smartsplit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,client -c yellow,cyan \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "test": "npm --prefix server test",
+    "seed": "npm --prefix server run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
