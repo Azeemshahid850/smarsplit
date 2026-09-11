@@ -11,6 +11,7 @@ import Home from './pages/Home.jsx';
 import Groups from './pages/Groups.jsx';
 import CreateGroup from './pages/CreateGroup.jsx';
 import GroupDetail from './pages/GroupDetail.jsx';
+import AddExpense from './pages/AddExpense.jsx';
 
 export default function App() {
   return (
@@ -29,6 +30,8 @@ export default function App() {
               <Route path="/groups" element={<Groups />} />
               <Route path="/groups/new" element={<CreateGroup />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
+              <Route path="/expenses/new" element={<AddExpense />} />
+              <Route path="/expenses/:expenseId/edit" element={<AddExpense />} />
             </Route>
           </Route>
 

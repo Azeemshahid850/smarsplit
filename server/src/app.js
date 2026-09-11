@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import healthRoutes from './routes/health.js';
 import authRoutes from './routes/auth.js';
 import groupRoutes from './routes/groups.js';
+import expenseRoutes from './routes/expenses.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -21,6 +22,7 @@ if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 app.use('/api/v1', healthRoutes);
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', groupRoutes);
+app.use('/api/v1', expenseRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

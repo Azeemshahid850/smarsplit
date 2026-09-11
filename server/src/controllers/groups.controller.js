@@ -4,6 +4,7 @@ import { Group } from '../models/Group.js';
 import { User } from '../models/User.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
+import { summariseGroupsFor } from '../services/balances.js';
 
 const newInviteToken = () => crypto.randomBytes(24).toString('hex');
 
@@ -78,13 +79,14 @@ export async function listGroups(req, res) {
     .populate('members.user', 'name avatarUrl')
     .sort({ createdAt: -1 });
 
-  // Balances and totals are computed from expenses — wired in phase 3.
-  ok(res, { groups: groups.map((g) => publicGroup(g)) });
+  const summary = await summariseGroupsFor(req.user._id, groups.map((g) => g._id));
+  ok(res, { groups: groups.map((g) => publicGroup(g, summary[String(g._id)])) });
 }
 
 export async function getGroup(req, res) {
   await req.group.populate('members.user', 'name avatarUrl');
-  ok(res, { group: publicGroup(req.group) });
+  const summary = await summariseGroupsFor(req.user._id, [req.group._id]);
+  ok(res, { group: publicGroup(req.group, summary[String(req.group._id)]) });
 }
 
 export async function updateGroup(req, res) {

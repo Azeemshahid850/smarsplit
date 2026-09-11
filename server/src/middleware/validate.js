@@ -9,6 +9,11 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
       .join('; ');
     return next(ApiError.badRequest(detail, 'VALIDATION_ERROR'));
   }
-  req[source] = result.data;
+  // Express 5 exposes req.query via a getter, so it cannot be assigned.
+  if (source === 'query') {
+    Object.defineProperty(req, 'query', { value: result.data, writable: true, configurable: true });
+  } else {
+    req[source] = result.data;
+  }
   next();
 };

@@ -7,6 +7,8 @@ import { useAsync } from '../hooks/useAsync.js';
 import { formatDate } from '../utils/format.js';
 import { Loading, ErrorState } from '../components/States.jsx';
 import MembersTab from '../components/MembersTab.jsx';
+import ExpensesTab from '../components/ExpensesTab.jsx';
+import BalancesTab from '../components/BalancesTab.jsx';
 
 const TABS = ['Expenses', 'Balances', 'Members'];
 
@@ -58,12 +60,9 @@ export default function GroupDetail() {
       </nav>
 
       <section className="mt-6">
+        {tab === 'Expenses' && <ExpensesTab group={view} onChanged={reload} />}
+        {tab === 'Balances' && <BalancesTab group={view} />}
         {tab === 'Members' && <MembersTab group={view} onChange={reload} />}
-        {tab !== 'Members' && (
-          <p className="rounded-xl border border-dashed border-slate-300 py-12 text-center text-sm text-slate-400">
-            {tab} arrive in the next phase.
-          </p>
-        )}
       </section>
     </>
   );
