@@ -206,8 +206,8 @@ async function seed() {
   console.log(`Personal: ${PERSONAL.length} transactions, ${BUDGETS.length} budgets`);
 
   for (const [index, r] of RECEIPTS.entries()) {
-    const { lineItems, potentialSavings } = await matchLineItems(r.items);
-    await Receipt.create({
+    const { lineItems, potentialSavings, suggestedAlternatives } = await matchLineItems(r.items);
+    const receipt = await Receipt.create({
       userId: demo._id,
       imageUrl: PLACEHOLDER_IMAGE,
       store: r.store,
@@ -219,6 +219,26 @@ async function seed() {
       totalsAgree: true,
       potentialSavings,
     });
+
+    // Commit the first one so the dashboard's "savings found" card has a figure
+    // behind it — savings live on the committed transaction, not the receipt.
+    if (index === 0) {
+      const transaction = await PersonalExpense.create({
+        userId: demo._id,
+        title: `${r.store} receipt`,
+        amount: r.items.reduce((t, i) => t + i.price, 0),
+        category: 'Food',
+        type: 'DEBIT',
+        paymentMethod: 'Card',
+        date: receipt.receiptDate,
+        receiptUrl: receipt.imageUrl,
+        potentialSavings,
+        suggestedAlternatives,
+      });
+      receipt.committedTo = 'personal';
+      receipt.committedId = transaction._id;
+      await receipt.save();
+    }
   }
   console.log(`Receipts: ${RECEIPTS.length} scanned and price-matched`);
 
