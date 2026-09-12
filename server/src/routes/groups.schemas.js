@@ -27,11 +27,20 @@ export const updateGroupSchema = z.object({
   settings: z.object({ simplifyDebts: z.boolean().optional(), anyoneCanEdit: z.boolean().optional() }).optional(),
 });
 
-export const inviteMemberSchema = z.object({
-  email,
-  role: z.enum(['admin', 'member']).default('member'),
-});
+// Invite by email address, or add an existing account straight from search.
+export const inviteMemberSchema = z
+  .object({
+    email: email.optional(),
+    userId: objectId.optional(),
+    role: z.enum(['admin', 'member']).default('member'),
+  })
+  .refine((v) => Boolean(v.email) || Boolean(v.userId), {
+    message: 'Pick a person or type an email address',
+    path: ['email'],
+  });
 
 export const groupParamsSchema = z.object({ id: objectId });
 export const memberParamsSchema = z.object({ id: objectId, userId: objectId });
 export const joinParamsSchema = z.object({ inviteToken: z.string().min(20, 'Invalid invite link') });
+export const joinCodeParamsSchema = z.object({ joinCode: z.string().min(6).max(12).trim() });
+export const memberIdParamsSchema = z.object({ id: objectId, memberId: objectId });

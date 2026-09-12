@@ -6,7 +6,9 @@ const memberSchema = new mongoose.Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     name: { type: String, default: null },
     role: { type: String, enum: ['admin', 'member'], default: 'member' },
-    status: { type: String, enum: ['active', 'pending'], default: 'pending' },
+    // pending  — invited by email, has not claimed the link yet
+    // requested — asked to join through the share code, waiting on an admin
+    status: { type: String, enum: ['active', 'pending', 'requested'], default: 'pending' },
     inviteToken: { type: String, default: null },
     joinedAt: { type: Date, default: null },
   },
@@ -28,6 +30,8 @@ const groupSchema = new mongoose.Schema(
       anyoneCanEdit: { type: Boolean, default: false },
     },
     status: { type: String, enum: ['ACTIVE', 'SETTLED'], default: 'ACTIVE' },
+    // Short shareable code — anyone with it can ask to join, an admin approves.
+    joinCode: { type: String, default: null, index: true, sparse: true },
   },
   { timestamps: true },
 );

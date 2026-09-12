@@ -12,6 +12,8 @@ import {
   groupParamsSchema,
   memberParamsSchema,
   joinParamsSchema,
+  joinCodeParamsSchema,
+  memberIdParamsSchema,
 } from './groups.schemas.js';
 
 const router = Router();
@@ -59,5 +61,46 @@ router.delete(
 );
 
 router.post('/join/:inviteToken', requireAuth, validate(joinParamsSchema, 'params'), asyncHandler(ctrl.joinGroup));
+
+// Share-code flow: anyone with the code can ask, an admin decides.
+router.get(
+  '/join-request/:joinCode',
+  requireAuth,
+  validate(joinCodeParamsSchema, 'params'),
+  asyncHandler(ctrl.previewByCode),
+);
+router.post(
+  '/join-request/:joinCode',
+  requireAuth,
+  validate(joinCodeParamsSchema, 'params'),
+  asyncHandler(ctrl.requestToJoin),
+);
+
+router.patch(
+  '/groups/:id/members/:memberId/approve',
+  requireAuth,
+  validate(memberIdParamsSchema, 'params'),
+  asyncHandler(requireMember),
+  requireAdmin,
+  asyncHandler(ctrl.approveMember),
+);
+
+router.post(
+  '/groups/:id/members/:memberId/resend',
+  requireAuth,
+  validate(memberIdParamsSchema, 'params'),
+  asyncHandler(requireMember),
+  requireAdmin,
+  asyncHandler(ctrl.resendInvite),
+);
+
+router.post(
+  '/groups/:id/join-code/rotate',
+  requireAuth,
+  validate(groupParamsSchema, 'params'),
+  asyncHandler(requireMember),
+  requireAdmin,
+  asyncHandler(ctrl.rotateJoinCode),
+);
 
 export default router;

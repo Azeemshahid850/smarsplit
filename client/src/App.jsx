@@ -11,6 +11,7 @@ import Register from './pages/Register.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import Join from './pages/Join.jsx';
+import JoinRequest from './pages/JoinRequest.jsx';
 import Home from './pages/Home.jsx';
 import Groups from './pages/Groups.jsx';
 import Personal from './pages/Personal.jsx';
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/join/:inviteToken" element={<Join />} />
+            <Route path="/join-request/:joinCode" element={<JoinRequest />} />
 
             <Route element={<ProtectedRoute />}>
               <Route

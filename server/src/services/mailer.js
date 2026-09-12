@@ -11,6 +11,9 @@ const transporter = process.env.SMTP_HOST
     })
   : null;
 
+/** False when no SMTP is configured — the UI then tells the user to share the link itself. */
+export const isMailConfigured = () => Boolean(transporter);
+
 export async function sendMail({ to, subject, html, text }) {
   if (!transporter) {
     console.log(`[mail:dev] to=${to} subject="${subject}"\n${text}`);
@@ -26,5 +29,25 @@ export function sendPasswordResetMail(to, resetUrl) {
     subject: 'Reset your SmartSplit password',
     text: `Reset your password: ${resetUrl}\nThis link expires in 30 minutes. Ignore this email if you did not request it.`,
     html: `<p>Reset your SmartSplit password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Expires in 30 minutes.</p>`,
+  });
+}
+
+export function sendGroupInviteMail(to, { groupName, inviterName, joinUrl }) {
+  return sendMail({
+    to,
+    subject: `${inviterName} invited you to "${groupName}" on SmartSplit`,
+    text: `${inviterName} added you to "${groupName}" on SmartSplit.\n\nJoin here: ${joinUrl}\n\nIf you do not have an account yet, sign up with this email address and the link will connect you to the group.`,
+    html: `<p><strong>${inviterName}</strong> invited you to join <strong>${groupName}</strong> on SmartSplit.</p>
+<p><a href="${joinUrl}">Join the group</a></p>
+<p style="color:#64748b;font-size:13px">No account yet? Sign up with this email address and the link will connect you to the group.</p>`,
+  });
+}
+
+export function sendJoinRequestMail(to, { groupName, requesterName, groupUrl }) {
+  return sendMail({
+    to,
+    subject: `${requesterName} asked to join "${groupName}"`,
+    text: `${requesterName} asked to join "${groupName}".\n\nApprove or decline here: ${groupUrl}`,
+    html: `<p><strong>${requesterName}</strong> asked to join <strong>${groupName}</strong>.</p><p><a href="${groupUrl}">Approve or decline</a></p>`,
   });
 }

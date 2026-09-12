@@ -58,9 +58,14 @@ export default function GroupDetail() {
           {view.iAmAdmin && (
             <button
               onClick={openInvite}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+              className="relative flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
             >
               <UserPlus className="h-4 w-4 text-slate-400" /> Add people
+              {group.requestCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-medium text-white">
+                  {group.requestCount}
+                </span>
+              )}
             </button>
           )}
 
@@ -80,6 +85,11 @@ export default function GroupDetail() {
             }`}
           >
             {t}
+            {t === 'Members' && group.requestCount > 0 && (
+              <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">
+                {group.requestCount}
+              </span>
+            )}
           </button>
         ))}
       </nav>
