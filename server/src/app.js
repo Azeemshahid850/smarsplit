@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import groupRoutes from './routes/groups.js';
 import expenseRoutes from './routes/expenses.js';
 import settlementRoutes from './routes/settlements.js';
+import personalRoutes from './routes/personal.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/v1', authRoutes);
 app.use('/api/v1', groupRoutes);
 app.use('/api/v1', expenseRoutes);
 app.use('/api/v1', settlementRoutes);
+app.use('/api/v1', personalRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

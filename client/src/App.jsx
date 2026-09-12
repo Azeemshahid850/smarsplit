@@ -9,6 +9,7 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import Join from './pages/Join.jsx';
 import Home from './pages/Home.jsx';
 import Groups from './pages/Groups.jsx';
+import Personal from './pages/Personal.jsx';
 import CreateGroup from './pages/CreateGroup.jsx';
 import GroupDetail from './pages/GroupDetail.jsx';
 import AddExpense from './pages/AddExpense.jsx';
@@ -29,6 +30,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/groups" element={<Groups />} />
+              <Route path="/personal" element={<Personal />} />
               <Route path="/groups/new" element={<CreateGroup />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
               <Route path="/groups/:id/settle" element={<SettleUp />} />
