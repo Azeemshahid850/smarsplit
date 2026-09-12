@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Repeat, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { getSummary, listTransactions, deleteTransaction } from '../api/personal.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatDate } from '../utils/format.js';
@@ -9,10 +10,12 @@ import CategoryBars from '../components/CategoryBars.jsx';
 import AddTransactionForm from '../components/AddTransactionForm.jsx';
 import BudgetSettings from '../components/BudgetSettings.jsx';
 import SavingsCards from '../components/SavingsCards.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 
 export default function Personal() {
+  const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
   const summary = useAsync(() => getSummary(month), [month]);
   const transactions = useAsync(() => listTransactions({ month, limit: 10 }), [month]);
@@ -20,9 +23,19 @@ export default function Personal() {
   const refresh = () => Promise.all([summary.reload(), transactions.reload()]);
 
   const remove = async (t) => {
-    if (!window.confirm(`Delete "${t.title}"?`)) return;
-    await deleteTransaction(t.id);
-    await refresh();
+    const ok = await confirm({
+      title: `Delete "${t.title}"?`,
+      description: `${t.type === 'CREDIT' ? 'Income' : 'Spending'} of ${formatMoney(t.amount)} on ${formatDate(t.date)}.`,
+    });
+    if (!ok) return;
+
+    try {
+      await deleteTransaction(t.id);
+      await refresh();
+      toast.success(`Deleted "${t.title}"`);
+    } catch (err) {
+      toast.error(err.message || 'Could not delete that transaction');
+    }
   };
 
   return (

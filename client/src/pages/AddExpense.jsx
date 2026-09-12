@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { listGroups, getGroup } from '../api/groups.js';
 import { createExpense, getExpense, updateExpense } from '../api/expenses.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -174,6 +175,7 @@ export default function AddExpense() {
     try {
       if (editing) await updateExpense(expenseId, body);
       else await createExpense(groupId, body);
+      toast.success(editing ? `"${body.title}" updated` : `"${body.title}" added — ${formatMoney(total, currency)}`);
       navigate(`/groups/${groupId}`, { replace: true });
     } catch (err) {
       setError(err.message || 'Could not save the expense');

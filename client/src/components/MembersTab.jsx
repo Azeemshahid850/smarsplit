@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Copy, Check, Trash2, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { inviteMember, removeMember } from '../api/groups.js';
 import Avatar from './Avatar.jsx';
 import FormError from './FormError.jsx';
+import { useConfirm } from './ConfirmDialog.jsx';
 
 export default function MembersTab({ group, onChange }) {
+  const confirm = useConfirm();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
   const [joinLink, setJoinLink] = useState('');
@@ -23,6 +26,9 @@ export default function MembersTab({ group, onChange }) {
       setJoinLink(res.joinLink || '');
       setEmail('');
       await onChange();
+      toast.success(
+        res.joinLink ? `Invite created — share the join link with ${res.member.email}` : `${res.member.name} was added to the group`,
+      );
     } catch (err) {
       setError(err.message || 'Could not invite that person');
     } finally {
@@ -31,19 +37,27 @@ export default function MembersTab({ group, onChange }) {
   };
 
   const remove = async (member) => {
-    if (!window.confirm(`Remove ${member.name} from ${group.title}?`)) return;
+    const ok = await confirm({
+      title: `Remove ${member.name}?`,
+      description: `They lose access to ${group.title}. Expenses they are named on stay as they are.`,
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
+
     setError('');
     try {
       await removeMember(group.id, member.userId || member.id);
       await onChange();
+      toast.success(`${member.name} removed from ${group.title}`);
     } catch (err) {
-      setError(err.message || 'Could not remove that member');
+      toast.error(err.message || 'Could not remove that member');
     }
   };
 
   const copy = async () => {
     await navigator.clipboard.writeText(joinLink);
     setCopied(true);
+    toast.success('Join link copied to your clipboard');
     setTimeout(() => setCopied(false), 1500);
   };
 

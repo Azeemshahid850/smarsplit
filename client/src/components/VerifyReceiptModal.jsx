@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Plus, AlertTriangle, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { updateReceiptItem, addReceiptItem, removeReceiptItem, commitReceipt } from '../api/receipts.js';
 import { formatMoney } from '../utils/format.js';
 import FormError from './FormError.jsx';
@@ -25,7 +26,7 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
     try {
       setReceipt((await updateReceiptItem(receipt.id, index, patch)).receipt);
     } catch (err) {
-      setError(err.message || 'Could not update that line');
+      toast.error(err.message || 'Could not update that line');
     }
   };
 
@@ -46,7 +47,13 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
     setSaving(true);
     try {
       const body = target === 'personal' ? { target, category, paymentMethod } : { target: 'groupExpense', groupId, category };
-      onCommitted(await commitReceipt(receipt.id, body), target);
+      const result = await commitReceipt(receipt.id, body);
+      toast.success(
+        target === 'personal'
+          ? `Saved ${formatMoney(receipt.itemsTotal)} to Personal`
+          : 'Receipt ready — pick who shared each item',
+      );
+      onCommitted(result, target);
     } catch (err) {
       setError(err.message || 'Could not save this receipt');
     } finally {

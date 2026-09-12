@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { createTransaction } from '../api/personal.js';
 import Field from './Field.jsx';
 import SubmitButton from './SubmitButton.jsx';
@@ -46,6 +47,7 @@ export default function AddTransactionForm({ onAdded }) {
       });
       setForm({ ...blank, type: form.type });
       await onAdded();
+      toast.success(`${form.type === 'CREDIT' ? 'Income' : 'Expense'} "${form.title.trim()}" added`);
     } catch (err) {
       setError(err.message || 'Could not save that transaction');
     } finally {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Sparkles, Check, TrendingDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { getGroup } from '../api/groups.js';
 import { getBalances } from '../api/expenses.js';
 import { previewSettlement, recordSettlement, listSettlements, markPaid } from '../api/settlements.js';
@@ -74,9 +75,10 @@ export default function SettleUp() {
     setError('');
     setSaving(true);
     try {
-      await recordSettlement(id);
+      const result = await recordSettlement(id);
       setPreview(null);
       await Promise.all([recorded.reload(), balances.reload(), group.reload()]);
+      toast.success(`Settlement recorded — ${result.optimizedCount} payments, ${result.transfersSaved} transfers saved`);
     } catch (err) {
       setError(err.message || 'Could not record the settlement');
     } finally {
@@ -89,6 +91,7 @@ export default function SettleUp() {
     try {
       await markPaid(payment.id, true);
       await Promise.all([recorded.reload(), balances.reload()]);
+      toast.success(`${payment.fromName} → ${payment.toName} marked paid`);
     } catch (err) {
       setError(err.message || 'Could not mark that payment paid');
     }

@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 import { listExpenses, deleteExpense } from '../api/expenses.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatDate } from '../utils/format.js';
 import { Loading, ErrorState, EmptyState } from './States.jsx';
 import Avatar from './Avatar.jsx';
+import { useConfirm } from './ConfirmDialog.jsx';
 
 const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 const SPLIT_LABEL = { EQUAL: 'equal', EXACT: 'exact', PERCENTAGE: '%', LINE_ITEM: 'items' };
 
 export default function ExpensesTab({ group, onChanged }) {
+  const confirm = useConfirm();
   const [filters, setFilters] = useState({ category: '', payer: '', page: 1 });
   const { data, loading, error, reload } = useAsync(
     () => listExpenses(group.id, { ...filters, limit: 20 }),
@@ -20,9 +23,19 @@ export default function ExpensesTab({ group, onChanged }) {
   const nameOf = (userId) => group.members.find((m) => m.userId === userId)?.name || 'Someone';
 
   const remove = async (expense) => {
-    if (!window.confirm(`Delete "${expense.title}"? This cannot be undone from the UI.`)) return;
-    await deleteExpense(expense.id);
-    await Promise.all([reload(), onChanged?.()]);
+    const ok = await confirm({
+      title: `Delete "${expense.title}"?`,
+      description: 'Balances update straight away. This cannot be undone from the app.',
+    });
+    if (!ok) return;
+
+    try {
+      await deleteExpense(expense.id);
+      await Promise.all([reload(), onChanged?.()]);
+      toast.success(`Deleted "${expense.title}"`);
+    } catch (err) {
+      toast.error(err.message || 'Could not delete that expense');
+    }
   };
 
   const setFilter = (patch) => setFilters((f) => ({ ...f, ...patch, page: 1 }));

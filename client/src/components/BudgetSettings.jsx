@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { listBudgets, setBudget, deleteBudget } from '../api/personal.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney } from '../utils/format.js';
@@ -17,15 +18,22 @@ export default function BudgetSettings({ onChanged }) {
     const cap = Math.round(Number(draft.monthlyCap)) || 0;
     if (cap <= 0) return;
     setBusy(true);
-    await setBudget({ category: draft.category, monthlyCap: cap });
-    setDraft((d) => ({ ...d, monthlyCap: '' }));
-    setBusy(false);
-    await Promise.all([reload(), onChanged?.()]);
+    try {
+      await setBudget({ category: draft.category, monthlyCap: cap });
+      setDraft((d) => ({ ...d, monthlyCap: '' }));
+      await Promise.all([reload(), onChanged?.()]);
+      toast.success(`${draft.category} budget set to ${formatMoney(cap)}`);
+    } catch (err) {
+      toast.error(err.message || 'Could not save that budget');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const remove = async (id) => {
-    await deleteBudget(id);
+  const remove = async (budget) => {
+    await deleteBudget(budget.id);
     await Promise.all([reload(), onChanged?.()]);
+    toast.success(`${budget.category} budget removed`);
   };
 
   if (loading) return <Loading label="Loading budgets…" />;
@@ -43,7 +51,7 @@ export default function BudgetSettings({ onChanged }) {
               <span className="text-slate-700">{b.category}</span>
               <span className="flex items-center gap-3">
                 <span className="text-slate-500">{formatMoney(b.monthlyCap)}</span>
-                <button onClick={() => remove(b.id)} className="text-slate-300 hover:text-red-600">
+                <button onClick={() => remove(b)} className="text-slate-300 hover:text-red-600">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </span>

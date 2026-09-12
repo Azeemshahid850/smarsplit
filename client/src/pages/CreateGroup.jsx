@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { X, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { createGroup } from '../api/groups.js';
 import Field from '../components/Field.jsx';
 import SubmitButton from '../components/SubmitButton.jsx';
@@ -46,6 +47,7 @@ export default function CreateGroup() {
         memberEmails: emails,
         settings,
       });
+      toast.success(`"${group.title}" created`);
       navigate(`/groups/${group.id}`, { replace: true });
     } catch (err) {
       setError(err.message || 'Could not create the group');
