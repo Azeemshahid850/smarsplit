@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine } from 'lucide-react';
+import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3 } from 'lucide-react';
+import NotificationBell from './NotificationBell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 
@@ -8,6 +9,7 @@ const nav = [
   { to: '/groups', label: 'Groups', icon: Users },
   { to: '/personal', label: 'Personal', icon: PiggyBank },
   { to: '/scan', label: 'Scan', icon: ScanLine },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
 ];
 
 export default function AppLayout() {
@@ -40,6 +42,7 @@ export default function AppLayout() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <Avatar name={user.name} avatarUrl={user.avatarUrl} />
             <button onClick={logout} title="Sign out" className="text-slate-400 hover:text-slate-700">
               <LogOut className="h-4 w-4" />

@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",
+    "@json2csv/plainjs": "^7.0.8",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "google-auth-library": "^11.0.2",
@@ -25,6 +27,7 @@
     "multer": "^2.3.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^10.0.4",
+    "pdfkit": "^0.20.2",
     "tesseract.js": "^7.0.0",
     "zod": "^4.6.2"
   },
@@ -33,5 +36,8 @@
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "vitest": "^5.0.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

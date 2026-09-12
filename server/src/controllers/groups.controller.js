@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { summariseGroupsFor } from '../services/balances.js';
+import { notify, activeMemberIds } from '../services/notifications.js';
 
 const newInviteToken = () => crypto.randomBytes(24).toString('hex');
 
@@ -156,6 +157,14 @@ export async function joinGroup(req, res) {
   await group.save();
 
   ok(res, { group: publicGroup(group) });
+
+  await notify({
+    recipients: activeMemberIds(group),
+    exclude: req.user._id,
+    type: 'MEMBER_JOINED',
+    message: `${req.user.name} joined ${group.title}`,
+    groupId: group._id,
+  });
 }
 
 export { publicGroup, publicMember };

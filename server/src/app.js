@@ -11,6 +11,7 @@ import expenseRoutes from './routes/expenses.js';
 import settlementRoutes from './routes/settlements.js';
 import personalRoutes from './routes/personal.js';
 import receiptRoutes from './routes/receipts.js';
+import reportRoutes from './routes/reports.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/v1', expenseRoutes);
 app.use('/api/v1', settlementRoutes);
 app.use('/api/v1', personalRoutes);
 app.use('/api/v1', receiptRoutes);
+app.use('/api/v1', reportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

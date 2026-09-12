@@ -5,6 +5,7 @@ import { AuditLog } from '../models/AuditLog.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { settlementPreview } from '../services/settlement.js';
+import { notify, activeMemberIds } from '../services/notifications.js';
 
 // Names for the UI, resolved once per request.
 function memberIndex(group) {
@@ -109,6 +110,15 @@ export async function recordSettlement(req, res) {
     },
     201,
   );
+
+  await notify({
+    recipients: activeMemberIds(group),
+    exclude: req.user._id,
+    type: 'SETTLEMENT_CREATED',
+    message: `${req.user.name.split(' ')[0]} settled up ${group.title} — ${preview.optimizedCount} payments instead of ${preview.rawDebtCount}`,
+    groupId: group._id,
+    meta: { transfersSaved: preview.transfersSaved },
+  });
 }
 
 export async function listSettlements(req, res) {
@@ -165,4 +175,15 @@ export async function markPaid(req, res) {
   }
 
   ok(res, { settlement: { id: settlement._id, isPaid: settlement.isPaid, paidAt: settlement.paidAt }, outstanding });
+
+  if (settlement.isPaid) {
+    await notify({
+      recipients: activeMemberIds(group),
+      exclude: req.user._id,
+      type: 'SETTLEMENT_PAID',
+      message: `A payment of Rs ${settlement.amount.toLocaleString('en-PK')} was marked paid in ${group.title}`,
+      groupId: group._id,
+      meta: { settlementId: settlement._id },
+    });
+  }
 }

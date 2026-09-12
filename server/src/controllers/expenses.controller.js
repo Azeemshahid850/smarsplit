@@ -3,6 +3,7 @@ import { ApiError } from '../middleware/ApiError.js';
 import { canEditExpense } from '../middleware/membership.js';
 import { ok } from '../utils/ok.js';
 import { groupBalances } from '../services/balances.js';
+import { notify, activeMemberIds } from '../services/notifications.js';
 import { computeSplits, assertPayersCoverTotal, assertSplitsBalance, SplitError } from '../services/splitCalculator.js';
 
 const publicExpense = (e) => ({
@@ -51,6 +52,8 @@ function buildSplits(body) {
   }
 }
 
+const money = (n) => `Rs ${Math.round(n).toLocaleString('en-PK')}`;
+
 export async function createExpense(req, res) {
   const group = req.group;
   assertEveryoneIsAMember(group, req.body);
@@ -64,6 +67,15 @@ export async function createExpense(req, res) {
   });
 
   ok(res, { expense: publicExpense(expense) }, 201);
+
+  await notify({
+    recipients: activeMemberIds(group),
+    exclude: req.user._id,
+    type: 'EXPENSE_ADDED',
+    message: `${req.user.name.split(' ')[0]} logged ${money(expense.totalAmount)} for ${expense.title} in ${group.title}`,
+    groupId: group._id,
+    meta: { expenseId: expense._id, amount: expense.totalAmount },
+  });
 }
 
 export async function listExpenses(req, res) {

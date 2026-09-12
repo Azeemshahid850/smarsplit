@@ -7,3 +7,19 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+/* Data-viz palette — validated categorical slots (see dataviz reference).
+   Colour follows the entity, never its rank: each category owns a slot. */
+:root {
+  --viz-surface: #ffffff;
+  --viz-grid: #e2e8f0;
+  --viz-axis: #94a3b8;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+}
