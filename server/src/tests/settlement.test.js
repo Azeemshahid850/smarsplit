@@ -4,14 +4,14 @@ import { computeSplits } from '../services/splitCalculator.js';
 
 const apply = (net, payments) => {
   const after = new Map(net);
-  for (const p of payments) {
-    after.set(p.from, (after.get(p.from) || 0) + p.amount);
-    after.set(p.to, (after.get(p.to) || 0) - p.amount);
+  for (const payment of payments) {
+    after.set(payment.from, (after.get(payment.from) || 0) + payment.amount);
+    after.set(payment.to, (after.get(payment.to) || 0) - payment.amount);
   }
   return after;
 };
 
-const allZero = (balances) => [...balances.values()].every((v) => v === 0);
+const allZero = (balances) => [...balances.values()].every((netValue) => netValue === 0);
 
 describe('minCashFlow — the guarantees', () => {
   it('settles the Murree example in exactly 4 payments', () => {
@@ -28,10 +28,10 @@ describe('minCashFlow — the guarantees', () => {
     expect(payments).toHaveLength(4);
     expect(payments.length).toBeLessThanOrEqual(net.size - 1);
     expect(allZero(apply(net, payments))).toBe(true);
-    expect(payments.every((p) => p.amount > 0)).toBe(true);
+    expect(payments.every((payment) => payment.amount > 0)).toBe(true);
     // Nobody both pays and receives in the optimized set.
-    const payers = new Set(payments.map((p) => p.from));
-    expect(payments.some((p) => payers.has(p.to))).toBe(false);
+    const payers = new Set(payments.map((payment) => payment.from));
+    expect(payments.some((payment) => payers.has(payment.to))).toBe(false);
   });
 
   it('returns nothing for an already-settled group', () => {
@@ -50,7 +50,7 @@ describe('minCashFlow — the guarantees', () => {
     const payments = minCashFlow(net);
 
     expect(payments).toHaveLength(2);
-    expect(payments.reduce((t, p) => t + p.amount, 0)).toBe(66);
+    expect(payments.reduce((runningTotal, payment) => runningTotal + payment.amount, 0)).toBe(66);
     expect(allZero(apply(net, payments))).toBe(true);
   });
 
@@ -90,7 +90,7 @@ describe('minCashFlow — the guarantees', () => {
 
       expect(payments.length).toBeLessThanOrEqual(size - 1);
       expect(allZero(apply(net, payments))).toBe(true);
-      expect(payments.every((p) => Number.isInteger(p.amount) && p.amount > 0)).toBe(true);
+      expect(payments.every((payment) => Number.isInteger(payment.amount) && payment.amount > 0)).toBe(true);
     }
   });
 
@@ -110,14 +110,14 @@ describe('minCashFlow — the guarantees', () => {
       const paidBy = [
         { userId: members[rand(size)], amount: first },
         { userId: members[rand(size)], amount: totalAmount - first },
-      ].filter((p) => p.amount > 0);
+      ].filter((payment) => payment.amount > 0);
 
       const expenses = [
         { totalAmount, paidBy, splits: computeSplits({ splitType: 'EQUAL', totalAmount, participants: members, paidBy }) },
       ];
 
       const net = computeNetBalances(expenses, []);
-      expect([...net.values()].reduce((t, v) => t + v, 0)).toBe(0);
+      expect([...net.values()].reduce((runningTotal, netValue) => runningTotal + netValue, 0)).toBe(0);
       expect(allZero(apply(net, minCashFlow(net)))).toBe(true);
     }
   });

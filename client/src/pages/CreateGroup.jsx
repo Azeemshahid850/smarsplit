@@ -25,7 +25,7 @@ export default function CreateGroup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const change = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 
   const addEmail = () => {
     const value = emailDraft.trim().toLowerCase();
@@ -36,8 +36,8 @@ export default function CreateGroup() {
     setError('');
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
     try {
@@ -71,16 +71,16 @@ export default function CreateGroup() {
         <div>
           <span className="text-sm font-medium text-slate-700">Type</span>
           <div className="mt-2 flex flex-wrap gap-2">
-            {TYPES.map((t) => (
+            {TYPES.map((typeOption) => (
               <button
                 type="button"
-                key={t}
-                onClick={() => setForm((f) => ({ ...f, type: t }))}
+                key={typeOption}
+                onClick={() => setForm((current) => ({ ...current, type: typeOption }))}
                 className={`rounded-full px-3 py-1.5 text-sm capitalize transition ${
-                  form.type === t ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  form.type === typeOption ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {t}
+                {typeOption}
               </button>
             ))}
           </div>
@@ -99,10 +99,10 @@ export default function CreateGroup() {
             <input
               type="email"
               value={emailDraft}
-              onChange={(e) => setEmailDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
+              onChange={(event) => setEmailDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
                   addEmail();
                 }
               }}
@@ -115,10 +115,10 @@ export default function CreateGroup() {
           </div>
           {emails.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {emails.map((e) => (
-                <span key={e} className="flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-xs text-slate-700">
-                  {e}
-                  <button type="button" onClick={() => setEmails((l) => l.filter((x) => x !== e))} className="text-slate-400 hover:text-slate-700">
+              {emails.map((event) => (
+                <span key={event} className="flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-xs text-slate-700">
+                  {event}
+                  <button type="button" onClick={() => setEmails((currentList) => currentList.filter((entry) => entry !== event))} className="text-slate-400 hover:text-slate-700">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </span>
@@ -137,7 +137,7 @@ export default function CreateGroup() {
               <input
                 type="checkbox"
                 checked={settings[key]}
-                onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.checked }))}
+                onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.checked }))}
                 className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-emerald-600"
               />
               <span>

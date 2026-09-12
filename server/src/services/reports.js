@@ -28,7 +28,7 @@ export async function personalMonthly(userId, month) {
     PersonalExpense.findOne({ userId: user, type: 'DEBIT', date: { $gte: start, $lt: end } }).sort({ amount: -1 }).lean(),
   ]);
 
-  const sum = (list, type) => list.filter((r) => r._id.type === type).reduce((t, r) => t + r.total, 0);
+  const sum = (list, type) => list.filter((aggregateRow) => aggregateRow._id.type === type).reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
 
   const income = sum(rows, 'CREDIT');
   const spend = sum(rows, 'DEBIT');
@@ -36,9 +36,9 @@ export async function personalMonthly(userId, month) {
   const lastIncome = sum(previousRows, 'CREDIT');
 
   const topCategories = rows
-    .filter((r) => r._id.type === 'DEBIT')
-    .map((r) => ({ category: r._id.category, total: r.total, share: pct(r.total, spend) }))
-    .sort((a, b) => b.total - a.total);
+    .filter((aggregateRow) => aggregateRow._id.type === 'DEBIT')
+    .map((aggregateRow) => ({ category: aggregateRow._id.category, total: aggregateRow.total, share: pct(aggregateRow.total, spend) }))
+    .sort((leftMember, budgetRow) => budgetRow.total - leftMember.total);
 
   return {
     month: month || new Date().toISOString().slice(0, 7),
@@ -72,29 +72,29 @@ export async function personalTrends(userId, months = 6) {
   ]);
 
   const labels = Array.from({ length: months }, (_, i) => {
-    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const dayRow = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    return `${dayRow.getFullYear()}-${String(dayRow.getMonth() + 1).padStart(2, '0')}`;
   });
 
   const find = (month, type, category) =>
-    rows.find((r) => r._id.month === month && r._id.type === type && (!category || r._id.category === category))?.total ?? 0;
+    rows.find((aggregateRow) => aggregateRow._id.month === month && aggregateRow._id.type === type && (!category || aggregateRow._id.category === category))?.total ?? 0;
 
   const { all: categoryNames } = await categoriesFor(userId);
-  const seen = [...new Set([...categoryNames, ...rows.map((r) => r._id.category)])];
+  const seen = [...new Set([...categoryNames, ...rows.map((aggregateRow) => aggregateRow._id.category)])];
 
   const series = labels.map((month) => {
-    const inflow = rows.filter((r) => r._id.month === month && r._id.type === 'CREDIT').reduce((t, r) => t + r.total, 0);
-    const outflow = rows.filter((r) => r._id.month === month && r._id.type === 'DEBIT').reduce((t, r) => t + r.total, 0);
-    const byCategory = Object.fromEntries(seen.map((c) => [c, find(month, 'DEBIT', c)]));
+    const inflow = rows.filter((aggregateRow) => aggregateRow._id.month === month && aggregateRow._id.type === 'CREDIT').reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
+    const outflow = rows.filter((aggregateRow) => aggregateRow._id.month === month && aggregateRow._id.type === 'DEBIT').reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
+    const byCategory = Object.fromEntries(seen.map((categoryRow) => [categoryRow, find(month, 'DEBIT', categoryRow)]));
     return { month, inflow, outflow, net: inflow - outflow, ...byCategory };
   });
 
   const budgets = await Budget.find({ userId }).lean();
   const current = labels.at(-1);
-  const budgetVsActual = budgets.map((b) => ({
-    category: b.category,
-    cap: b.monthlyCap,
-    actual: find(current, 'DEBIT', b.category),
+  const budgetVsActual = budgets.map((budgetRow) => ({
+    category: budgetRow.category,
+    cap: budgetRow.monthlyCap,
+    actual: find(current, 'DEBIT', budgetRow.category),
   }));
 
   return { months: labels, series, budgetVsActual };
@@ -128,25 +128,25 @@ export async function groupSummary(group) {
     Settlement.find({ groupId }).lean(),
   ]);
 
-  const total = byCategory.reduce((t, c) => t + c.total, 0);
-  const index = (rows) => Object.fromEntries(rows.map((r) => [String(r._id), r.total]));
+  const total = byCategory.reduce((runningTotal, categoryRow) => runningTotal + categoryRow.total, 0);
+  const index = (rows) => Object.fromEntries(rows.map((aggregateRow) => [String(aggregateRow._id), aggregateRow.total]));
   const paidBy = index(paid);
   const consumedBy = index(consumed);
 
   const members = group.members
-    .filter((m) => m.status === 'active' && m.user)
-    .map((m) => {
-      const id = String(m.user._id ?? m.user);
+    .filter((member) => member.status === 'active' && member.user)
+    .map((member) => {
+      const id = String(member.user._id ?? member.user);
       return {
         userId: id,
-        name: m.user.name ?? m.name ?? m.email,
+        name: member.user.name ?? member.name ?? member.email,
         paid: paidBy[id] ?? 0,
         consumed: consumedBy[id] ?? 0,
         // Fairness: what they used as a share of what everyone used.
         share: pct(consumedBy[id] ?? 0, total),
       };
     })
-    .sort((a, b) => b.paid - a.paid);
+    .sort((leftMember, budgetRow) => budgetRow.paid - leftMember.paid);
 
   const rawDebtCount = settlements[0]?.rawDebtCount ?? 0;
   const optimizedCount = settlements.length;
@@ -157,14 +157,14 @@ export async function groupSummary(group) {
     status: group.status,
     total,
     perPerson: members.length ? Math.round(total / members.length) : 0,
-    byCategory: byCategory.map((c) => ({ category: c._id, total: c.total, share: pct(c.total, total) })),
-    timeline: byDay.map((d) => ({ date: d._id, total: d.total })),
+    byCategory: byCategory.map((categoryRow) => ({ category: categoryRow._id, total: categoryRow.total, share: pct(categoryRow.total, total) })),
+    timeline: byDay.map((dayRow) => ({ date: dayRow._id, total: dayRow.total })),
     members,
     settlementEfficiency: {
       rawDebtCount,
       optimizedCount,
       transfersSaved: Math.max(rawDebtCount - optimizedCount, 0),
-      paidCount: settlements.filter((s) => s.isPaid).length,
+      paidCount: settlements.filter((rightMember) => rightMember.isPaid).length,
     },
   };
 }

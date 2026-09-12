@@ -13,7 +13,7 @@ export const exportQuerySchema = z.object({
   groupId: objectId.optional(),
   month: month.optional(),
   category: z.string().min(1).max(30).trim().optional(),
-}).refine((v) => v.scope !== 'group' || Boolean(v.groupId), {
+}).refine((value) => value.scope !== 'group' || Boolean(value.groupId), {
   message: 'groupId is required to export a group',
   path: ['groupId'],
 });

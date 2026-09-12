@@ -15,11 +15,11 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const change = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const passwordTooShort = form.password.length > 0 && form.password.length < 8;
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     if (passwordTooShort) return;
     setError('');
     setLoading(true);

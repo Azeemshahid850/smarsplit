@@ -20,21 +20,21 @@ export function normalize(name = '') {
  * ponytail: 12 lines instead of the `string-similarity` dependency, which is
  * unmaintained; swap in a library only if a better metric is ever needed.
  */
-export function similarity(a, b) {
-  if (a === b) return 1;
-  if (a.length < 2 || b.length < 2) return 0;
+export function similarity(leftText, rightText) {
+  if (leftText === rightText) return 1;
+  if (leftText.length < 2 || rightText.length < 2) return 0;
 
-  const bigrams = (s) => {
+  const bigrams = (textValue) => {
     const map = new Map();
-    for (let i = 0; i < s.length - 1; i += 1) {
-      const pair = s.slice(i, i + 2);
+    for (let lineItem = 0; lineItem < textValue.length - 1; lineItem += 1) {
+      const pair = textValue.slice(lineItem, lineItem + 2);
       map.set(pair, (map.get(pair) || 0) + 1);
     }
     return map;
   };
 
-  const first = bigrams(a);
-  const second = bigrams(b);
+  const first = bigrams(leftText);
+  const second = bigrams(rightText);
   let shared = 0;
 
   for (const [pair, count] of first) {
@@ -42,7 +42,7 @@ export function similarity(a, b) {
     shared += Math.min(count, other);
   }
 
-  return (2 * shared) / (a.length - 1 + (b.length - 1));
+  return (2 * shared) / (leftText.length - 1 + (rightText.length - 1));
 }
 
 export const MATCH_THRESHOLD = 0.8;
@@ -90,14 +90,14 @@ export async function findBenchmark(rawName, catalogue = null) {
 
   const all = catalogue ?? (await BenchmarkPrice.find().lean());
   const wantedSize = parseSize(rawName);
-  const rows = all.filter((r) => sizeCompatible(wantedSize, r));
+  const rows = all.filter((priceRow) => sizeCompatible(wantedSize, priceRow));
   if (!rows.length) return null;
 
   // Exact alias or canonical hit.
-  const exact = rows.filter((r) => r.aliases.includes(key) || normalize(r.canonicalName) === key);
+  const exact = rows.filter((priceRow) => priceRow.aliases.includes(key) || normalize(priceRow.canonicalName) === key);
   if (exact.length) {
     // Among equally-named products, compare like with like: one canonical family.
-    const family = exact.filter((r) => r.canonicalName === exact[0].canonicalName);
+    const family = exact.filter((priceRow) => priceRow.canonicalName === exact[0].canonicalName);
     return cheapest(family, 1);
   }
 
@@ -106,7 +106,7 @@ export async function findBenchmark(rawName, catalogue = null) {
   let bestScore = 0;
 
   for (const row of rows) {
-    const score = Math.max(similarity(key, normalize(row.canonicalName)), ...row.aliases.map((a) => similarity(key, a)));
+    const score = Math.max(similarity(key, normalize(row.canonicalName)), ...row.aliases.map((leftText) => similarity(key, leftText)));
     if (score > bestScore) {
       bestScore = score;
       best = row;
@@ -116,12 +116,12 @@ export async function findBenchmark(rawName, catalogue = null) {
   if (!best || bestScore < MATCH_THRESHOLD) return null;
 
   // Compare every platform's price for the matched product, not just the one row.
-  const family = rows.filter((r) => r.canonicalName === best.canonicalName);
+  const family = rows.filter((priceRow) => priceRow.canonicalName === best.canonicalName);
   return cheapest(family, bestScore);
 }
 
 function cheapest(rows, score) {
-  const sorted = [...rows].sort((a, b) => a.price - b.price);
+  const sorted = [...rows].sort((leftText, rightText) => leftText.price - rightText.price);
   return { match: sorted[0], alternatives: sorted.slice(0, 3), score };
 }
 
@@ -168,7 +168,7 @@ export async function matchLineItems(lineItems = []) {
     }),
   );
 
-  suggestedAlternatives.sort((a, b) => b.saving - a.saving);
+  suggestedAlternatives.sort((leftText, rightText) => rightText.saving - leftText.saving);
 
   return { lineItems: matched, potentialSavings, suggestedAlternatives: suggestedAlternatives.slice(0, 3) };
 }

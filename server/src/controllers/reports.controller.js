@@ -47,7 +47,7 @@ export async function exportReport(req, res) {
     await group.populate('members.user', 'name avatarUrl');
 
     const nameOf = (userId) =>
-      group.members.find((m) => String(m.user?._id ?? m.user) === String(userId))?.user?.name ?? 'Someone';
+      group.members.find((memberRow) => String(memberRow.user?._id ?? memberRow.user) === String(userId))?.user?.name ?? 'Someone';
 
     const filter = { groupId: group._id, deletedAt: null, ...(category && { category }) };
     if (month) {
@@ -56,7 +56,7 @@ export async function exportReport(req, res) {
     }
 
     const expenses = await GroupExpense.find(filter).sort({ date: 1 }).lean();
-    const rows = expenses.map((e) => flattenGroupExpense(e, nameOf));
+    const rows = expenses.map((expenseRow) => flattenGroupExpense(expenseRow, nameOf));
     const base = `${group.title.replace(/\W+/g, '-').toLowerCase()}-expenses`;
 
     if (format === 'csv') return send(res, toCsv(rows, GROUP_EXPENSE_COLUMNS), 'text/csv', `${base}.csv`);
@@ -96,14 +96,14 @@ export async function listNotifications(req, res) {
   ]);
 
   ok(res, {
-    notifications: notifications.map((n) => ({
-      id: n._id,
-      type: n.type,
-      message: n.message,
-      groupId: n.groupId,
-      meta: n.meta,
-      read: Boolean(n.readAt),
-      createdAt: n.createdAt,
+    notifications: notifications.map((notificationRow) => ({
+      id: notificationRow._id,
+      type: notificationRow.type,
+      message: notificationRow.message,
+      groupId: notificationRow.groupId,
+      meta: notificationRow.meta,
+      read: Boolean(notificationRow.readAt),
+      createdAt: notificationRow.createdAt,
     })),
     unreadCount,
   });

@@ -29,7 +29,7 @@ const base = {
 };
 
 export const createExpenseSchema = z.object(base);
-export const updateExpenseSchema = z.object(base).partial().refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export const updateExpenseSchema = z.object(base).partial().refine((value) => Object.keys(value).length > 0, 'Nothing to update');
 
 export const listExpensesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

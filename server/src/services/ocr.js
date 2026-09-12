@@ -91,7 +91,7 @@ export async function extractWithTesseract(imageBuffer) {
 /** Do the extracted lines add up to the printed total, within 5%? */
 export function totalsAgree(items, total) {
   if (!total) return null;
-  const summed = items.reduce((t, i) => t + i.price, 0);
+  const summed = items.reduce((runningTotal, lineItem) => runningTotal + lineItem.price, 0);
   return Math.abs(summed - total) <= total * 0.05;
 }
 
@@ -117,8 +117,8 @@ export async function extractReceipt({ imageBase64, imageBuffer, mediaType }) {
   }
 
   const items = result.items
-    .map((i) => ({ rawText: i.rawText ?? '', name: i.name, qty: Math.max(1, Math.round(i.qty || 1)), price: Math.round(i.price) }))
-    .filter((i) => i.name && i.price > 0);
+    .map((lineItem) => ({ rawText: lineItem.rawText ?? '', name: lineItem.name, qty: Math.max(1, Math.round(lineItem.qty || 1)), price: Math.round(lineItem.price) }))
+    .filter((lineItem) => lineItem.name && lineItem.price > 0);
 
   return {
     status: 'done',

@@ -20,9 +20,9 @@ export async function searchUsers(req, res) {
   const knownIds = [
     ...new Set(
       groups
-        .flatMap((g) => g.members)
-        .filter((m) => m.user && String(m.user) !== String(req.user._id))
-        .map((m) => String(m.user)),
+        .flatMap((groupRow) => groupRow.members)
+        .filter((memberRow) => memberRow.user && String(memberRow.user) !== String(req.user._id))
+        .map((memberRow) => String(memberRow.user)),
     ),
   ];
 
@@ -38,14 +38,14 @@ export async function searchUsers(req, res) {
 
   const seen = new Set();
   const users = [...known, ...exact]
-    .filter((u) => String(u._id) !== String(req.user._id) && !seen.has(String(u._id)) && seen.add(String(u._id)))
-    .map((u) => ({
-      id: u._id,
-      name: u.name,
-      email: u.email,
-      avatarUrl: u.avatarUrl,
+    .filter((userRow) => String(userRow._id) !== String(req.user._id) && !seen.has(String(userRow._id)) && seen.add(String(userRow._id)))
+    .map((userRow) => ({
+      id: userRow._id,
+      name: userRow.name,
+      email: userRow.email,
+      avatarUrl: userRow.avatarUrl,
       // Flags the ones you have travelled with, so the list is easy to trust.
-      known: knownIds.includes(String(u._id)),
+      known: knownIds.includes(String(userRow._id)),
     }));
 
   ok(res, { users });

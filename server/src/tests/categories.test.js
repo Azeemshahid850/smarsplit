@@ -27,7 +27,7 @@ describe('GET /categories', () => {
     await addCategory(user, 'Education');
 
     const { custom, all } = (await get(user, `${api}/categories`)).body.data;
-    expect(custom.map((c) => c.name)).toEqual(['Education', 'Rent Deposit']);
+    expect(custom.map((categoryRow) => categoryRow.name)).toEqual(['Education', 'Rent Deposit']);
     expect(all).toEqual([...DEFAULT_CATEGORIES, 'Education', 'Rent Deposit']);
   });
 
@@ -93,7 +93,7 @@ describe('custom categories in use', () => {
     expect(created.body.data.transaction.category).toBe('Education');
 
     const summary = await get(user, `${api}/personal/summary?month=2026-09`);
-    expect(summary.body.data.byCategory.find((c) => c.category === 'Education')).toMatchObject({ total: 65000 });
+    expect(summary.body.data.byCategory.find((categoryRow) => categoryRow.category === 'Education')).toMatchObject({ total: 65000 });
   });
 
   it('rejects a category the user never created', async () => {
@@ -187,7 +187,7 @@ describe('DELETE /categories/:id', () => {
 
     // …but the money it recorded is still visible and correctly attributed.
     const summary = await get(user, `${api}/personal/summary?month=2026-09`);
-    expect(summary.body.data.byCategory.find((c) => c.category === 'Education')).toMatchObject({ total: 1000 });
+    expect(summary.body.data.byCategory.find((categoryRow) => categoryRow.category === 'Education')).toMatchObject({ total: 1000 });
 
     const list = await get(user, `${api}/transactions?category=Education`);
     expect(list.body.data.transactions).toHaveLength(1);

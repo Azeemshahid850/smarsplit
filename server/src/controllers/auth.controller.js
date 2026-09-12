@@ -19,7 +19,7 @@ import {
 
 const BCRYPT_COST = 12;
 const RESET_TTL_MS = 30 * 60 * 1000;
-const sha256 = (v) => crypto.createHash('sha256').update(v).digest('hex');
+const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
 async function issueSession(res, user) {
   const { token, expiresAt } = await issueRefreshToken(user._id);

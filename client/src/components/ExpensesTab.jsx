@@ -21,7 +21,7 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
     [group.id, filters.category, filters.payer, filters.page],
   );
 
-  const nameOf = (userId) => group.members.find((m) => m.userId === userId)?.name || 'Someone';
+  const nameOf = (userId) => group.members.find((memberRow) => memberRow.userId === userId)?.name || 'Someone';
 
   const remove = async (expense) => {
     const ok = await confirm({
@@ -39,31 +39,31 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
     }
   };
 
-  const setFilter = (patch) => setFilters((f) => ({ ...f, ...patch, page: 1 }));
+  const setFilter = (patch) => setFilters((current) => ({ ...current, ...patch, page: 1 }));
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={filters.category}
-          onChange={(e) => setFilter({ category: e.target.value })}
+          onChange={(expenseRow) => setFilter({ category: expenseRow.target.value })}
           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
         >
           <option value="">All categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
+          {CATEGORIES.map((categoryName) => (
+            <option key={categoryName}>{categoryName}</option>
           ))}
         </select>
 
         <select
           value={filters.payer}
-          onChange={(e) => setFilter({ payer: e.target.value })}
+          onChange={(expenseRow) => setFilter({ payer: expenseRow.target.value })}
           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
         >
           <option value="">Anyone paid</option>
-          {group.members.filter((m) => m.userId).map((m) => (
-            <option key={m.id} value={m.userId}>
-              {m.name}
+          {group.members.filter((memberRow) => memberRow.userId).map((memberRow) => (
+            <option key={memberRow.id} value={memberRow.userId}>
+              {memberRow.name}
             </option>
           ))}
         </select>
@@ -112,36 +112,36 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {data.expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-slate-50">
+                  {data.expenses.map((expenseRow) => (
+                    <tr key={expenseRow.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{e.title}</p>
-                        <p className="text-xs text-slate-400">
-                          {e.category} · {formatDate(e.date)}
-                        </p>
+                        <payerEntry className="font-medium text-slate-800">{expenseRow.title}</payerEntry>
+                        <payerEntry className="text-xs text-slate-400">
+                          {expenseRow.category} · {formatDate(expenseRow.date)}
+                        </payerEntry>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex -space-x-2">
-                            {e.paidBy.map((p) => (
-                              <Avatar key={p.userId} name={nameOf(p.userId)} />
+                            {expenseRow.paidBy.map((payerEntry) => (
+                              <Avatar key={payerEntry.userId} name={nameOf(payerEntry.userId)} />
                             ))}
                           </div>
-                          {e.paidBy.length > 1 && <span className="text-xs text-slate-400">{e.paidBy.length} payers</span>}
+                          {expenseRow.paidBy.length > 1 && <span className="text-xs text-slate-400">{expenseRow.paidBy.length} payers</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                          {SPLIT_LABEL[e.splitType]}
+                          {SPLIT_LABEL[expenseRow.splitType]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">{formatMoney(e.totalAmount, group.baseCurrency)}</td>
+                      <td className="px-4 py-3 text-right font-medium">{formatMoney(expenseRow.totalAmount, group.baseCurrency)}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <Link to={`/expenses/${e.id}/edit`} title="Edit" className="text-slate-300 hover:text-slate-700">
+                          <Link to={`/expenses/${expenseRow.id}/edit`} title="Edit" className="text-slate-300 hover:text-slate-700">
                             <Pencil className="h-4 w-4" />
                           </Link>
-                          <button onClick={() => remove(e)} title="Delete" className="text-slate-300 hover:text-red-600">
+                          <button onClick={() => remove(expenseRow)} title="Delete" className="text-slate-300 hover:text-red-600">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
@@ -160,14 +160,14 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                 <div className="flex gap-2">
                   <button
                     disabled={filters.page <= 1}
-                    onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}
+                    onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
                     className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40"
                   >
                     Previous
                   </button>
                   <button
                     disabled={filters.page >= data.pagination.pages}
-                    onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}
+                    onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
                     className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40"
                   >
                     Next

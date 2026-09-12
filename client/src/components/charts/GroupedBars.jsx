@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { SERIES, AXIS, GRID } from './palette.js';
 import ChartTooltip from './ChartTooltip.jsx';
 
-const compact = (n) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+const compact = (rupees) => (rupees >= 1000 ? `${Math.round(rupees / 1000)}k` : String(rupees));
 
 /** Two comparable measures side by side: budget vs actual, or paid vs consumed. */
 export default function GroupedBars({ data, xKey, bars, currency = 'PKR', empty = 'Nothing to chart yet.' }) {
@@ -17,8 +17,8 @@ export default function GroupedBars({ data, xKey, bars, currency = 'PKR', empty 
           <YAxis tickFormatter={compact} tickLine={false} axisLine={false} width={48} {...AXIS} />
           <Tooltip content={<ChartTooltip currency={currency} />} cursor={{ fill: '#f1f5f9' }} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          {bars.map((b, i) => (
-            <Bar key={b.key} dataKey={b.key} name={b.label} fill={SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={34} />
+          {bars.map((barSpec, barIndex) => (
+            <Bar key={barSpec.key} dataKey={barSpec.key} name={barSpec.label} fill={SERIES[barIndex]} radius={[4, 4, 0, 0]} maxBarSize={34} />
           ))}
         </BarChart>
       </ResponsiveContainer>

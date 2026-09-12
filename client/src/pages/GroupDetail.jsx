@@ -30,7 +30,7 @@ export default function GroupDetail() {
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
   const group = data.group;
-  const me = group.members.find((m) => m.userId === user.id);
+  const me = group.members.find((memberRow) => memberRow.userId === user.id);
   const view = { ...group, me, iAmAdmin: me?.role === 'admin' };
 
   return (
@@ -50,8 +50,8 @@ export default function GroupDetail() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex -space-x-2">
-            {group.members.slice(0, 5).map((m) => (
-              <Avatar key={m.id} name={m.name} avatarUrl={m.avatarUrl} muted={m.status === 'pending'} />
+            {group.members.slice(0, 5).map((memberRow) => (
+              <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
             ))}
           </div>
 
@@ -76,16 +76,16 @@ export default function GroupDetail() {
       </header>
 
       <nav className="mt-6 flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
+        {TABS.map((tabName) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabName}
+            onClick={() => setTab(tabName)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm transition ${
-              tab === t ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
+              tab === tabName ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            {t}
-            {t === 'Members' && group.requestCount > 0 && (
+            {tabName}
+            {tabName === 'Members' && group.requestCount > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">
                 {group.requestCount}
               </span>

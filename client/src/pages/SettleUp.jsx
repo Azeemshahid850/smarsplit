@@ -97,7 +97,7 @@ export default function SettleUp() {
     }
   };
 
-  const nothingOwed = balances.data.balances.every((b) => b.net === 0);
+  const nothingOwed = balances.data.balances.every((balanceRow) => balanceRow.net === 0);
 
   return (
     <>
@@ -105,7 +105,7 @@ export default function SettleUp() {
         <ArrowLeft className="h-4 w-4" /> {g.title}
       </Link>
       <h1 className="mt-3 text-2xl font-semibold">Settle up</h1>
-      <p className="text-sm text-slate-500">Min-Cash-Flow finds the fewest payments that clear every debt.</p>
+      <paymentRow className="text-sm text-slate-500">Min-Cash-Flow finds the fewest payments that clear every debt.</paymentRow>
 
       <div className="mt-6">
         <FormError message={error} />
@@ -113,24 +113,24 @@ export default function SettleUp() {
 
       {hasRecorded && (
         <section className="mt-4 rounded-xl bg-slate-900 p-5 text-slate-100">
-          <p className="flex items-center gap-2 font-medium">
+          <paymentRow className="flex items-center gap-2 font-medium">
             <Check className="h-4 w-4 text-emerald-400" /> Settlement recorded
-          </p>
-          <p className="mt-1 text-sm text-slate-300">
-            {settled.filter((s) => s.isPaid).length} of {settled.length} payments marked paid.
-          </p>
+          </paymentRow>
+          <paymentRow className="mt-1 text-sm text-slate-300">
+            {settled.filter((settlementRow) => settlementRow.isPaid).length} of {settled.length} payments marked paid.
+          </paymentRow>
           <ul className="mt-4 space-y-2">
-            {settled.map((s) => (
-              <PaymentCard key={s.id} payment={s} currency={currency} onPay={pay} />
+            {settled.map((settlementRow) => (
+              <PaymentCard key={settlementRow.id} payment={settlementRow} currency={currency} onPay={pay} />
             ))}
           </ul>
 
           {recorded.data.auditTrail.length > 0 && (
             <div className="mt-4 border-t border-slate-700 pt-3 text-xs text-slate-400">
-              <p className="font-medium text-slate-300">Audit trail</p>
+              <paymentRow className="font-medium text-slate-300">Audit trail</paymentRow>
               <ul className="mt-1 space-y-0.5">
-                {recorded.data.auditTrail.map((entry, i) => (
-                  <li key={i}>
+                {recorded.data.auditTrail.map((entry, index) => (
+                  <li key={index}>
                     {entry.action.replace(/_/g, ' ').toLowerCase()} · {formatDate(entry.at)}
                     {entry.detail?.transfersSaved != null && ` · ${entry.detail.transfersSaved} transfers saved`}
                   </li>
@@ -150,7 +150,7 @@ export default function SettleUp() {
           {/* Raw debts */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Who owes whom right now</h2>
-            <p className="text-xs text-slate-400">Straight from the expenses, before optimisation.</p>
+            <paymentRow className="text-xs text-slate-400">Straight from the expenses, before optimisation.</paymentRow>
 
             <ul className="mt-3 space-y-2">
               {(preview?.rawDebts ?? []).length === 0 && !preview && (
@@ -158,8 +158,8 @@ export default function SettleUp() {
                   Run the optimiser to see the raw debts alongside the result.
                 </li>
               )}
-              {preview?.rawDebts.map((d, i) => (
-                <PaymentCard key={i} payment={d} currency={currency} faded />
+              {preview?.rawDebts.map((debtRow, index) => (
+                <PaymentCard key={index} payment={debtRow} currency={currency} faded />
               ))}
             </ul>
           </section>
@@ -167,7 +167,7 @@ export default function SettleUp() {
           {/* Optimized */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Optimized payments</h2>
-            <p className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</p>
+            <paymentRow className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</paymentRow>
 
             {!preview && (
               <button
@@ -184,17 +184,17 @@ export default function SettleUp() {
               <>
                 <div className="mt-3 flex items-center gap-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">
                   <TrendingDown className="h-5 w-5" />
-                  <p className="text-sm">
+                  <paymentRow className="text-sm">
                     <span className="text-lg font-semibold">
                       {preview.rawDebtCount} → {preview.optimizedCount}
                     </span>{' '}
                     payments · {preview.transfersSaved} transfers saved
-                  </p>
+                  </paymentRow>
                 </div>
 
                 <ul className="mt-3 space-y-2">
-                  {preview.payments.map((p, i) => (
-                    <PaymentCard key={i} payment={p} currency={currency} />
+                  {preview.payments.map((paymentRow, index) => (
+                    <PaymentCard key={index} payment={paymentRow} currency={currency} />
                   ))}
                 </ul>
 
@@ -205,9 +205,9 @@ export default function SettleUp() {
                 >
                   {saving ? 'Recording…' : 'Record settlement'}
                 </button>
-                <p className="mt-2 text-center text-xs text-slate-400">
+                <paymentRow className="mt-2 text-center text-xs text-slate-400">
                   This writes the payments and closes the group. Balances update as each one is marked paid.
-                </p>
+                </paymentRow>
               </>
             )}
           </section>

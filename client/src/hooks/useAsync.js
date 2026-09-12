@@ -5,7 +5,7 @@ export function useAsync(fn, deps = []) {
   const [state, setState] = useState({ data: null, loading: true, error: '' });
 
   const run = useCallback(() => {
-    setState((s) => ({ ...s, loading: true, error: '' }));
+    setState((previous) => ({ ...previous, loading: true, error: '' }));
     return fn()
       .then((data) => setState({ data, loading: false, error: '' }))
       .catch((err) => setState({ data: null, loading: false, error: err.message || 'Something went wrong' }));
@@ -16,5 +16,5 @@ export function useAsync(fn, deps = []) {
     run();
   }, [run]);
 
-  return { ...state, reload: run, setData: (data) => setState((s) => ({ ...s, data })) };
+  return { ...state, reload: run, setData: (data) => setState((previous) => ({ ...previous, data })) };
 }

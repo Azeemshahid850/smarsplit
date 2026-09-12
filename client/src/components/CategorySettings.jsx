@@ -10,8 +10,8 @@ export default function CategorySettings() {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const create = async (e) => {
-    e.preventDefault();
+  const create = async (event) => {
+    event.preventDefault();
     const value = name.trim();
     if (value.length < 2) return;
 
@@ -67,16 +67,16 @@ export default function CategorySettings() {
       <p className="text-xs text-slate-400">The seven built-in ones, plus any you add yourself.</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {defaults.map((c) => (
-          <span key={c} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+        {defaults.map((categoryRow) => (
+          <span key={categoryRow} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
             <Lock className="h-3 w-3 text-slate-400" />
-            {c}
+            {categoryRow}
           </span>
         ))}
-        {custom.map((c) => (
-          <span key={c.id} className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-2.5 pr-1.5 text-xs text-emerald-800">
-            {c.name}
-            <button onClick={() => destroy(c)} title={`Delete ${c.name}`} className="text-emerald-400 hover:text-red-600">
+        {custom.map((categoryRow) => (
+          <span key={categoryRow.id} className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-2.5 pr-1.5 text-xs text-emerald-800">
+            {categoryRow.name}
+            <button onClick={() => destroy(categoryRow)} title={`Delete ${categoryRow.name}`} className="text-emerald-400 hover:text-red-600">
               <Trash2 className="h-3 w-3" />
             </button>
           </span>
@@ -86,7 +86,7 @@ export default function CategorySettings() {
       <form onSubmit={create} className="mt-3 flex gap-2">
         <input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event) => setName(event.target.value)}
           placeholder="Education, Pets, Eid…"
           maxLength={30}
           className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"

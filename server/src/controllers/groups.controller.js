@@ -14,20 +14,20 @@ const newJoinCode = () => crypto.randomBytes(4).toString('hex').toUpperCase();
 const clientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
 
 // Shapes a member for the client: resolved user details, never internal tokens.
-function publicMember(m) {
-  const populated = m.user && typeof m.user === 'object' && m.user.name;
+function publicMember(memberRow) {
+  const populated = memberRow.user && typeof memberRow.user === 'object' && memberRow.user.name;
   return {
-    id: m._id,
-    userId: populated ? m.user._id : m.user,
-    name: populated ? m.user.name : m.name || m.email.split('@')[0],
-    email: m.email,
-    avatarUrl: populated ? m.user.avatarUrl : null,
-    role: m.role,
-    status: m.status,
-    joinedAt: m.joinedAt,
+    id: memberRow._id,
+    userId: populated ? memberRow.user._id : memberRow.user,
+    name: populated ? memberRow.user.name : memberRow.name || memberRow.email.split('@')[0],
+    email: memberRow.email,
+    avatarUrl: populated ? memberRow.user.avatarUrl : null,
+    role: memberRow.role,
+    status: memberRow.status,
+    joinedAt: memberRow.joinedAt,
     // Pending invites keep their link retrievable, so it can be re-copied at any
     // time rather than only in the moment it was created.
-    joinLink: m.inviteToken ? `${clientUrl()}/join/${m.inviteToken}` : null,
+    joinLink: memberRow.inviteToken ? `${clientUrl()}/join/${memberRow.inviteToken}` : null,
   };
 }
 
@@ -47,9 +47,9 @@ function publicGroup(group, { myBalance = 0, totalSpent = 0 } = {}) {
     joinCode: group.joinCode,
     shareLink: group.joinCode ? `${clientUrl()}/join-request/${group.joinCode}` : null,
     members: group.members.map(publicMember),
-    memberCount: group.members.filter((m) => m.status === 'active').length,
-    pendingCount: group.members.filter((m) => m.status === 'pending').length,
-    requestCount: group.members.filter((m) => m.status === 'requested').length,
+    memberCount: group.members.filter((memberRow) => memberRow.status === 'active').length,
+    pendingCount: group.members.filter((memberRow) => memberRow.status === 'pending').length,
+    requestCount: group.members.filter((memberRow) => memberRow.status === 'requested').length,
     totalSpent,
     myBalance,
   };
@@ -77,9 +77,9 @@ export async function createGroup(req, res) {
   };
 
   const invited = await Promise.all(
-    [...new Set(memberEmails.map((e) => e.toLowerCase()))]
-      .filter((e) => e !== req.user.email)
-      .map((e) => buildMember(e)),
+    [...new Set(memberEmails.map((emailAddress) => emailAddress.toLowerCase()))]
+      .filter((emailAddress) => emailAddress !== req.user.email)
+      .map((emailAddress) => buildMember(emailAddress)),
   );
 
   const group = await Group.create({ ...rest, createdBy: req.user._id, joinCode: newJoinCode(), members: [owner, ...invited] });
@@ -91,8 +91,8 @@ export async function listGroups(req, res) {
     .populate('members.user', 'name avatarUrl')
     .sort({ createdAt: -1 });
 
-  const summary = await summariseGroupsFor(req.user._id, groups.map((g) => g._id));
-  ok(res, { groups: groups.map((g) => publicGroup(g, summary[String(g._id)])) });
+  const summary = await summariseGroupsFor(req.user._id, groups.map((groupRow) => groupRow._id));
+  ok(res, { groups: groups.map((groupRow) => publicGroup(groupRow, summary[String(groupRow._id)])) });
 }
 
 export async function getGroup(req, res) {
@@ -129,7 +129,7 @@ export async function inviteMember(req, res) {
     email = user.email;
   }
 
-  const existing = group.members.find((m) => m.email === email);
+  const existing = group.members.find((memberRow) => memberRow.email === email);
   if (existing) {
     throw ApiError.conflict(
       existing.status === 'active' ? 'They are already in this group' : 'They have already been invited',
@@ -191,11 +191,11 @@ export async function resendInvite(req, res) {
 export async function removeMember(req, res) {
   const group = req.group;
   const target = group.members.find(
-    (m) => String(m.user) === req.params.userId || String(m._id) === req.params.userId,
+    (memberRow) => String(memberRow.user) === req.params.userId || String(memberRow._id) === req.params.userId,
   );
   if (!target) throw ApiError.notFound('Member not found', 'MEMBER_NOT_FOUND');
 
-  const activeAdmins = group.members.filter((m) => m.role === 'admin' && m.status === 'active');
+  const activeAdmins = group.members.filter((memberRow) => memberRow.role === 'admin' && memberRow.status === 'active');
   if (target.role === 'admin' && activeAdmins.length === 1) {
     throw ApiError.badRequest('A group must keep at least one admin', 'LAST_ADMIN');
   }
@@ -209,7 +209,7 @@ export async function joinGroup(req, res) {
   const group = await Group.findOne({ 'members.inviteToken': req.params.inviteToken });
   if (!group) throw ApiError.notFound('Invite link is invalid or already used', 'BAD_INVITE');
 
-  const invite = group.members.find((m) => m.inviteToken === req.params.inviteToken);
+  const invite = group.members.find((memberRow) => memberRow.inviteToken === req.params.inviteToken);
 
   if (group.memberFor(req.user._id)) {
     throw ApiError.conflict('You are already a member of this group', 'ALREADY_MEMBER');
@@ -238,14 +238,14 @@ export async function previewByCode(req, res) {
   const group = await Group.findOne({ joinCode: req.params.joinCode.toUpperCase() });
   if (!group) throw ApiError.notFound('That join code is not valid', 'BAD_JOIN_CODE');
 
-  const membership = group.members.find((m) => String(m.user) === String(req.user._id));
+  const membership = group.members.find((memberRow) => String(memberRow.user) === String(req.user._id));
 
   ok(res, {
     group: {
       id: group._id,
       title: group.title,
       type: group.type,
-      memberCount: group.members.filter((m) => m.status === 'active').length,
+      memberCount: group.members.filter((memberRow) => memberRow.status === 'active').length,
     },
     myStatus: membership?.status ?? null,
   });
@@ -261,7 +261,7 @@ export async function requestToJoin(req, res) {
   if (!group) throw ApiError.notFound('That join code is not valid', 'BAD_JOIN_CODE');
 
   const existing = group.members.find(
-    (m) => String(m.user) === String(req.user._id) || m.email === req.user.email,
+    (memberRow) => String(memberRow.user) === String(req.user._id) || memberRow.email === req.user.email,
   );
 
   if (existing?.status === 'active') throw ApiError.conflict('You are already in this group', 'ALREADY_MEMBER');
@@ -290,15 +290,15 @@ export async function requestToJoin(req, res) {
 
   ok(res, { status: 'requested', groupId: group._id }, 201);
 
-  const admins = group.members.filter((m) => m.role === 'admin' && m.status === 'active' && m.user);
+  const admins = group.members.filter((memberRow) => memberRow.role === 'admin' && memberRow.status === 'active' && memberRow.user);
   await notify({
-    recipients: admins.map((m) => m.user),
+    recipients: admins.map((memberRow) => memberRow.user),
     type: 'JOIN_REQUESTED',
     message: `${req.user.name} asked to join ${group.title}`,
     groupId: group._id,
   });
 
-  const adminUsers = await User.find({ _id: { $in: admins.map((m) => m.user) } }).select('email');
+  const adminUsers = await User.find({ _id: { $in: admins.map((memberRow) => memberRow.user) } }).select('email');
   await Promise.all(
     adminUsers.map((admin) =>
       sendJoinRequestMail(admin.email, {

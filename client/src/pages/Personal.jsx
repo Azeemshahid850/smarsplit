@@ -23,17 +23,17 @@ export default function Personal() {
 
   const refresh = () => Promise.all([summary.reload(), transactions.reload()]);
 
-  const remove = async (t) => {
+  const remove = async (transactionRow) => {
     const ok = await confirm({
-      title: `Delete "${t.title}"?`,
-      description: `${t.type === 'CREDIT' ? 'Income' : 'Spending'} of ${formatMoney(t.amount)} on ${formatDate(t.date)}.`,
+      title: `Delete "${transactionRow.title}"?`,
+      description: `${transactionRow.type === 'CREDIT' ? 'Income' : 'Spending'} of ${formatMoney(transactionRow.amount)} on ${formatDate(transactionRow.date)}.`,
     });
     if (!ok) return;
 
     try {
-      await deleteTransaction(t.id);
+      await deleteTransaction(transactionRow.id);
       await refresh();
-      toast.success(`Deleted "${t.title}"`);
+      toast.success(`Deleted "${transactionRow.title}"`);
     } catch (err) {
       toast.error(err.message || 'Could not delete that transaction');
     }
@@ -49,7 +49,7 @@ export default function Personal() {
         <input
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(event) => setMonth(event.target.value)}
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
         />
       </div>
@@ -93,10 +93,10 @@ export default function Personal() {
                   <h2 className="mt-6 font-medium">Savings found by ExpenseAI</h2>
                   <div className="mt-3 space-y-4">
                     {(transactions.data?.transactions ?? [])
-                      .filter((t) => t.potentialSavings > 0)
+                      .filter((transactionRow) => transactionRow.potentialSavings > 0)
                       .slice(0, 3)
-                      .map((t) => (
-                        <SavingsCards key={t.id} alternatives={t.suggestedAlternatives} totalSavings={t.potentialSavings} />
+                      .map((transactionRow) => (
+                        <SavingsCards key={transactionRow.id} alternatives={transactionRow.suggestedAlternatives} totalSavings={transactionRow.potentialSavings} />
                       ))}
                   </div>
                 </>
@@ -122,23 +122,23 @@ export default function Personal() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {transactions.data.transactions.map((t) => (
-                          <tr key={t.id} className="hover:bg-slate-50">
+                        {transactions.data.transactions.map((transactionRow) => (
+                          <tr key={transactionRow.id} className="hover:bg-slate-50">
                             <td className="px-4 py-3">
                               <p className="flex items-center gap-1.5 font-medium text-slate-800">
-                                {t.title}
-                                {(t.isRecurring || t.generatedFrom) && <Repeat className="h-3.5 w-3.5 text-slate-300" />}
+                                {transactionRow.title}
+                                {(transactionRow.isRecurring || transactionRow.generatedFrom) && <Repeat className="h-3.5 w-3.5 text-slate-300" />}
                               </p>
-                              <p className="text-xs text-slate-400">{formatDate(t.date)}</p>
+                              <p className="text-xs text-slate-400">{formatDate(transactionRow.date)}</p>
                             </td>
-                            <td className="px-4 py-3 text-slate-600">{t.category}</td>
-                            <td className="px-4 py-3 text-slate-500">{t.paymentMethod}</td>
-                            <td className={`px-4 py-3 text-right font-medium ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                              {t.type === 'CREDIT' ? '+' : '−'}
-                              {formatMoney(t.amount)}
+                            <td className="px-4 py-3 text-slate-600">{transactionRow.category}</td>
+                            <td className="px-4 py-3 text-slate-500">{transactionRow.paymentMethod}</td>
+                            <td className={`px-4 py-3 text-right font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                              {transactionRow.type === 'CREDIT' ? '+' : '−'}
+                              {formatMoney(transactionRow.amount)}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button onClick={() => remove(t)} className="text-slate-300 hover:text-red-600">
+                              <button onClick={() => remove(transactionRow)} className="text-slate-300 hover:text-red-600">
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </td>

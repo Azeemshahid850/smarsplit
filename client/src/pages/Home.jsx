@@ -14,7 +14,7 @@ export default function Home() {
   const summary = useAsync(() => getSummary());
   const recent = useAsync(() => listTransactions({ limit: 5 }));
 
-  const owedAcross = groups.data?.groups.reduce((t, g) => t + g.myBalance, 0) ?? 0;
+  const owedAcross = groups.data?.groups.reduce((transactionRow, groupRow) => transactionRow + groupRow.myBalance, 0) ?? 0;
 
   return (
     <>
@@ -71,15 +71,15 @@ export default function Home() {
             )}
             {groups.data && groups.data.groups.length > 0 && (
               <ul className="space-y-2">
-                {groups.data.groups.slice(0, 4).map((g) => (
-                  <li key={g.id}>
-                    <Link to={`/groups/${g.id}`} className="flex items-center justify-between rounded-xl bg-white p-4 ring-1 ring-slate-200 hover:ring-slate-300">
+                {groups.data.groups.slice(0, 4).map((groupRow) => (
+                  <li key={groupRow.id}>
+                    <Link to={`/groups/${groupRow.id}`} className="flex items-center justify-between rounded-xl bg-white p-4 ring-1 ring-slate-200 hover:ring-slate-300">
                       <span>
-                        <span className="block font-medium text-slate-800">{g.title}</span>
-                        <span className="text-xs text-slate-400">{g.memberCount} members · {formatMoney(g.totalSpent, g.baseCurrency)} spent</span>
+                        <span className="block font-medium text-slate-800">{groupRow.title}</span>
+                        <span className="text-xs text-slate-400">{groupRow.memberCount} members · {formatMoney(groupRow.totalSpent, groupRow.baseCurrency)} spent</span>
                       </span>
-                      <span className={`text-sm font-medium ${g.myBalance > 0 ? 'text-emerald-600' : g.myBalance < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                        {g.myBalance === 0 ? 'settled' : formatSigned(g.myBalance, g.baseCurrency)}
+                      <span className={`text-sm font-medium ${groupRow.myBalance > 0 ? 'text-emerald-600' : groupRow.myBalance < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                        {groupRow.myBalance === 0 ? 'settled' : formatSigned(groupRow.myBalance, groupRow.baseCurrency)}
                       </span>
                     </Link>
                   </li>
@@ -105,15 +105,15 @@ export default function Home() {
             )}
             {recent.data && recent.data.transactions.length > 0 && (
               <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
-                {recent.data.transactions.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between px-4 py-3">
+                {recent.data.transactions.map((transactionRow) => (
+                  <li key={transactionRow.id} className="flex items-center justify-between px-4 py-3">
                     <span>
-                      <span className="block text-sm font-medium text-slate-800">{t.title}</span>
-                      <span className="text-xs text-slate-400">{t.category} · {formatDate(t.date)}</span>
+                      <span className="block text-sm font-medium text-slate-800">{transactionRow.title}</span>
+                      <span className="text-xs text-slate-400">{transactionRow.category} · {formatDate(transactionRow.date)}</span>
                     </span>
-                    <span className={`text-sm font-medium ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                      {t.type === 'CREDIT' ? '+' : '−'}
-                      {formatMoney(t.amount)}
+                    <span className={`text-sm font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                      {transactionRow.type === 'CREDIT' ? '+' : '−'}
+                      {formatMoney(transactionRow.amount)}
                     </span>
                   </li>
                 ))}

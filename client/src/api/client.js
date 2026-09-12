@@ -29,9 +29,9 @@ api.interceptors.response.use(
       config._retried = true;
       refreshing ||= api
         .post('/auth/refresh')
-        .then((r) => {
-          setAccessToken(r.data.data.accessToken);
-          return r.data.data.accessToken;
+        .then((refreshed) => {
+          setAccessToken(refreshed.data.data.accessToken);
+          return refreshed.data.data.accessToken;
         })
         .catch(() => {
           setAccessToken(null);

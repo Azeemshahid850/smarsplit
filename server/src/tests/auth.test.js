@@ -7,7 +7,7 @@ import { RefreshToken } from '../models/RefreshToken.js';
 const creds = { name: 'Azeem Khan', email: 'azeem@demo.pk', password: 'Demo1234' };
 
 const register = (overrides = {}) => request(app).post('/api/v1/auth/register').send({ ...creds, ...overrides });
-const cookieOf = (res) => res.headers['set-cookie'].find((c) => c.startsWith('rt='));
+const cookieOf = (res) => res.headers['set-cookie'].find((cookieHeader) => cookieHeader.startsWith('rt='));
 
 describe('POST /auth/register', () => {
   it('creates a user, returns access token + refresh cookie, never leaks the hash', async () => {

@@ -22,7 +22,7 @@ describe('invite by email', () => {
 
     // The link survives a page reload — it is on the member, not just the response.
     const fetched = await get(owner, `${api}/groups/${group.id}`);
-    const pending = fetched.body.data.group.members.find((m) => m.email === 'newbie@demo.pk');
+    const pending = fetched.body.data.group.members.find((memberRow) => memberRow.email === 'newbie@demo.pk');
     expect(pending.joinLink).toBe(invite.body.data.joinLink);
     expect(fetched.body.data.group.pendingCount).toBe(1);
   });
@@ -31,7 +31,7 @@ describe('invite by email', () => {
     const owner = await makeUser();
     const group = await makeGroup(owner, { memberEmails: ['newbie@demo.pk'] });
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
-      (m) => m.email === 'newbie@demo.pk',
+      (memberRow) => memberRow.email === 'newbie@demo.pk',
     );
 
     const res = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
@@ -44,7 +44,7 @@ describe('invite by email', () => {
     const friend = await makeUser();
     const group = await makeGroup(owner, { memberEmails: [friend.email] });
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
-      (m) => m.email === friend.email,
+      (memberRow) => memberRow.email === friend.email,
     );
 
     const res = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
@@ -171,7 +171,7 @@ describe('request to join, then approve', () => {
 
     const seen = (await get(owner, `${api}/groups/${group.id}`)).body.data.group;
     expect(seen.requestCount).toBe(1);
-    expect(seen.members.find((m) => m.name === 'Sara Khan').status).toBe('requested');
+    expect(seen.members.find((memberRow) => memberRow.name === 'Sara Khan').status).toBe('requested');
   });
 
   it('lets an admin approve, which grants access', async () => {
@@ -181,7 +181,7 @@ describe('request to join, then approve', () => {
     await post(outsider, `${api}/join-request/${await codeOf(owner, group)}`);
 
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
-      (m) => m.status === 'requested',
+      (memberRow) => memberRow.status === 'requested',
     );
     const approved = await patch(owner, `${api}/groups/${group.id}/members/${member.id}/approve`);
 
@@ -197,7 +197,7 @@ describe('request to join, then approve', () => {
     await post(outsider, `${api}/join-request/${await codeOf(owner, group)}`);
 
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
-      (m) => m.status === 'requested',
+      (memberRow) => memberRow.status === 'requested',
     );
     const rejected = await request(app)
       .delete(`${api}/groups/${group.id}/members/${member.id}`)
@@ -215,7 +215,7 @@ describe('request to join, then approve', () => {
     await post(outsider, `${api}/join-request/${await codeOf(owner, group)}`);
 
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
-      (m) => m.status === 'requested',
+      (memberRow) => memberRow.status === 'requested',
     );
     const res = await patch(friend, `${api}/groups/${group.id}/members/${member.id}/approve`);
 

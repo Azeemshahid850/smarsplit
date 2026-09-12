@@ -19,7 +19,7 @@ const transactionShape = {
 
 export const createTransactionSchema = z
   .object(transactionShape)
-  .refine((v) => !v.isRecurring || Boolean(v.recurringInterval), {
+  .refine((value) => !value.isRecurring || Boolean(value.recurringInterval), {
     message: 'Pick how often this repeats',
     path: ['recurringInterval'],
   });

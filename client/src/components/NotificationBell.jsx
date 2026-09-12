@@ -18,19 +18,19 @@ export default function NotificationBell() {
   // Close when clicking outside the dropdown.
   useEffect(() => {
     if (!open) return;
-    const onClick = (e) => !box.current?.contains(e.target) && setOpen(false);
+    const onClick = (event) => !box.current?.contains(event.target) && setOpen(false);
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
   const openFeed = () => {
-    setOpen((o) => !o);
+    setOpen((wasOpen) => !wasOpen);
     if (!open) load();
   };
 
-  const read = async (n) => {
-    if (n.read) return;
-    await markNotificationRead(n.id);
+  const read = async (notificationRow) => {
+    if (notificationRow.read) return;
+    await markNotificationRead(notificationRow.id);
     load();
   };
 
@@ -65,17 +65,17 @@ export default function NotificationBell() {
             <p className="px-4 py-8 text-center text-sm text-slate-400">Nothing here yet.</p>
           ) : (
             <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
-              {feed.notifications.map((n) => {
+              {feed.notifications.map((notificationRow) => {
                 const body = (
                   <>
-                    <span className={`block text-sm ${n.read ? 'text-slate-500' : 'font-medium text-slate-800'}`}>{n.message}</span>
-                    <span className="text-xs text-slate-400">{formatDate(n.createdAt)}</span>
+                    <span className={`block text-sm ${notificationRow.read ? 'text-slate-500' : 'font-medium text-slate-800'}`}>{notificationRow.message}</span>
+                    <span className="text-xs text-slate-400">{formatDate(notificationRow.createdAt)}</span>
                   </>
                 );
                 return (
-                  <li key={n.id} onClick={() => read(n)} className="cursor-pointer px-4 py-3 hover:bg-slate-50">
-                    {n.groupId ? (
-                      <Link to={`/groups/${n.groupId}`} onClick={() => setOpen(false)}>
+                  <li key={notificationRow.id} onClick={() => read(notificationRow)} className="cursor-pointer px-4 py-3 hover:bg-slate-50">
+                    {notificationRow.groupId ? (
+                      <Link to={`/groups/${notificationRow.groupId}`} onClick={() => setOpen(false)}>
                         {body}
                       </Link>
                     ) : (

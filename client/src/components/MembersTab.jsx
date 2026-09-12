@@ -59,7 +59,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
     setSearching(true);
     const timer = setTimeout(() => {
       searchUsers(q)
-        .then(({ users }) => setResults(users.filter((u) => !group.members.some((m) => m.userId === u.id))))
+        .then(({ users }) => setResults(users.filter((userRow) => !group.members.some((memberRow) => memberRow.userId === userRow.id))))
         .catch(() => setResults([]))
         .finally(() => setSearching(false));
     }, 300);
@@ -157,8 +157,8 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
     toast.success('New share link generated');
   };
 
-  const requests = group.members.filter((m) => m.status === 'requested');
-  const roster = group.members.filter((m) => m.status !== 'requested');
+  const requests = group.members.filter((memberRow) => memberRow.status === 'requested');
+  const roster = group.members.filter((memberRow) => memberRow.status !== 'requested');
 
   return (
     <div className="space-y-6">
@@ -170,8 +170,8 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
             <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{requests.length}</span>
           </h3>
           <ul className="mt-2 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-amber-200">
-            {requests.map((r) => (
-              <RequestRow key={r.id} request={r} onApprove={approve} onReject={reject} />
+            {requests.map((requestRow) => (
+              <RequestRow key={requestRow.id} request={requestRow} onApprove={approve} onReject={reject} />
             ))}
           </ul>
         </section>
@@ -179,26 +179,26 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
 
       {/* The roster */}
       <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
-        {roster.map((m) => (
-          <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <Avatar name={m.name} avatarUrl={m.avatarUrl} size="md" muted={m.status === 'pending'} />
+        {roster.map((memberRow) => (
+          <li key={memberRow.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Avatar name={memberRow.name} avatarUrl={memberRow.avatarUrl} size="md" muted={memberRow.status === 'pending'} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-800">{m.name}</p>
-              <p className="truncate text-xs text-slate-400">{m.email}</p>
+              <p className="truncate text-sm font-medium text-slate-800">{memberRow.name}</p>
+              <p className="truncate text-xs text-slate-400">{memberRow.email}</p>
             </div>
 
-            {m.role === 'admin' && (
+            {memberRow.role === 'admin' && (
               <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                 <ShieldCheck className="h-3 w-3" /> admin
               </span>
             )}
 
-            {m.status === 'pending' && (
+            {memberRow.status === 'pending' && (
               <>
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">not joined yet</span>
-                {isAdmin && m.joinLink && <CopyButton value={m.joinLink} label="Copy invite link" />}
+                {isAdmin && memberRow.joinLink && <CopyButton value={memberRow.joinLink} label="Copy invite link" />}
                 {isAdmin && (
-                  <button onClick={() => resend(m)} title="Resend" className="text-slate-300 hover:text-slate-700">
+                  <button onClick={() => resend(memberRow)} title="Resend" className="text-slate-300 hover:text-slate-700">
                     <Send className="h-4 w-4" />
                   </button>
                 )}
@@ -206,7 +206,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
             )}
 
             {isAdmin && (
-              <button onClick={() => remove(m)} title="Remove" className="text-slate-300 hover:text-red-600">
+              <button onClick={() => remove(memberRow)} title="Remove" className="text-slate-300 hover:text-red-600">
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
@@ -233,7 +233,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search by name or email"
                 className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500"
               />
@@ -247,17 +247,17 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
                     Nobody found. Use their exact email address below to invite them.
                   </li>
                 )}
-                {results.map((u) => (
-                  <li key={u.id} className="flex items-center gap-3 px-3 py-2">
-                    <Avatar name={u.name} avatarUrl={u.avatarUrl} />
+                {results.map((userRow) => (
+                  <li key={userRow.id} className="flex items-center gap-3 px-3 py-2">
+                    <Avatar name={userRow.name} avatarUrl={userRow.avatarUrl} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm text-slate-800">{u.name}</span>
-                      <span className="block truncate text-xs text-slate-400">{u.email}</span>
+                      <span className="block truncate text-sm text-slate-800">{userRow.name}</span>
+                      <span className="block truncate text-xs text-slate-400">{userRow.email}</span>
                     </span>
-                    {u.known && <span className="text-xs text-slate-400">travelled with</span>}
+                    {userRow.known && <span className="text-xs text-slate-400">travelled with</span>}
                     <button
                       disabled={busy}
-                      onClick={() => addPerson({ userId: u.id }, u.name)}
+                      onClick={() => addPerson({ userId: userRow.id }, userRow.name)}
                       className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white hover:bg-slate-800 disabled:opacity-50"
                     >
                       Add
@@ -278,8 +278,8 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
             </p>
 
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
+              onSubmit={(event) => {
+                event.preventDefault();
                 addPerson({ email: email.trim().toLowerCase() }, email.trim());
               }}
               className="mt-2 flex flex-wrap gap-2"
@@ -289,13 +289,13 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="friend@email.com"
                 className="min-w-48 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"
               />
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(event) => setRole(event.target.value)}
                 className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
               >
                 <option value="member">member</option>

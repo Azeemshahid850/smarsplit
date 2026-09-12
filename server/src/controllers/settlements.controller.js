@@ -11,16 +11,16 @@ import { notify, activeMemberIds } from '../services/notifications.js';
 function memberIndex(group) {
   return Object.fromEntries(
     group.members
-      .filter((m) => m.user)
-      .map((m) => [String(m.user._id ?? m.user), { name: m.user.name ?? m.name ?? m.email, avatarUrl: m.user.avatarUrl ?? null }]),
+      .filter((memberRow) => memberRow.user)
+      .map((memberRow) => [String(memberRow.user._id ?? memberRow.user), { name: memberRow.user.name ?? memberRow.name ?? memberRow.email, avatarUrl: memberRow.user.avatarUrl ?? null }]),
   );
 }
 
 const decorate = (payments, people) =>
-  payments.map((p) => ({
-    ...p,
-    fromName: people[String(p.from)]?.name ?? 'Someone',
-    toName: people[String(p.to)]?.name ?? 'Someone',
+  payments.map((paymentRow) => ({
+    ...paymentRow,
+    fromName: people[String(paymentRow.from)]?.name ?? 'Someone',
+    toName: people[String(paymentRow.to)]?.name ?? 'Someone',
   }));
 
 async function loadLedger(groupId) {
@@ -62,11 +62,11 @@ export async function recordSettlement(req, res) {
   if (!preview.payments.length) throw ApiError.badRequest('Everyone is already settled up', 'NOTHING_TO_SETTLE');
 
   const created = await Settlement.insertMany(
-    preview.payments.map((p) => ({
+    preview.payments.map((paymentRow) => ({
       groupId: group._id,
-      fromUser: p.from,
-      toUser: p.to,
-      amount: p.amount,
+      fromUser: paymentRow.from,
+      toUser: paymentRow.to,
+      amount: paymentRow.amount,
       isPaid: false,
       rawDebtCount: preview.rawDebtCount,
       optimizedCount: preview.optimizedCount,
@@ -94,14 +94,14 @@ export async function recordSettlement(req, res) {
   ok(
     res,
     {
-      settlements: created.map((s) => ({
-        id: s._id,
-        from: s.fromUser,
-        to: s.toUser,
-        amount: s.amount,
-        isPaid: s.isPaid,
-        fromName: people[String(s.fromUser)]?.name ?? 'Someone',
-        toName: people[String(s.toUser)]?.name ?? 'Someone',
+      settlements: created.map((settlementRow) => ({
+        id: settlementRow._id,
+        from: settlementRow.fromUser,
+        to: settlementRow.toUser,
+        amount: settlementRow.amount,
+        isPaid: settlementRow.isPaid,
+        fromName: people[String(settlementRow.fromUser)]?.name ?? 'Someone',
+        toName: people[String(settlementRow.toUser)]?.name ?? 'Someone',
       })),
       rawDebtCount: preview.rawDebtCount,
       optimizedCount: preview.optimizedCount,
@@ -131,17 +131,17 @@ export async function listSettlements(req, res) {
   const log = await AuditLog.find({ groupId: group._id }).sort({ createdAt: -1 }).limit(20).lean();
 
   ok(res, {
-    settlements: settlements.map((s) => ({
-      id: s._id,
-      from: s.fromUser,
-      to: s.toUser,
-      amount: s.amount,
-      isPaid: s.isPaid,
-      paidAt: s.paidAt,
-      fromName: people[String(s.fromUser)]?.name ?? 'Someone',
-      toName: people[String(s.toUser)]?.name ?? 'Someone',
+    settlements: settlements.map((settlementRow) => ({
+      id: settlementRow._id,
+      from: settlementRow.fromUser,
+      to: settlementRow.toUser,
+      amount: settlementRow.amount,
+      isPaid: settlementRow.isPaid,
+      paidAt: settlementRow.paidAt,
+      fromName: people[String(settlementRow.fromUser)]?.name ?? 'Someone',
+      toName: people[String(settlementRow.toUser)]?.name ?? 'Someone',
     })),
-    auditTrail: log.map((l) => ({ action: l.action, detail: l.detail, at: l.createdAt })),
+    auditTrail: log.map((logEntry) => ({ action: logEntry.action, detail: logEntry.detail, at: logEntry.createdAt })),
     groupStatus: group.status,
   });
 }

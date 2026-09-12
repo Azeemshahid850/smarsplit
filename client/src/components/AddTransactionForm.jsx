@@ -27,11 +27,11 @@ export default function AddTransactionForm({ onAdded }) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const change = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const amount = Math.round(Number(form.amount)) || 0;
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError('');
     setSaving(true);
     try {
@@ -64,16 +64,16 @@ export default function AddTransactionForm({ onAdded }) {
         {[
           { key: 'DEBIT', label: 'Spent' },
           { key: 'CREDIT', label: 'Received' },
-        ].map((t) => (
+        ].map((typeOption) => (
           <button
             type="button"
-            key={t.key}
-            onClick={() => setForm((f) => ({ ...f, type: t.key }))}
+            key={typeOption.key}
+            onClick={() => setForm((current) => ({ ...current, type: typeOption.key }))}
             className={`flex-1 rounded-md px-3 py-1.5 text-sm transition ${
-              form.type === t.key ? 'bg-white font-medium text-slate-900 shadow-sm' : 'text-slate-500'
+              form.type === typeOption.key ? 'bg-white font-medium text-slate-900 shadow-sm' : 'text-slate-500'
             }`}
           >
-            {t.label}
+            {typeOption.label}
           </button>
         ))}
       </div>
@@ -89,16 +89,16 @@ export default function AddTransactionForm({ onAdded }) {
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Category</span>
           <select name="category" value={form.category} onChange={change} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-            {CATEGORIES.map((c) => (
-              <option key={c}>{c}</option>
+            {CATEGORIES.map((categoryName) => (
+              <option key={categoryName}>{categoryName}</option>
             ))}
           </select>
         </label>
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Payment method</span>
           <select name="paymentMethod" value={form.paymentMethod} onChange={change} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-            {METHODS.map((m) => (
-              <option key={m}>{m}</option>
+            {METHODS.map((methodName) => (
+              <option key={methodName}>{methodName}</option>
             ))}
           </select>
         </label>
@@ -109,7 +109,7 @@ export default function AddTransactionForm({ onAdded }) {
           <input
             type="checkbox"
             checked={form.isRecurring}
-            onChange={(e) => setForm((f) => ({ ...f, isRecurring: e.target.checked }))}
+            onChange={(event) => setForm((current) => ({ ...current, isRecurring: event.target.checked }))}
             className="h-4 w-4 rounded border-slate-300 accent-emerald-600"
           />
           <span className="font-medium text-slate-700">Repeats</span>

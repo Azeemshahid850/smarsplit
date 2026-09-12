@@ -10,18 +10,24 @@ const PLATFORM = { daraz: 'Daraz', metro: 'Metro', imtiaz: 'Imtiaz' };
  */
 export default function SavingsCards({ lineItems = [], alternatives = [], totalSavings = 0, compact = false }) {
   const fromLines = lineItems
-    .filter((i) => i.priceMatch)
-    .map((i) => ({
-      name: i.name,
-      paid: Math.round(i.price / (i.qty || 1)),
-      onlinePrice: i.priceMatch.onlinePrice,
-      source: i.priceMatch.source,
-      url: i.priceMatch.url,
+    .filter((lineItem) => lineItem.priceMatch)
+    .map((lineItem) => ({
+      name: lineItem.name,
+      paid: Math.round(lineItem.price / (lineItem.qty || 1)),
+      onlinePrice: lineItem.priceMatch.onlinePrice,
+      source: lineItem.priceMatch.source,
+      url: lineItem.priceMatch.url,
     }));
 
   const cards = fromLines.length
     ? fromLines
-    : alternatives.map((a) => ({ name: a.name, paid: a.onlinePrice + a.saving, onlinePrice: a.onlinePrice, source: a.source, url: a.url }));
+    : alternatives.map((alternative) => ({
+        name: alternative.name,
+        paid: alternative.onlinePrice + alternative.saving,
+        onlinePrice: alternative.onlinePrice,
+        source: alternative.source,
+        url: alternative.url,
+      }));
 
   if (!cards.length) return null;
 
@@ -35,20 +41,20 @@ export default function SavingsCards({ lineItems = [], alternatives = [], totalS
       </div>
 
       <ul className="mt-3 space-y-2">
-        {cards.map((c, i) => (
-          <li key={i} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+        {cards.map((card, index) => (
+          <li key={index} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-sm">
             <span className="min-w-0">
-              <span className="block truncate font-medium text-slate-800">{c.name}</span>
+              <span className="block truncate font-medium text-slate-800">{card.name}</span>
               <span className="text-xs text-slate-500">
-                {formatMoney(c.onlinePrice)} on {PLATFORM[c.source] ?? c.source} · you paid {formatMoney(c.paid)}
+                {formatMoney(card.onlinePrice)} on {PLATFORM[card.source] ?? card.source} · you paid {formatMoney(card.paid)}
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-2">
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                save {formatMoney(c.paid - c.onlinePrice)}
+                save {formatMoney(card.paid - card.onlinePrice)}
               </span>
-              {c.url && (
-                <a href={c.url} target="_blank" rel="noreferrer" className="text-slate-300 hover:text-slate-600">
+              {card.url && (
+                <a href={card.url} target="_blank" rel="noreferrer" className="text-slate-300 hover:text-slate-600">
                   <ExternalLink className="h-4 w-4" />
                 </a>
               )}

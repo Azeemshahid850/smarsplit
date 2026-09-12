@@ -9,27 +9,27 @@ const toneFor = (consumed) => {
 };
 
 export default function CategoryBars({ categories, currency = 'PKR' }) {
-  const widest = Math.max(...categories.map((c) => c.cap ?? c.total), 1);
+  const widest = Math.max(...categories.map((categoryRow) => categoryRow.cap ?? categoryRow.total), 1);
 
   return (
     <ul className="space-y-3">
-      {categories.map((c) => {
-        const width = Math.min((c.total / (c.cap ?? widest)) * 100, 100);
+      {categories.map((categoryRow) => {
+        const width = Math.min((categoryRow.total / (categoryRow.cap ?? widest)) * 100, 100);
         return (
-          <li key={c.category}>
+          <li key={categoryRow.category}>
             <div className="flex items-baseline justify-between text-sm">
-              <span className="font-medium text-slate-700">{c.category}</span>
+              <span className="font-medium text-slate-700">{categoryRow.category}</span>
               <span className="text-slate-500">
-                {formatMoney(c.total, currency)}
-                {c.cap != null && <span className="text-slate-400"> / {formatMoney(c.cap, currency)}</span>}
+                {formatMoney(categoryRow.total, currency)}
+                {categoryRow.cap != null && <span className="text-slate-400"> / {formatMoney(c.cap, currency)}</span>}
               </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className={`h-full rounded-full transition-all ${toneFor(c.consumed)}`} style={{ width: `${width}%` }} />
+              <div className={`h-full rounded-full transition-all ${toneFor(categoryRow.consumed)}`} style={{ width: `${width}%` }} />
             </div>
-            {c.consumed != null && (
-              <p className={`mt-0.5 text-xs ${c.consumed >= 100 ? 'text-red-600' : c.consumed >= 80 ? 'text-amber-600' : 'text-slate-400'}`}>
-                {c.consumed}% of budget{c.consumed >= 100 ? ' — over' : ''}
+            {categoryRow.consumed != null && (
+              <p className={`mt-0.5 text-xs ${categoryRow.consumed >= 100 ? 'text-red-600' : categoryRow.consumed >= 80 ? 'text-amber-600' : 'text-slate-400'}`}>
+                {categoryRow.consumed}% of budget{categoryRow.consumed >= 100 ? ' — over' : ''}
               </p>
             )}
           </li>

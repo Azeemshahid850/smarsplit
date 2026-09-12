@@ -62,7 +62,7 @@ function PersonalReport({ month, setMonth }) {
         <input
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(event) => setMonth(event.target.value)}
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
         />
         <ExportButtons params={{ scope: 'transactions', month }} />
@@ -143,10 +143,10 @@ function GroupReport({ groups }) {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.title}
+        <select value={groupId} onChange={(event) => setGroupId(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+          {groups.map((groupRow) => (
+            <option key={groupRow.id} value={groupRow.id}>
+              {groupRow.title}
             </option>
           ))}
         </select>
@@ -165,7 +165,7 @@ function GroupReport({ groups }) {
         <p className="text-xs text-slate-400">How fairly the spending landed</p>
         <div className="mt-4">
           <GroupedBars
-            data={r.members.map((m) => ({ name: m.name.split(' ')[0], paid: m.paid, consumed: m.consumed }))}
+            data={r.members.map((memberRow) => ({ name: memberRow.name.split(' ')[0], paid: memberRow.paid, consumed: memberRow.consumed }))}
             xKey="name"
             bars={[
               { key: 'paid', label: 'Paid' },
@@ -198,15 +198,15 @@ export default function Reports() {
       <p className="text-sm text-slate-500">Charts, trends and exports for both workspaces.</p>
 
       <nav className="mt-6 flex gap-1 border-b border-slate-200">
-        {['Personal', 'Group'].map((t) => (
+        {['Personal', 'Group'].map((tabName) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabName}
+            onClick={() => setTab(tabName)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm transition ${
-              tab === t ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
+              tab === tabName ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            {t}
+            {tabName}
           </button>
         ))}
       </nav>

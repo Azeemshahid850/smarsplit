@@ -12,7 +12,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   const { collections } = mongoose.connection;
-  await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
+  await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
 });
 
 afterAll(async () => {

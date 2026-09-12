@@ -14,12 +14,12 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const change = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const tooShort = form.password.length > 0 && form.password.length < 8;
   const mismatch = form.confirm.length > 0 && form.confirm !== form.password;
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     if (tooShort || mismatch) return;
     setError('');
     setLoading(true);

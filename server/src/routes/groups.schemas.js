@@ -34,7 +34,7 @@ export const inviteMemberSchema = z
     userId: objectId.optional(),
     role: z.enum(['admin', 'member']).default('member'),
   })
-  .refine((v) => Boolean(v.email) || Boolean(v.userId), {
+  .refine((value) => Boolean(value.email) || Boolean(value.userId), {
     message: 'Pick a person or type an email address',
     path: ['email'],
   });

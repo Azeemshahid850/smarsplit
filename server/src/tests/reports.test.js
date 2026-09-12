@@ -87,11 +87,11 @@ describe('GET /reports/groups/:id/summary', () => {
 
     expect(report.total).toBe(13500);
     expect(report.perPerson).toBe(6750);
-    expect(report.byCategory.map((c) => c.category)).toEqual(['Housing', 'Travel']);
+    expect(report.byCategory.map((categoryRow) => categoryRow.category)).toEqual(['Housing', 'Travel']);
     expect(report.byCategory[0]).toMatchObject({ total: 9000, share: 67 });
 
-    const bySara = report.members.find((m) => m.userId === sara.id);
-    const byBilal = report.members.find((m) => m.userId === bilal.id);
+    const bySara = report.members.find((memberRow) => memberRow.userId === sara.id);
+    const byBilal = report.members.find((memberRow) => memberRow.userId === bilal.id);
     expect(bySara).toMatchObject({ paid: 9000, consumed: 6750, share: 50 });
     expect(byBilal).toMatchObject({ paid: 4500, consumed: 6750 });
     expect(report.timeline.length).toBeGreaterThan(0);
@@ -134,7 +134,7 @@ describe('GET /reports/export', () => {
     await spend(user, {});
     const res = await get(user, `${api}/reports/export?format=xlsx`).buffer().parse((r, cb) => {
       const chunks = [];
-      r.on('data', (c) => chunks.push(c));
+      r.on('data', (categoryRow) => chunks.push(categoryRow));
       r.on('end', () => cb(null, Buffer.concat(chunks)));
     });
 
@@ -148,7 +148,7 @@ describe('GET /reports/export', () => {
     await spend(user, { date: '2026-09-05' });
     const res = await get(user, `${api}/reports/export?format=pdf&month=2026-09`).buffer().parse((r, cb) => {
       const chunks = [];
-      r.on('data', (c) => chunks.push(c));
+      r.on('data', (categoryRow) => chunks.push(categoryRow));
       r.on('end', () => cb(null, Buffer.concat(chunks)));
     });
 
@@ -161,7 +161,7 @@ describe('GET /reports/export', () => {
     const { sara, group } = await trip();
     const res = await get(sara, `${api}/reports/export?format=pdf&scope=group&groupId=${group.id}`).buffer().parse((r, cb) => {
       const chunks = [];
-      r.on('data', (c) => chunks.push(c));
+      r.on('data', (categoryRow) => chunks.push(categoryRow));
       r.on('end', () => cb(null, Buffer.concat(chunks)));
     });
 
@@ -184,7 +184,7 @@ describe('notification feed', () => {
     const { bilal, group } = await trip();
     const res = await get(bilal, `${api}/notifications`);
 
-    const added = res.body.data.notifications.find((n) => n.type === 'EXPENSE_ADDED');
+    const added = res.body.data.notifications.find((notificationRow) => notificationRow.type === 'EXPENSE_ADDED');
     expect(added.message).toBe('Sara logged Rs 9,000 for Hotel in Northern Tour');
     expect(String(added.groupId)).toBe(group.id);
     expect(res.body.data.unreadCount).toBeGreaterThan(0);
@@ -193,7 +193,7 @@ describe('notification feed', () => {
   it('never notifies the person who caused the event', async () => {
     const { sara } = await trip();
     const mine = await get(sara, `${api}/notifications`);
-    expect(mine.body.data.notifications.some((n) => n.message.includes('Sara logged'))).toBe(false);
+    expect(mine.body.data.notifications.some((notificationRow) => notificationRow.message.includes('Sara logged'))).toBe(false);
   });
 
   it('records settlement created and paid events', async () => {
@@ -201,7 +201,7 @@ describe('notification feed', () => {
     const { settlements } = (await post(sara, `${api}/groups/${group.id}/settle`)).body.data;
     await request(app).patch(`${api}/settlements/${settlements[0].id}/pay`).set('Authorization', `Bearer ${sara.accessToken}`).send({ isPaid: true });
 
-    const types = (await get(bilal, `${api}/notifications`)).body.data.notifications.map((n) => n.type);
+    const types = (await get(bilal, `${api}/notifications`)).body.data.notifications.map((notificationRow) => notificationRow.type);
     expect(types).toContain('SETTLEMENT_CREATED');
     expect(types).toContain('SETTLEMENT_PAID');
   });

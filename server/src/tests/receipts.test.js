@@ -27,7 +27,7 @@ async function waitForOcr(user, receiptId) {
   for (let i = 0; i < 40; i += 1) {
     const res = await get(user, `${api}/receipts/${receiptId}`);
     if (res.body.data.receipt.ocrStatus !== 'processing') return res.body.data.receipt;
-    await new Promise((r) => setTimeout(r, 25));
+    await new Promise((response) => setTimeout(response, 25));
   }
   throw new Error('OCR never finished');
 }

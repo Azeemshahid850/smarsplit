@@ -12,7 +12,7 @@ export async function makeUser(overrides = {}) {
     ...res.body.data.user,
     password: body.password,
     accessToken,
-    cookie: res.headers['set-cookie'].find((c) => c.startsWith('rt=')),
+    cookie: res.headers['set-cookie'].find((cookieHeader) => cookieHeader.startsWith('rt=')),
     auth: (req) => req.set('Authorization', `Bearer ${accessToken}`),
   };
 }

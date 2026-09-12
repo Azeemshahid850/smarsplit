@@ -151,10 +151,10 @@ describe('budgets and summary', () => {
     expect(net).toBe(77300);
     expect(lastMonthSpend).toBe(6000);
 
-    const food = byCategory.find((c) => c.category === 'Food');
+    const food = byCategory.find((categoryRow) => categoryRow.category === 'Food');
     expect(food).toMatchObject({ total: 8500, cap: 10000, consumed: 85 }); // amber band
-    expect(byCategory.find((c) => c.category === 'Utilities')).toMatchObject({ total: 4200, cap: null, consumed: null });
-    expect(byCategory.some((c) => c.category === 'Travel')).toBe(false); // no spend, no cap, not listed
+    expect(byCategory.find((categoryRow) => categoryRow.category === 'Utilities')).toMatchObject({ total: 4200, cap: null, consumed: null });
+    expect(byCategory.some((categoryRow) => categoryRow.category === 'Travel')).toBe(false); // no spend, no cap, not listed
   });
 
   it('gives an empty month zeroes rather than an error', async () => {

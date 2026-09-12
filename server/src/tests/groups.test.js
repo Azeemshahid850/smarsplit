@@ -30,7 +30,7 @@ describe('POST /groups', () => {
     const group = await makeGroup(owner, { memberEmails: [friend.email, 'stranger@demo.pk', owner.email] });
 
     expect(group.members).toHaveLength(3); // owner deduped, not added twice
-    const byEmail = Object.fromEntries(group.members.map((m) => [m.email, m]));
+    const byEmail = Object.fromEntries(group.members.map((memberRow) => [memberRow.email, memberRow]));
     expect(byEmail[friend.email].status).toBe('active');
     expect(byEmail['stranger@demo.pk'].status).toBe('pending');
     expect(JSON.stringify(group)).not.toMatch(/inviteToken/);
@@ -63,7 +63,7 @@ describe('GET /groups', () => {
     const mine = await request(app).get(`${api}/groups`).set('Authorization', `Bearer ${owner.accessToken}`);
     const theirs = await request(app).get(`${api}/groups`).set('Authorization', `Bearer ${outsider.accessToken}`);
 
-    expect(mine.body.data.groups.map((g) => g.title)).toEqual(['Flat 3B', 'Murree Trip']);
+    expect(mine.body.data.groups.map((groupRow) => groupRow.title)).toEqual(['Flat 3B', 'Murree Trip']);
     expect(theirs.body.data.groups).toEqual([]);
   });
 
@@ -155,7 +155,7 @@ describe('invites and joining', () => {
 
     const joined = await request(app).post(`${api}/join/${token}`).set('Authorization', `Bearer ${newbie.accessToken}`);
     expect(joined.status).toBe(200);
-    expect(joined.body.data.group.members.find((m) => m.email === 'newbie@demo.pk').status).toBe('active');
+    expect(joined.body.data.group.members.find((memberRow) => memberRow.email === 'newbie@demo.pk').status).toBe('active');
 
     // Single use.
     const replay = await request(app).post(`${api}/join/${token}`).set('Authorization', `Bearer ${newbie.accessToken}`);

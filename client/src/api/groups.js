@@ -10,7 +10,7 @@ export const inviteMember = (id, body) => api.post(`/groups/${id}/members`, body
 export const removeMember = (id, userId) => api.delete(`/groups/${id}/members/${userId}`).then(data);
 export const joinGroup = (inviteToken) => api.post(`/join/${inviteToken}`).then(data);
 
-export const searchUsers = (q) => api.get(`/users/search?q=${encodeURIComponent(q)}`).then(data);
+export const searchUsers = (queryValue) => api.get(`/users/search?q=${encodeURIComponent(queryValue)}`).then(data);
 export const resendInvite = (groupId, memberId) => api.post(`/groups/${groupId}/members/${memberId}/resend`).then(data);
 export const approveMember = (groupId, memberId) => api.patch(`/groups/${groupId}/members/${memberId}/approve`).then(data);
 export const rotateJoinCode = (groupId) => api.post(`/groups/${groupId}/join-code/rotate`).then(data);

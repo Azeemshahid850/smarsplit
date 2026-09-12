@@ -102,8 +102,8 @@ async function seed() {
 
   console.log('Clearing existing data…');
   await Promise.all(
-    [User, Group, GroupExpense, Settlement, PersonalExpense, Budget, Receipt, Notification, AuditLog, RefreshToken].map((m) =>
-      m.deleteMany({}),
+    [User, Group, GroupExpense, Settlement, PersonalExpense, Budget, Receipt, Notification, AuditLog, RefreshToken].map((model) =>
+      model.deleteMany({}),
     ),
   );
 
@@ -112,9 +112,9 @@ async function seed() {
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
   const users = await User.insertMany(
-    PEOPLE.map((p) => ({ ...p, passwordHash, defaultCurrency: 'PKR' })),
+    PEOPLE.map((personSpec) => ({ ...personSpec, passwordHash, defaultCurrency: 'PKR' })),
   );
-  const byName = Object.fromEntries(users.map((u) => [u.name, u]));
+  const byName = Object.fromEntries(users.map((seededUser) => [seededUser.name, seededUser]));
   const demo = byName['Azeem Shahid'];
   console.log(`Users: ${users.length} (login ${demo.email} / ${DEMO_PASSWORD})`);
 
@@ -126,33 +126,33 @@ async function seed() {
     tags: ['trip', 'winter'],
     startDate: dayOf(2),
     createdBy: demo._id,
-    members: users.map((u, i) => ({
-      user: u._id,
-      email: u.email,
-      name: u.name,
-      role: i === 0 ? 'admin' : 'member',
+    members: users.map((seededUser, itemSpec) => ({
+      user: seededUser._id,
+      email: seededUser.email,
+      name: seededUser.name,
+      role: itemSpec === 0 ? 'admin' : 'member',
       status: 'active',
       joinedAt: dayOf(1),
     })),
   });
 
-  const everyone = users.map((u) => String(u._id));
-  const expenses = TRIP_EXPENSES.map((e) => {
-    const paidBy = [{ userId: byName[e.payer]._id, amount: e.amount }];
+  const everyone = users.map((seededUser) => String(seededUser._id));
+  const expenses = TRIP_EXPENSES.map((expenseSpec) => {
+    const paidBy = [{ userId: byName[expenseSpec.payer]._id, amount: expenseSpec.amount }];
     return {
       groupId: group._id,
-      title: e.title,
-      totalAmount: e.amount,
-      category: e.category,
-      date: dayOf(e.day),
+      title: expenseSpec.title,
+      totalAmount: expenseSpec.amount,
+      category: expenseSpec.category,
+      date: dayOf(expenseSpec.day),
       paidBy,
       splitType: 'EQUAL',
-      splits: computeSplits({ splitType: 'EQUAL', totalAmount: e.amount, participants: everyone, paidBy }),
-      createdBy: byName[e.payer]._id,
+      splits: computeSplits({ splitType: 'EQUAL', totalAmount: expenseSpec.amount, participants: everyone, paidBy }),
+      createdBy: byName[expenseSpec.payer]._id,
     };
   });
   await GroupExpense.insertMany(expenses);
-  console.log(`Murree Trip: ${expenses.length} expenses, Rs ${expenses.reduce((t, e) => t + e.totalAmount, 0).toLocaleString('en-PK')}`);
+  console.log(`Murree Trip: ${expenses.length} expenses, Rs ${expenses.reduce((transactionSpec, expenseSpec) => transactionSpec + expenseSpec.totalAmount, 0).toLocaleString('en-PK')}`);
 
   // A second, smaller group so the list page is not a single row.
   const flat = await Group.create({
@@ -160,11 +160,11 @@ async function seed() {
     type: 'home',
     baseCurrency: 'PKR',
     createdBy: demo._id,
-    members: [demo, byName['Hamza Tariq']].map((u, i) => ({
-      user: u._id,
-      email: u.email,
-      name: u.name,
-      role: i === 0 ? 'admin' : 'member',
+    members: [demo, byName['Hamza Tariq']].map((seededUser, itemSpec) => ({
+      user: seededUser._id,
+      email: seededUser.email,
+      name: seededUser.name,
+      role: itemSpec === 0 ? 'admin' : 'member',
       status: 'active',
       joinedAt: dayOf(1),
     })),
@@ -188,21 +188,21 @@ async function seed() {
   });
 
   await PersonalExpense.insertMany(
-    PERSONAL.map((t) => ({
+    PERSONAL.map((transactionSpec) => ({
       userId: demo._id,
-      title: t.title,
-      amount: t.amount,
-      type: t.type ?? 'DEBIT',
-      category: t.category,
-      paymentMethod: t.method,
-      date: dayOf(t.day),
-      isRecurring: Boolean(t.recurring),
-      recurring: t.recurring
-        ? { interval: t.recurring, nextRunAt: new Date(dayOf(t.day).getFullYear(), dayOf(t.day).getMonth() + 1, t.day) }
+      title: transactionSpec.title,
+      amount: transactionSpec.amount,
+      type: transactionSpec.type ?? 'DEBIT',
+      category: transactionSpec.category,
+      paymentMethod: transactionSpec.method,
+      date: dayOf(transactionSpec.day),
+      isRecurring: Boolean(transactionSpec.recurring),
+      recurring: transactionSpec.recurring
+        ? { interval: transactionSpec.recurring, nextRunAt: new Date(dayOf(transactionSpec.day).getFullYear(), dayOf(transactionSpec.day).getMonth() + 1, transactionSpec.day) }
         : { interval: null, nextRunAt: null },
     })),
   );
-  await Budget.insertMany(BUDGETS.map((b) => ({ ...b, userId: demo._id })));
+  await Budget.insertMany(BUDGETS.map((budgetSpec) => ({ ...budgetSpec, userId: demo._id })));
   console.log(`Personal: ${PERSONAL.length} transactions, ${BUDGETS.length} budgets`);
 
   for (const [index, r] of RECEIPTS.entries()) {
@@ -215,7 +215,7 @@ async function seed() {
       ocrStatus: 'done',
       ocrEngine: 'vision',
       lineItems,
-      totalDetected: r.items.reduce((t, i) => t + i.price, 0),
+      totalDetected: r.items.reduce((transactionSpec, itemSpec) => transactionSpec + itemSpec.price, 0),
       totalsAgree: true,
       potentialSavings,
     });
@@ -226,7 +226,7 @@ async function seed() {
       const transaction = await PersonalExpense.create({
         userId: demo._id,
         title: `${r.store} receipt`,
-        amount: r.items.reduce((t, i) => t + i.price, 0),
+        amount: r.items.reduce((transactionSpec, itemSpec) => transactionSpec + itemSpec.price, 0),
         category: 'Food',
         type: 'DEBIT',
         paymentMethod: 'Card',

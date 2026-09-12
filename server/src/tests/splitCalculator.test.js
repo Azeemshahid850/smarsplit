@@ -10,7 +10,7 @@ import {
 const A = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 const B = 'bbbbbbbbbbbbbbbbbbbbbbbb';
 const C = 'cccccccccccccccccccccccc';
-const total = (splits) => splits.reduce((t, s) => t + s.share, 0);
+const total = (splits) => splits.reduce((runningTotal, splitEntry) => runningTotal + splitEntry.share, 0);
 
 describe('EQUAL', () => {
   it('splits evenly when it divides', () => {
@@ -26,8 +26,8 @@ describe('EQUAL', () => {
     const splits = computeSplits({ splitType: 'EQUAL', totalAmount: 100, participants: [A, B, C], paidBy: [{ userId: B, amount: 100 }] });
 
     expect(total(splits)).toBe(100);
-    expect(splits.find((s) => s.userId === B).share).toBe(34);
-    expect(splits.filter((s) => s.userId !== B).map((s) => s.share)).toEqual([33, 33]);
+    expect(splits.find((splitEntry) => splitEntry.userId === B).share).toBe(34);
+    expect(splits.filter((splitEntry) => splitEntry.userId !== B).map((splitEntry) => splitEntry.share)).toEqual([33, 33]);
   });
 
   it('falls back to the first participant when the payer is not splitting', () => {
@@ -91,7 +91,7 @@ describe('PERCENTAGE', () => {
     });
 
     expect(total(splits)).toBe(100);
-    expect(splits.find((s) => s.userId === C).share).toBe(34);
+    expect(splits.find((splitEntry) => splitEntry.userId === C).share).toBe(34);
   });
 
   it('handles thirds of an awkward total', () => {
@@ -103,7 +103,7 @@ describe('PERCENTAGE', () => {
     });
 
     expect(total(splits)).toBe(4201);
-    expect(splits.map((s) => s.share)).toEqual([2101, 1050, 1050]);
+    expect(splits.map((splitEntry) => splitEntry.share)).toEqual([2101, 1050, 1050]);
   });
 
   it('rejects percentages that do not reach 100', () => {
@@ -126,7 +126,7 @@ describe('LINE_ITEM', () => {
     });
 
     expect(total(splits)).toBe(900);
-    expect(Object.fromEntries(splits.map((s) => [s.userId, s.share]))).toEqual({ [A]: 300, [B]: 300, [C]: 300 });
+    expect(Object.fromEntries(splits.map((splitEntry) => [splitEntry.userId, splitEntry.share]))).toEqual({ [A]: 300, [B]: 300, [C]: 300 });
   });
 
   it('rounds an item that does not divide evenly and still balances', () => {
@@ -138,7 +138,7 @@ describe('LINE_ITEM', () => {
     });
 
     expect(total(splits)).toBe(100);
-    expect(splits.map((s) => s.share).sort()).toEqual([33, 33, 34]);
+    expect(splits.map((splitEntry) => splitEntry.share).sort()).toEqual([33, 33, 34]);
   });
 
   it('rejects items that do not add up to the expense total', () => {

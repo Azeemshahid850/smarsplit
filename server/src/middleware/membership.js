@@ -27,5 +27,5 @@ export function requireAdmin(req, res, next) {
 export function canEditExpense(group, membership, expense) {
   if (group.settings.anyoneCanEdit) return true;
   if (membership.role === 'admin') return true;
-  return expense.paidBy.some((p) => String(p.userId) === String(membership.user));
+  return expense.paidBy.some((payerEntry) => String(payerEntry.userId) === String(membership.user));
 }

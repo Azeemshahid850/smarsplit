@@ -6,7 +6,7 @@ import { formatMoney, formatSigned } from '../utils/format.js';
 import Avatar from '../components/Avatar.jsx';
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
 
-const balanceTone = (n) => (n > 0 ? 'text-emerald-600' : n < 0 ? 'text-red-600' : 'text-slate-400');
+const balanceTone = (netAmount) => (netAmount > 0 ? 'text-emerald-600' : netAmount < 0 ? 'text-red-600' : 'text-slate-400');
 
 export default function Groups() {
   const { data, loading, error, reload } = useAsync(listGroups);
@@ -55,37 +55,37 @@ export default function Groups() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.groups.map((g) => (
-                  <tr key={g.id} className="hover:bg-slate-50">
+                {data.groups.map((groupRow) => (
+                  <tr key={groupRow.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <Link to={`/groups/${g.id}`} className="font-medium text-slate-900 hover:underline">
-                        {g.title}
+                      <Link to={`/groups/${groupRow.id}`} className="font-medium text-slate-900 hover:underline">
+                        {groupRow.title}
                       </Link>
-                      <p className="text-xs capitalize text-slate-400">{g.type}</p>
+                      <p className="text-xs capitalize text-slate-400">{groupRow.type}</p>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex -space-x-2">
-                        {g.members.slice(0, 5).map((m) => (
-                          <Avatar key={m.id} name={m.name} avatarUrl={m.avatarUrl} muted={m.status === 'pending'} />
+                        {groupRow.members.slice(0, 5).map((memberRow) => (
+                          <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
                         ))}
-                        {g.members.length > 5 && (
+                        {groupRow.members.length > 5 && (
                           <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-[11px] text-slate-500 ring-2 ring-white">
-                            +{g.members.length - 5}
+                            +{groupRow.members.length - 5}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{formatMoney(g.totalSpent, g.baseCurrency)}</td>
-                    <td className={`px-4 py-3 font-medium ${balanceTone(g.myBalance)}`}>
-                      {g.myBalance === 0 ? 'settled up' : formatSigned(g.myBalance, g.baseCurrency)}
+                    <td className="px-4 py-3 text-slate-700">{formatMoney(groupRow.totalSpent, groupRow.baseCurrency)}</td>
+                    <td className={`px-4 py-3 font-medium ${balanceTone(groupRow.myBalance)}`}>
+                      {groupRow.myBalance === 0 ? 'settled up' : formatSigned(groupRow.myBalance, groupRow.baseCurrency)}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
-                          g.status === 'SETTLED' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'
+                          groupRow.status === 'SETTLED' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'
                         }`}
                       >
-                        {g.status.toLowerCase()}
+                        {groupRow.status.toLowerCase()}
                       </span>
                     </td>
                   </tr>

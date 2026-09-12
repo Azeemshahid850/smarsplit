@@ -5,15 +5,15 @@ import { ApiError } from '../middleware/ApiError.js';
 /** Every account starts with these; they can never be deleted. */
 export const DEFAULT_CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 
-export const isDefault = (name) => DEFAULT_CATEGORIES.some((c) => c.toLowerCase() === String(name).toLowerCase());
+export const isDefault = (name) => DEFAULT_CATEGORIES.some((categoryRow) => categoryRow.toLowerCase() === String(name).toLowerCase());
 
 /** Defaults plus this user's own, defaults first and custom ones alphabetical. */
 export async function categoriesFor(userId) {
   const custom = await Category.find({ userId }).sort({ name: 1 }).lean();
   return {
     defaults: DEFAULT_CATEGORIES,
-    custom: custom.map((c) => ({ id: c._id, name: c.name })),
-    all: [...DEFAULT_CATEGORIES, ...custom.map((c) => c.name)],
+    custom: custom.map((categoryRow) => ({ id: categoryRow._id, name: categoryRow.name })),
+    all: [...DEFAULT_CATEGORIES, ...custom.map((categoryRow) => categoryRow.name)],
   };
 }
 
@@ -23,9 +23,9 @@ export async function categoriesFor(userId) {
  * group rather than only for its author.
  */
 export async function categoriesForGroup(group) {
-  const memberIds = group.members.filter((m) => m.status === 'active' && m.user).map((m) => m.user._id ?? m.user);
+  const memberIds = group.members.filter((member) => member.status === 'active' && member.user).map((member) => member.user._id ?? member.user);
   const custom = await Category.find({ userId: { $in: memberIds } }).lean();
-  return [...DEFAULT_CATEGORIES, ...new Set(custom.map((c) => c.name))];
+  return [...DEFAULT_CATEGORIES, ...new Set(custom.map((categoryRow) => categoryRow.name))];
 }
 
 /**
@@ -34,7 +34,7 @@ export async function categoriesForGroup(group) {
  */
 export function assertCategoryAllowed(category, allowed) {
   if (category == null) return;
-  const match = allowed.find((c) => c.toLowerCase() === String(category).toLowerCase());
+  const match = allowed.find((categoryRow) => categoryRow.toLowerCase() === String(category).toLowerCase());
   if (!match) {
     throw ApiError.badRequest(`"${category}" is not one of your categories`, 'UNKNOWN_CATEGORY');
   }
@@ -51,7 +51,7 @@ export async function categoryUsage(userId, name) {
 
   const [transactions, expenses, budgets] = await Promise.all([
     PersonalExpense.countDocuments({ userId, category: name }),
-    GroupExpense.countDocuments({ groupId: { $in: groups.map((g) => g._id) }, category: name, deletedAt: null }),
+    GroupExpense.countDocuments({ groupId: { $in: groups.map((groupRow) => groupRow._id) }, category: name, deletedAt: null }),
     Budget.countDocuments({ userId, category: name }),
   ]);
 

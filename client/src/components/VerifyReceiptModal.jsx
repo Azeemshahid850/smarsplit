@@ -35,8 +35,8 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
     setReceipt((await removeReceiptItem(receipt.id, index)).receipt);
   };
 
-  const addLine = async (e) => {
-    e.preventDefault();
+  const addLine = async (event) => {
+    event.preventDefault();
     const price = Math.round(Number(draft.price)) || 0;
     if (!draft.name.trim() || price <= 0) return;
     setReceipt((await addReceiptItem(receipt.id, { name: draft.name.trim(), qty: Number(draft.qty) || 1, price })).receipt);
@@ -100,21 +100,21 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
                 <li key={index} className="flex items-center gap-2">
                   <input
                     defaultValue={item.name}
-                    onBlur={(e) => e.target.value !== item.name && editLine(index, { name: e.target.value })}
+                    onBlur={(event) => event.target.value !== item.name && editLine(index, { name: event.target.value })}
                     className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                   />
                   <input
                     type="number"
                     min="1"
                     defaultValue={item.qty}
-                    onBlur={(e) => Number(e.target.value) !== item.qty && editLine(index, { qty: Number(e.target.value) })}
+                    onBlur={(event) => Number(event.target.value) !== item.qty && editLine(index, { qty: Number(event.target.value) })}
                     className="w-14 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                   />
                   <input
                     type="number"
                     min="0"
                     defaultValue={item.price}
-                    onBlur={(e) => Number(e.target.value) !== item.price && editLine(index, { price: Math.round(Number(e.target.value)) })}
+                    onBlur={(event) => Number(event.target.value) !== item.price && editLine(index, { price: Math.round(Number(event.target.value)) })}
                     className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                   />
                   {item.corrected && <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" title="edited by you" />}
@@ -129,14 +129,14 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
               <input
                 placeholder="Add a missing item"
                 value={draft.name}
-                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
                 className="min-w-0 flex-1 rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-sm"
               />
               <input
                 type="number"
                 min="1"
                 value={draft.qty}
-                onChange={(e) => setDraft((d) => ({ ...d, qty: e.target.value }))}
+                onChange={(event) => setDraft((current) => ({ ...current, qty: event.target.value }))}
                 className="w-14 rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-sm"
               />
               <input
@@ -144,7 +144,7 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
                 min="0"
                 placeholder="0"
                 value={draft.price}
-                onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
+                onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value }))}
                 className="w-24 rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-sm"
               />
               <button className="text-slate-400 hover:text-emerald-600">
@@ -170,38 +170,38 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
             {[
               { key: 'personal', label: 'Save to Personal' },
               { key: 'groupExpense', label: 'Use in group expense' },
-            ].map((t) => (
+            ].map((targetOption) => (
               <button
-                key={t.key}
-                onClick={() => setTarget(t.key)}
-                disabled={t.key === 'groupExpense' && groups.length === 0}
+                key={targetOption.key}
+                onClick={() => setTarget(targetOption.key)}
+                disabled={targetOption.key === 'groupExpense' && groups.length === 0}
                 className={`rounded-full px-3 py-1.5 text-sm transition disabled:opacity-40 ${
-                  target === t.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  target === targetOption.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {t.label}
+                {targetOption.label}
               </button>
             ))}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-              {CATEGORIES.map((c) => (
-                <option key={c}>{c}</option>
+            <select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+              {CATEGORIES.map((categoryName) => (
+                <option key={categoryName}>{categoryName}</option>
               ))}
             </select>
 
             {target === 'personal' ? (
-              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-                {METHODS.map((m) => (
-                  <option key={m}>{m}</option>
+              <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                {METHODS.map((methodName) => (
+                  <option key={methodName}>{methodName}</option>
                 ))}
               </select>
             ) : (
-              <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.title}
+              <select value={groupId} onChange={(event) => setGroupId(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                {groups.map((groupRow) => (
+                  <option key={groupRow.id} value={groupRow.id}>
+                    {groupRow.title}
                   </option>
                 ))}
               </select>

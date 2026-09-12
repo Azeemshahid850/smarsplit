@@ -19,7 +19,7 @@ const SPLIT_TYPES = [
   { key: 'LINE_ITEM', label: 'Line items' },
 ];
 
-const int = (v) => (v === '' || v == null ? 0 : Math.round(Number(v)) || 0);
+const int = (fieldValue) => (fieldValue === '' || fieldValue == null ? 0 : Math.round(Number(fieldValue)) || 0);
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function AddExpense() {
@@ -61,11 +61,11 @@ export default function AddExpense() {
             category: expense.category,
             notes: expense.notes || '',
           });
-          setPayers(expense.paidBy.map((p) => ({ userId: p.userId, amount: String(p.amount) })));
+          setPayers(expense.paidBy.map((payerEntry) => ({ userId: payerEntry.userId, amount: String(payerEntry.amount) })));
           setSplitType(expense.splitType);
-          setParticipants(expense.splits.map((s) => s.userId));
-          setExact(Object.fromEntries(expense.splits.map((s) => [s.userId, String(s.share)])));
-          setItems(expense.items.map((i) => ({ ...i, price: String(i.price), qty: String(i.qty) })));
+          setParticipants(expense.splits.map((splitOption) => splitOption.userId));
+          setExact(Object.fromEntries(expense.splits.map((splitOption) => [splitOption.userId, String(splitOption.share)])));
+          setItems(expense.items.map((rowIndex) => ({ ...rowIndex, price: String(rowIndex.price), qty: String(rowIndex.qty) })));
         } else {
           const { groups: list } = await listGroups();
           setGroups(list);
@@ -82,7 +82,7 @@ export default function AddExpense() {
               notes: '',
             });
             setSplitType('LINE_ITEM');
-            setItems(receiptDraft.items.map((i) => ({ ...i, price: String(i.price), qty: String(i.qty) })));
+            setItems(receiptDraft.items.map((rowIndex) => ({ ...rowIndex, price: String(rowIndex.price), qty: String(rowIndex.qty) })));
           }
         }
       } catch (err) {
@@ -98,20 +98,20 @@ export default function AddExpense() {
   useEffect(() => {
     if (!groupId) return;
     getGroup(groupId)
-      .then(({ group: g }) => {
-        setGroup(g);
-        const active = g.members.filter((m) => m.status === 'active' && m.userId);
-        setParticipants((prev) => (prev.length ? prev : active.map((m) => m.userId)));
+      .then(({ group: groupRow }) => {
+        setGroup(groupRow);
+        const active = groupRow.members.filter((memberRow) => memberRow.status === 'active' && memberRow.userId);
+        setParticipants((prev) => (prev.length ? prev : active.map((memberRow) => memberRow.userId)));
         setPayers((prev) => (prev.length ? prev : [{ userId: user.id, amount: '' }]));
       })
       .catch((err) => setError(err.message || 'Could not load that group'));
   }, [groupId, user.id]);
 
-  const members = useMemo(() => (group?.members || []).filter((m) => m.status === 'active' && m.userId), [group]);
-  const nameOf = (userId) => members.find((m) => m.userId === userId)?.name || '—';
+  const members = useMemo(() => (group?.members || []).filter((memberRow) => memberRow.status === 'active' && memberRow.userId), [group]);
+  const nameOf = (userId) => members.find((memberRow) => memberRow.userId === userId)?.name || '—';
 
   const total = int(form.totalAmount);
-  const covered = payers.reduce((t, p) => t + int(p.amount), 0);
+  const covered = payers.reduce((runningTotal, payerEntry) => runningTotal + int(payerEntry.amount), 0);
   const currency = group?.baseCurrency || 'PKR';
 
   // Live mirror of the server invariants — the button stays off until they hold.
@@ -125,20 +125,20 @@ export default function AddExpense() {
     }
     if (splitType === 'EQUAL' && participants.length === 0) return 'Pick at least one person';
     if (splitType === 'EXACT') {
-      const given = participants.reduce((t, id) => t + int(exact[id]), 0);
+      const given = participants.reduce((runningTotal, id) => runningTotal + int(exact[id]), 0);
       if (given !== total) {
         const diff = total - given;
         return diff > 0 ? `Shares are ${formatMoney(diff, currency)} short` : `Shares are ${formatMoney(-diff, currency)} over`;
       }
     }
     if (splitType === 'PERCENTAGE') {
-      const pct = Math.round(participants.reduce((t, id) => t + Number(percentages[id] || 0), 0) * 100) / 100;
+      const pct = Math.round(participants.reduce((runningTotal, id) => runningTotal + Number(percentages[id] || 0), 0) * 100) / 100;
       if (pct !== 100) return `Percentages add up to ${pct}%, not 100%`;
     }
     if (splitType === 'LINE_ITEM') {
       if (!items.length) return 'Add at least one line item';
-      if (items.some((i) => !i.sharedBy?.length)) return 'Every item needs at least one person';
-      const lines = items.reduce((t, i) => t + Math.round(int(i.price) * (Number(i.qty) || 1)), 0);
+      if (items.some((rowIndex) => !rowIndex.sharedBy?.length)) return 'Every item needs at least one person';
+      const lines = items.reduce((runningTotal, rowIndex) => runningTotal + Math.round(int(rowIndex.price) * (Number(rowIndex.qty) || 1)), 0);
       if (lines !== total) return `Line items add up to ${formatMoney(lines, currency)}, not ${formatMoney(total, currency)}`;
     }
     return '';
@@ -147,10 +147,10 @@ export default function AddExpense() {
   const perHead = participants.length ? Math.floor(total / participants.length) : 0;
 
   const toggleParticipant = (userId) =>
-    setParticipants((list) => (list.includes(userId) ? list.filter((x) => x !== userId) : [...list, userId]));
+    setParticipants((list) => (list.includes(userId) ? list.filter((entry) => entry !== userId) : [...list, userId]));
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     if (problem) return;
     setError('');
     setSaving(true);
@@ -162,14 +162,14 @@ export default function AddExpense() {
       date: form.date,
       notes: form.notes,
       splitType,
-      paidBy: payers.map((p) => ({ userId: p.userId, amount: int(p.amount) })),
+      paidBy: payers.map((payerEntry) => ({ userId: payerEntry.userId, amount: int(payerEntry.amount) })),
       participants: splitType === 'EQUAL' ? participants : [],
       exact: splitType === 'EXACT' ? participants.map((id) => ({ userId: id, share: int(exact[id]) })) : [],
       percentages:
         splitType === 'PERCENTAGE' ? participants.map((id) => ({ userId: id, percent: Number(percentages[id] || 0) })) : [],
       items:
         splitType === 'LINE_ITEM'
-          ? items.map((i) => ({ name: i.name, qty: Number(i.qty) || 1, price: int(i.price), sharedBy: i.sharedBy }))
+          ? items.map((rowIndex) => ({ name: rowIndex.name, qty: Number(rowIndex.qty) || 1, price: int(rowIndex.price), sharedBy: rowIndex.sharedBy }))
           : [],
     };
 
@@ -202,24 +202,24 @@ export default function AddExpense() {
             <span className="text-sm font-medium text-slate-700">Group</span>
             <select
               value={groupId}
-              onChange={(e) => {
-                setGroupId(e.target.value);
+              onChange={(event) => {
+                setGroupId(event.target.value);
                 setParticipants([]);
                 setPayers([]);
               }}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
             >
               <option value="">Select a group</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.title}
+              {groups.map((groupRow) => (
+                <option key={groupRow.id} value={groupRow.id}>
+                  {groupRow.title}
                 </option>
               ))}
             </select>
           </label>
         )}
 
-        <Field label="Title" name="title" required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Hotel in Murree" />
+        <Field label="Title" name="title" required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Hotel in Murree" />
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Field
@@ -230,18 +230,18 @@ export default function AddExpense() {
             step="1"
             required
             value={form.totalAmount}
-            onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))}
+            onChange={(event) => setForm((current) => ({ ...current, totalAmount: event.target.value }))}
           />
-          <Field label="Date" name="date" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+          <Field label="Date" name="date" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} />
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Category</span>
             <select
               value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
             >
-              {CATEGORIES.map((c) => (
-                <option key={c}>{c}</option>
+              {CATEGORIES.map((categoryName) => (
+                <option key={categoryName}>{categoryName}</option>
               ))}
             </select>
           </label>
@@ -257,16 +257,16 @@ export default function AddExpense() {
           </div>
 
           <div className="mt-3 space-y-2">
-            {payers.map((p, index) => (
+            {payers.map((payerEntry, index) => (
               <div key={index} className="flex gap-2">
                 <select
-                  value={p.userId}
-                  onChange={(e) => setPayers((list) => list.map((x, i) => (i === index ? { ...x, userId: e.target.value } : x)))}
+                  value={payerEntry.userId}
+                  onChange={(event) => setPayers((list) => list.map((entry, rowIndex) => (rowIndex === index ? { ...entry, userId: event.target.value } : entry)))}
                   className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
                 >
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.name}
+                  {members.map((memberRow) => (
+                    <option key={memberRow.userId} value={memberRow.userId}>
+                      {memberRow.name}
                     </option>
                   ))}
                 </select>
@@ -274,13 +274,13 @@ export default function AddExpense() {
                   type="number"
                   min="1"
                   step="1"
-                  value={p.amount}
+                  value={payerEntry.amount}
                   placeholder="0"
-                  onChange={(e) => setPayers((list) => list.map((x, i) => (i === index ? { ...x, amount: e.target.value } : x)))}
+                  onChange={(event) => setPayers((list) => list.map((entry, rowIndex) => (rowIndex === index ? { ...entry, amount: event.target.value } : entry)))}
                   className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 />
                 {payers.length > 1 && (
-                  <button type="button" onClick={() => setPayers((list) => list.filter((_, i) => i !== index))} className="text-slate-400 hover:text-red-600">
+                  <button type="button" onClick={() => setPayers((list) => list.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-400 hover:text-red-600">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -291,7 +291,7 @@ export default function AddExpense() {
           <button
             type="button"
             onClick={() =>
-              setPayers((list) => [...list, { userId: members.find((m) => !list.some((p) => p.userId === m.userId))?.userId || members[0]?.userId, amount: '' }])
+              setPayers((list) => [...list, { userId: members.find((memberRow) => !list.some((payerEntry) => payerEntry.userId === memberRow.userId))?.userId || members[0]?.userId, amount: '' }])
             }
             className="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline"
           >
@@ -303,33 +303,33 @@ export default function AddExpense() {
         <section>
           <span className="text-sm font-medium text-slate-700">Split</span>
           <div className="mt-2 flex flex-wrap gap-2">
-            {SPLIT_TYPES.map((s) => (
+            {SPLIT_TYPES.map((splitOption) => (
               <button
                 type="button"
-                key={s.key}
-                onClick={() => setSplitType(s.key)}
+                key={splitOption.key}
+                onClick={() => setSplitType(splitOption.key)}
                 className={`rounded-full px-3 py-1.5 text-sm transition ${
-                  splitType === s.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  splitType === splitOption.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {s.label}
+                {splitOption.label}
               </button>
             ))}
           </div>
 
           <div className="mt-4 space-y-2 rounded-xl ring-1 ring-slate-200">
             {splitType !== 'LINE_ITEM' &&
-              members.map((m) => {
-                const on = participants.includes(m.userId);
+              members.map((memberRow) => {
+                const on = participants.includes(memberRow.userId);
                 return (
-                  <div key={m.userId} className="flex items-center gap-3 px-4 py-2">
+                  <div key={memberRow.userId} className="flex items-center gap-3 px-4 py-2">
                     <input
                       type="checkbox"
                       checked={on}
-                      onChange={() => toggleParticipant(m.userId)}
+                      onChange={() => toggleParticipant(memberRow.userId)}
                       className="h-4 w-4 rounded border-slate-300 accent-emerald-600"
                     />
-                    <span className="flex-1 text-sm text-slate-700">{m.name}</span>
+                    <span className="flex-1 text-sm text-slate-700">{memberRow.name}</span>
 
                     {splitType === 'EQUAL' && on && <span className="text-sm text-slate-500">{formatMoney(perHead, currency)}</span>}
 
@@ -338,8 +338,8 @@ export default function AddExpense() {
                         type="number"
                         min="0"
                         step="1"
-                        value={exact[m.userId] ?? ''}
-                        onChange={(e) => setExact((x) => ({ ...x, [m.userId]: e.target.value }))}
+                        value={exact[memberRow.userId] ?? ''}
+                        onChange={(event) => setExact((entry) => ({ ...entry, [memberRow.userId]: event.target.value }))}
                         className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm"
                       />
                     )}
@@ -351,8 +351,8 @@ export default function AddExpense() {
                           min="0"
                           max="100"
                           step="0.01"
-                          value={percentages[m.userId] ?? ''}
-                          onChange={(e) => setPercentages((x) => ({ ...x, [m.userId]: e.target.value }))}
+                          value={percentages[memberRow.userId] ?? ''}
+                          onChange={(event) => setPercentages((entry) => ({ ...entry, [memberRow.userId]: event.target.value }))}
                           className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-sm"
                         />
                         <span className="text-xs text-slate-400">%</span>
@@ -370,7 +370,7 @@ export default function AddExpense() {
                       <input
                         placeholder="Item"
                         value={item.name}
-                        onChange={(e) => setItems((l) => l.map((x, i) => (i === index ? { ...x, name: e.target.value } : x)))}
+                        onChange={(event) => setItems((currentList) => currentList.map((entry, rowIndex) => (rowIndex === index ? { ...entry, name: event.target.value } : entry)))}
                         className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
                       />
                       <input
@@ -378,7 +378,7 @@ export default function AddExpense() {
                         min="1"
                         placeholder="Qty"
                         value={item.qty}
-                        onChange={(e) => setItems((l) => l.map((x, i) => (i === index ? { ...x, qty: e.target.value } : x)))}
+                        onChange={(event) => setItems((currentList) => currentList.map((entry, rowIndex) => (rowIndex === index ? { ...entry, qty: event.target.value } : entry)))}
                         className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                       />
                       <input
@@ -386,32 +386,32 @@ export default function AddExpense() {
                         min="0"
                         placeholder="Price"
                         value={item.price}
-                        onChange={(e) => setItems((l) => l.map((x, i) => (i === index ? { ...x, price: e.target.value } : x)))}
+                        onChange={(event) => setItems((currentList) => currentList.map((entry, rowIndex) => (rowIndex === index ? { ...entry, price: event.target.value } : entry)))}
                         className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                       />
-                      <button type="button" onClick={() => setItems((l) => l.filter((_, i) => i !== index))} className="text-slate-400 hover:text-red-600">
+                      <button type="button" onClick={() => setItems((currentList) => currentList.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-400 hover:text-red-600">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {members.map((m) => {
-                        const on = item.sharedBy?.includes(m.userId);
+                      {members.map((memberRow) => {
+                        const on = item.sharedBy?.includes(memberRow.userId);
                         return (
                           <button
                             type="button"
-                            key={m.userId}
+                            key={memberRow.userId}
                             onClick={() =>
-                              setItems((l) =>
-                                l.map((x, i) =>
-                                  i === index
-                                    ? { ...x, sharedBy: on ? x.sharedBy.filter((u) => u !== m.userId) : [...(x.sharedBy || []), m.userId] }
-                                    : x,
+                              setItems((currentList) =>
+                                currentList.map((entry, rowIndex) =>
+                                  rowIndex === index
+                                    ? { ...entry, sharedBy: on ? entry.sharedBy.filter((memberId) => memberId !== memberRow.userId) : [...(entry.sharedBy || []), memberRow.userId] }
+                                    : entry,
                                 ),
                               )
                             }
                             className={`rounded-full px-2.5 py-1 text-xs ${on ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-300'}`}
                           >
-                            {m.name.split(' ')[0]}
+                            {memberRow.name.split(' ')[0]}
                           </button>
                         );
                       })}
@@ -421,7 +421,7 @@ export default function AddExpense() {
 
                 <button
                   type="button"
-                  onClick={() => setItems((l) => [...l, { name: '', qty: '1', price: '', sharedBy: members.map((m) => m.userId) }])}
+                  onClick={() => setItems((currentList) => [...currentList, { name: '', qty: '1', price: '', sharedBy: members.map((memberRow) => memberRow.userId) }])}
                   className="flex items-center gap-1 text-xs font-medium text-emerald-700 hover:underline"
                 >
                   <Plus className="h-3.5 w-3.5" /> Add item
@@ -431,9 +431,9 @@ export default function AddExpense() {
           </div>
         </section>
 
-        <Field label="Notes" name="notes" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
+        <Field label="Notes" name="notes" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional" />
 
-        {problem && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{problem}</p>}
+        {problem && <payerEntry className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{problem}</payerEntry>}
 
         <SubmitButton loading={saving} disabled={Boolean(problem)}>
           {editing ? 'Save changes' : 'Add expense'}

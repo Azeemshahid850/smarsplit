@@ -7,33 +7,33 @@ import { notify, activeMemberIds } from '../services/notifications.js';
 import { computeSplits, assertPayersCoverTotal, assertSplitsBalance, SplitError } from '../services/splitCalculator.js';
 import { categoriesForGroup, assertCategoryAllowed } from '../services/categories.js';
 
-const publicExpense = (e) => ({
-  id: e._id,
-  groupId: e.groupId,
-  title: e.title,
-  totalAmount: e.totalAmount,
-  category: e.category,
-  date: e.date,
-  notes: e.notes,
-  receiptImage: e.receiptImage,
-  splitType: e.splitType,
-  paidBy: e.paidBy.map((p) => ({ userId: p.userId, amount: p.amount })),
-  splits: e.splits.map((s) => ({ userId: s.userId, share: s.share })),
-  items: e.items,
-  createdBy: e.createdBy,
-  createdAt: e.createdAt,
+const publicExpense = (expenseRow) => ({
+  id: expenseRow._id,
+  groupId: expenseRow.groupId,
+  title: expenseRow.title,
+  totalAmount: expenseRow.totalAmount,
+  category: expenseRow.category,
+  date: expenseRow.date,
+  notes: expenseRow.notes,
+  receiptImage: expenseRow.receiptImage,
+  splitType: expenseRow.splitType,
+  paidBy: expenseRow.paidBy.map((payerEntry) => ({ userId: payerEntry.userId, amount: payerEntry.amount })),
+  splits: expenseRow.splits.map((splitEntry) => ({ userId: splitEntry.userId, share: splitEntry.share })),
+  items: expenseRow.items,
+  createdBy: expenseRow.createdBy,
+  createdAt: expenseRow.createdAt,
 });
 
 // Everyone named on an expense must be an active member of that group.
 function assertEveryoneIsAMember(group, body) {
-  const active = new Set(group.members.filter((m) => m.status === 'active' && m.user).map((m) => String(m.user)));
+  const active = new Set(group.members.filter((member) => member.status === 'active' && member.user).map((member) => String(member.user)));
 
   const named = [
-    ...body.paidBy.map((p) => p.userId),
+    ...body.paidBy.map((payerEntry) => payerEntry.userId),
     ...body.participants,
-    ...body.exact.map((e) => e.userId),
-    ...body.percentages.map((p) => p.userId),
-    ...body.items.flatMap((i) => i.sharedBy),
+    ...body.exact.map((expenseRow) => expenseRow.userId),
+    ...body.percentages.map((payerEntry) => payerEntry.userId),
+    ...body.items.flatMap((lineItem) => lineItem.sharedBy),
   ];
 
   const stranger = named.find((id) => !active.has(String(id)));
@@ -53,7 +53,7 @@ function buildSplits(body) {
   }
 }
 
-const money = (n) => `Rs ${Math.round(n).toLocaleString('en-PK')}`;
+const money = (rupees) => `Rs ${Math.round(rupees).toLocaleString('en-PK')}`;
 
 export async function createExpense(req, res) {
   const group = req.group;
@@ -112,13 +112,13 @@ export async function updateExpense(req, res) {
   // Recompute from the merged document so a partial edit still balances. A
   // partial body arrives carrying Zod's [] defaults, so anything the caller did
   // not actually send is rebuilt from the stored splits.
-  const previous = expense.splits.map((s) => ({ userId: String(s.userId), share: s.share }));
+  const previous = expense.splits.map((splitEntry) => ({ userId: String(splitEntry.userId), share: splitEntry.share }));
   const merged = { ...publicExpense(expense), ...req.body };
 
-  if (!req.body.participants?.length) merged.participants = previous.map((s) => s.userId);
+  if (!req.body.participants?.length) merged.participants = previous.map((splitEntry) => splitEntry.userId);
   if (!req.body.exact?.length) merged.exact = previous;
   if (!req.body.percentages?.length) {
-    merged.percentages = previous.map((s) => ({ userId: s.userId, percent: (s.share / expense.totalAmount) * 100 }));
+    merged.percentages = previous.map((splitEntry) => ({ userId: splitEntry.userId, percent: (splitEntry.share / expense.totalAmount) * 100 }));
   }
   if (!req.body.items?.length) merged.items = expense.items;
   assertEveryoneIsAMember(group, merged);
@@ -150,21 +150,21 @@ export async function getBalances(req, res) {
   await group.populate('members.user', 'name avatarUrl');
 
   const balances = group.members
-    .filter((m) => m.status === 'active' && m.user)
-    .map((m) => ({
-      userId: m.user._id,
-      name: m.user.name,
-      avatarUrl: m.user.avatarUrl,
-      net: net.get(String(m.user._id)) ?? 0,
+    .filter((member) => member.status === 'active' && member.user)
+    .map((member) => ({
+      userId: member.user._id,
+      name: member.user.name,
+      avatarUrl: member.user.avatarUrl,
+      net: net.get(String(member.user._id)) ?? 0,
     }))
-    .sort((a, b) => b.net - a.net);
+    .sort((leftSplit, rightSplit) => rightSplit.net - leftSplit.net);
 
   ok(res, {
     balances,
     totalSpent,
     expenseCount,
     // Proof for the UI footnote: a correct ledger always nets to zero.
-    netsToZero: balances.reduce((t, b) => t + b.net, 0) === 0,
+    netsToZero: balances.reduce((runningTotal, rightSplit) => runningTotal + rightSplit.net, 0) === 0,
   });
 }
 

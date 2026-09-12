@@ -15,7 +15,7 @@ export const loginSchema = z.object({ email, password: z.string().min(1, 'Passwo
 export const googleSchema = z.object({
   code: z.string().min(1).optional(),
   idToken: z.string().min(1).optional(),
-}).refine((v) => v.code || v.idToken, { message: 'code or idToken is required' });
+}).refine((value) => value.code || value.idToken, { message: 'code or idToken is required' });
 
 export const forgotPasswordSchema = z.object({ email });
 

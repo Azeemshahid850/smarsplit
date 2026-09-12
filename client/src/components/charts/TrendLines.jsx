@@ -2,7 +2,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { SERIES, AXIS, GRID } from './palette.js';
 import ChartTooltip from './ChartTooltip.jsx';
 
-const compact = (n) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+const compact = (rupees) => (rupees >= 1000 ? `${Math.round(rupees / 1000)}k` : String(rupees));
 
 /** Inflow vs outflow over N months. Both series are rupees — one axis, always. */
 export default function TrendLines({ series, currency = 'PKR' }) {

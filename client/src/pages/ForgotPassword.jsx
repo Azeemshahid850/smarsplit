@@ -13,8 +13,8 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
     try {
@@ -45,7 +45,7 @@ export default function ForgotPassword() {
       ) : (
         <form onSubmit={submit} className="space-y-4" noValidate>
           <FormError message={error} />
-          <Field label="Email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Field label="Email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
           <SubmitButton loading={loading}>Send reset link</SubmitButton>
         </form>
       )}

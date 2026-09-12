@@ -34,7 +34,7 @@ export function ConfirmProvider({ children }) {
           className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4"
           role="dialog"
           aria-modal="true"
-          onKeyDown={(e) => e.key === 'Escape' && close(false)}
+          onKeyDown={(event) => event.key === 'Escape' && close(false)}
         >
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex gap-3">

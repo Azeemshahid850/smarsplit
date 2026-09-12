@@ -24,7 +24,7 @@ export const commitSchema = z
     category: z.string().optional(),
     paymentMethod: z.string().optional(),
   })
-  .refine((v) => v.target !== 'groupExpense' || Boolean(v.groupId), {
+  .refine((value) => value.target !== 'groupExpense' || Boolean(value.groupId), {
     message: 'groupId is required when committing to a group expense',
     path: ['groupId'],
   });

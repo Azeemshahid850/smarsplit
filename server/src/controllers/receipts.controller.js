@@ -7,22 +7,22 @@ import { extractReceipt, totalsAgree } from '../services/ocr.js';
 import { uploadReceiptImage, signedReceiptUrl } from '../services/uploads.js';
 import { matchLineItems } from '../services/priceMatch.js';
 
-const publicReceipt = (r) => ({
-  id: r._id,
+const publicReceipt = (receiptRow) => ({
+  id: receiptRow._id,
   // Re-signed on every read so the link the client holds always expires.
-  imageUrl: signedReceiptUrl(r.imagePublicId) ?? r.imageUrl,
-  store: r.store,
-  receiptDate: r.receiptDate,
-  ocrStatus: r.ocrStatus,
-  ocrEngine: r.ocrEngine,
-  ocrError: r.ocrError,
-  lineItems: r.lineItems,
-  totalDetected: r.totalDetected,
-  totalsAgree: r.totalsAgree,
-  itemsTotal: r.lineItems.reduce((t, i) => t + i.price, 0),
-  potentialSavings: r.potentialSavings,
-  committedTo: r.committedTo,
-  committedId: r.committedId,
+  imageUrl: signedReceiptUrl(receiptRow.imagePublicId) ?? receiptRow.imageUrl,
+  store: receiptRow.store,
+  receiptDate: receiptRow.receiptDate,
+  ocrStatus: receiptRow.ocrStatus,
+  ocrEngine: receiptRow.ocrEngine,
+  ocrError: receiptRow.ocrError,
+  lineItems: receiptRow.lineItems,
+  totalDetected: receiptRow.totalDetected,
+  totalsAgree: receiptRow.totalsAgree,
+  itemsTotal: receiptRow.lineItems.reduce((runningTotal, lineItem) => runningTotal + lineItem.price, 0),
+  potentialSavings: receiptRow.potentialSavings,
+  committedTo: receiptRow.committedTo,
+  committedId: receiptRow.committedId,
 });
 
 /** Runs OCR in the background and writes the result back onto the receipt. */
@@ -60,7 +60,7 @@ export async function applyPriceMatches(receiptId, transactionId = null) {
   if (!receipt) return;
 
   const { lineItems, potentialSavings, suggestedAlternatives } = await matchLineItems(
-    receipt.lineItems.map((i) => i.toObject()),
+    receipt.lineItems.map((lineItem) => lineItem.toObject()),
   );
 
   // Atomic write, not load-modify-save: this runs in the background and can
@@ -145,7 +145,7 @@ export async function commitReceipt(req, res) {
   if (!receipt.lineItems.length) throw ApiError.badRequest('There are no line items to save', 'NO_LINE_ITEMS');
   if (receipt.committedTo) throw ApiError.conflict('This receipt has already been saved', 'ALREADY_COMMITTED');
 
-  const amount = receipt.lineItems.reduce((t, i) => t + i.price, 0);
+  const amount = receipt.lineItems.reduce((runningTotal, lineItem) => runningTotal + lineItem.price, 0);
 
   if (req.body.target === 'personal') {
     const transaction = await PersonalExpense.create({
@@ -176,7 +176,7 @@ export async function commitReceipt(req, res) {
   const group = await Group.findById(req.body.groupId);
   if (!group?.memberFor(req.user._id)) throw ApiError.forbidden('You are not a member of that group', 'NOT_A_MEMBER');
 
-  const members = group.members.filter((m) => m.status === 'active' && m.user).map((m) => String(m.user));
+  const members = group.members.filter((memberRow) => memberRow.status === 'active' && memberRow.user).map((memberRow) => String(memberRow.user));
 
   ok(res, {
     draft: {
@@ -187,7 +187,7 @@ export async function commitReceipt(req, res) {
       date: receipt.receiptDate || new Date(),
       splitType: 'LINE_ITEM',
       receiptImage: receipt.imageUrl,
-      items: receipt.lineItems.map((i) => ({ name: i.name, qty: i.qty, price: i.price, sharedBy: members })),
+      items: receipt.lineItems.map((lineItem) => ({ name: lineItem.name, qty: lineItem.qty, price: lineItem.price, sharedBy: members })),
     },
   });
 }

@@ -14,7 +14,7 @@ export default function BalancesTab({ group }) {
     return <EmptyState title="Nothing to balance yet" hint="Balances appear as soon as the first expense is added." />;
   }
 
-  const widest = Math.max(...data.balances.map((b) => Math.abs(b.net)), 1);
+  const widest = Math.max(...data.balances.map((balanceRow) => Math.abs(balanceRow.net)), 1);
 
   return (
     <div>
@@ -31,23 +31,23 @@ export default function BalancesTab({ group }) {
       </div>
 
       <ul className="mt-4 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
-        {data.balances.map((b) => (
-          <li key={b.userId} className="flex items-center gap-3 px-4 py-3">
-            <Avatar name={b.name} avatarUrl={b.avatarUrl} size="md" />
+        {data.balances.map((balanceRow) => (
+          <li key={balanceRow.userId} className="flex items-center gap-3 px-4 py-3">
+            <Avatar name={balanceRow.name} avatarUrl={balanceRow.avatarUrl} size="md" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-800">{b.name}</p>
+              <p className="text-sm font-medium text-slate-800">{balanceRow.name}</p>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className={`h-full rounded-full ${b.net >= 0 ? 'bg-emerald-500' : 'bg-red-400'}`}
-                  style={{ width: `${(Math.abs(b.net) / widest) * 100}%` }}
+                  className={`h-full rounded-full ${balanceRow.net >= 0 ? 'bg-emerald-500' : 'bg-red-400'}`}
+                  style={{ width: `${(Math.abs(balanceRow.net) / widest) * 100}%` }}
                 />
               </div>
             </div>
             <div className="text-right">
-              <p className={`text-sm font-semibold ${b.net > 0 ? 'text-emerald-600' : b.net < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                {b.net === 0 ? 'settled' : formatSigned(b.net, group.baseCurrency)}
+              <p className={`text-sm font-semibold ${balanceRow.net > 0 ? 'text-emerald-600' : balanceRow.net < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                {balanceRow.net === 0 ? 'settled' : formatSigned(balanceRow.net, group.baseCurrency)}
               </p>
-              <p className="text-xs text-slate-400">{b.net > 0 ? 'is owed' : b.net < 0 ? 'owes' : ''}</p>
+              <p className="text-xs text-slate-400">{balanceRow.net > 0 ? 'is owed' : balanceRow.net < 0 ? 'owes' : ''}</p>
             </div>
           </li>
         ))}

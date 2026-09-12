@@ -13,21 +13,21 @@ export function monthRange(month) {
   return { start: new Date(year, m - 1, 1), end: new Date(year, m, 1) };
 }
 
-const publicTransaction = (t) => ({
-  id: t._id,
-  title: t.title,
-  amount: t.amount,
-  category: t.category,
-  type: t.type,
-  paymentMethod: t.paymentMethod,
-  date: t.date,
-  note: t.note,
-  receiptUrl: t.receiptUrl,
-  isRecurring: t.isRecurring,
-  recurring: t.recurring,
-  generatedFrom: t.generatedFrom,
-  suggestedAlternatives: t.suggestedAlternatives,
-  potentialSavings: t.potentialSavings,
+const publicTransaction = (transaction) => ({
+  id: transaction._id,
+  title: transaction.title,
+  amount: transaction.amount,
+  category: transaction.category,
+  type: transaction.type,
+  paymentMethod: transaction.paymentMethod,
+  date: transaction.date,
+  note: transaction.note,
+  receiptUrl: transaction.receiptUrl,
+  isRecurring: transaction.isRecurring,
+  recurring: transaction.recurring,
+  generatedFrom: transaction.generatedFrom,
+  suggestedAlternatives: transaction.suggestedAlternatives,
+  potentialSavings: transaction.potentialSavings,
 });
 
 // A recurring transaction schedules its next run from its own date.
@@ -124,18 +124,18 @@ export async function summary(req, res) {
     ]),
   ]);
 
-  const income = rows.filter((r) => r._id.type === 'CREDIT').reduce((t, r) => t + r.total, 0);
-  const spend = rows.filter((r) => r._id.type === 'DEBIT').reduce((t, r) => t + r.total, 0);
-  const capFor = Object.fromEntries(budgets.map((b) => [b.category, b.monthlyCap]));
+  const income = rows.filter((aggregateRow) => aggregateRow._id.type === 'CREDIT').reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
+  const spend = rows.filter((aggregateRow) => aggregateRow._id.type === 'DEBIT').reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
+  const capFor = Object.fromEntries(budgets.map((budgetRow) => [budgetRow.category, budgetRow.monthlyCap]));
 
   // Their categories, plus any older one that still has spend this month, so a
   // deleted category never hides money that was already recorded against it.
   const { all } = await categoriesFor(req.user._id);
-  const spent = rows.filter((r) => r._id.type === 'DEBIT').map((r) => r._id.category);
-  const names = [...new Set([...all, ...spent, ...budgets.map((b) => b.category)])];
+  const spent = rows.filter((aggregateRow) => aggregateRow._id.type === 'DEBIT').map((aggregateRow) => aggregateRow._id.category);
+  const names = [...new Set([...all, ...spent, ...budgets.map((budgetRow) => budgetRow.category)])];
 
   const byCategory = names.map((category) => {
-    const total = rows.filter((r) => r._id.type === 'DEBIT' && r._id.category === category).reduce((t, r) => t + r.total, 0);
+    const total = rows.filter((aggregateRow) => aggregateRow._id.type === 'DEBIT' && aggregateRow._id.category === category).reduce((runningTotal, aggregateRow) => runningTotal + aggregateRow.total, 0);
     const cap = capFor[category] ?? null;
     return {
       category,
@@ -144,7 +144,7 @@ export async function summary(req, res) {
       // What the coloured bars key off: green, amber at 80%, red at 100%.
       consumed: cap ? Math.round((total / cap) * 100) : null,
     };
-  }).filter((c) => c.total > 0 || c.cap);
+  }).filter((categoryTotal) => categoryTotal.total > 0 || categoryTotal.cap);
 
   const savingsFound = await PersonalExpense.aggregate([
     { $match: { userId, date: { $gte: start, $lt: end } } },
@@ -164,7 +164,7 @@ export async function summary(req, res) {
 
 export async function listBudgets(req, res) {
   const budgets = await Budget.find({ userId: req.user._id }).sort({ category: 1 }).lean();
-  ok(res, { budgets: budgets.map((b) => ({ id: b._id, category: b.category, monthlyCap: b.monthlyCap })) });
+  ok(res, { budgets: budgets.map((budgetRow) => ({ id: budgetRow._id, category: budgetRow.category, monthlyCap: budgetRow.monthlyCap })) });
 }
 
 /** Upsert — one cap per category, so setting it twice just updates it. */

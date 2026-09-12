@@ -18,17 +18,17 @@ export function computeNetBalances(expenses = [], settlements = []) {
   const net = new Map();
   const bump = (id, delta) => net.set(String(id), (net.get(String(id)) || 0) + delta);
 
-  for (const e of expenses) {
-    if (e.deletedAt) continue;
-    for (const p of e.paidBy) bump(p.userId, p.amount);
-    for (const s of e.splits) bump(s.userId, -s.share);
+  for (const expense of expenses) {
+    if (expense.deletedAt) continue;
+    for (const payer of expense.paidBy) bump(payer.userId, payer.amount);
+    for (const split of expense.splits) bump(split.userId, -split.share);
   }
 
   // A settlement that has actually been paid cancels that much of the debt.
-  for (const s of settlements) {
-    if (!s.isPaid) continue;
-    bump(s.fromUser, s.amount);
-    bump(s.toUser, -s.amount);
+  for (const settlement of settlements) {
+    if (!settlement.isPaid) continue;
+    bump(settlement.fromUser, settlement.amount);
+    bump(settlement.toUser, -settlement.amount);
   }
 
   return net;
@@ -44,8 +44,8 @@ export function minCashFlow(netBalances) {
   const creditors = entries.filter(([, net]) => net > 0).map(([userId, net]) => ({ userId, net }));
   const debtors = entries.filter(([, net]) => net < 0).map(([userId, net]) => ({ userId, net: -net }));
 
-  const totalCredit = creditors.reduce((t, c) => t + c.net, 0);
-  const totalDebt = debtors.reduce((t, d) => t + d.net, 0);
+  const totalCredit = creditors.reduce((runningTotal, creditorEntry) => runningTotal + creditorEntry.net, 0);
+  const totalDebt = debtors.reduce((runningTotal, debtorEntry) => runningTotal + debtorEntry.net, 0);
   if (totalCredit !== totalDebt) {
     throw new Error(`Balances do not net to zero: owed ${totalCredit}, owing ${totalDebt}`);
   }
@@ -53,7 +53,7 @@ export function minCashFlow(netBalances) {
   const payments = [];
   // ponytail: re-sorting beats a real heap below ~1k members; swap in a binary
   // heap only if a group ever gets that large.
-  const byLargest = (a, b) => b.net - a.net || (a.userId < b.userId ? -1 : 1);
+  const byLargest = (leftEntry, rightEntry) => rightEntry.net - leftEntry.net || (leftEntry.userId < rightEntry.userId ? -1 : 1);
 
   while (creditors.length && debtors.length) {
     creditors.sort(byLargest);
@@ -83,12 +83,12 @@ export function minCashFlow(netBalances) {
 export function rawPairwiseDebts(expenses = []) {
   const owed = new Map(); // "debtor|creditor" → rupees
 
-  for (const e of expenses) {
-    if (e.deletedAt) continue;
-    const total = e.totalAmount ?? e.paidBy.reduce((t, p) => t + p.amount, 0);
+  for (const expense of expenses) {
+    if (expense.deletedAt) continue;
+    const total = expense.totalAmount ?? expense.paidBy.reduce((runningTotal, payer) => runningTotal + payer.amount, 0);
 
-    for (const split of e.splits) {
-      for (const payer of e.paidBy) {
+    for (const split of expense.splits) {
+      for (const payer of expense.paidBy) {
         if (String(split.userId) === String(payer.userId)) continue;
         // Each payer funded payer.amount/total of this expense.
         const portion = Math.round((split.share * payer.amount) / total);

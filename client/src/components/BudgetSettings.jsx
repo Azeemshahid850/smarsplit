@@ -14,14 +14,14 @@ export default function BudgetSettings({ onChanged }) {
   const [draft, setDraft] = useState({ category: 'Food', monthlyCap: '' });
   const [busy, setBusy] = useState(false);
 
-  const save = async (e) => {
-    e.preventDefault();
+  const save = async (event) => {
+    event.preventDefault();
     const cap = Math.round(Number(draft.monthlyCap)) || 0;
     if (cap <= 0) return;
     setBusy(true);
     try {
       await setBudget({ category: draft.category, monthlyCap: cap });
-      setDraft((d) => ({ ...d, monthlyCap: '' }));
+      setDraft((current) => ({ ...current, monthlyCap: '' }));
       await Promise.all([reload(), onChanged?.()]);
       toast.success(`${draft.category} budget set to ${formatMoney(cap)}`);
     } catch (err) {
@@ -47,12 +47,12 @@ export default function BudgetSettings({ onChanged }) {
 
       {data.budgets.length > 0 && (
         <ul className="mt-3 divide-y divide-slate-100">
-          {data.budgets.map((b) => (
-            <li key={b.id} className="flex items-center justify-between py-2 text-sm">
-              <span className="text-slate-700">{b.category}</span>
+          {data.budgets.map((budgetRow) => (
+            <li key={budgetRow.id} className="flex items-center justify-between py-2 text-sm">
+              <span className="text-slate-700">{budgetRow.category}</span>
               <span className="flex items-center gap-3">
-                <span className="text-slate-500">{formatMoney(b.monthlyCap)}</span>
-                <button onClick={() => remove(b)} className="text-slate-300 hover:text-red-600">
+                <span className="text-slate-500">{formatMoney(budgetRow.monthlyCap)}</span>
+                <button onClick={() => remove(budgetRow)} className="text-slate-300 hover:text-red-600">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </span>
@@ -64,11 +64,11 @@ export default function BudgetSettings({ onChanged }) {
       <form onSubmit={save} className="mt-3 flex gap-2">
         <select
           value={draft.category}
-          onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+          onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}
           className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
         >
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
+          {CATEGORIES.map((categoryName) => (
+            <option key={categoryName}>{categoryName}</option>
           ))}
         </select>
         <input
@@ -76,7 +76,7 @@ export default function BudgetSettings({ onChanged }) {
           min="1"
           placeholder="Cap"
           value={draft.monthlyCap}
-          onChange={(e) => setDraft((d) => ({ ...d, monthlyCap: e.target.value }))}
+          onChange={(event) => setDraft((current) => ({ ...current, monthlyCap: event.target.value }))}
           className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm"
         />
         <button disabled={busy} className="rounded-lg bg-slate-900 px-4 text-sm text-white hover:bg-slate-800 disabled:opacity-60">

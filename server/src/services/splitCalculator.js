@@ -12,22 +12,22 @@ export class SplitError extends Error {
   }
 }
 
-const isInt = (n) => Number.isInteger(n);
-const sum = (arrangement, key) => arrangement.reduce((t, x) => t + (key ? x[key] : x), 0);
+const isInt = (headCount) => Number.isInteger(headCount);
+const sum = (arrangement, key) => arrangement.reduce((runningTotal, entry) => runningTotal + (key ? entry[key] : entry), 0);
 
 /** The payer who put in the most — the leftover rupees land on them. */
 export function largestPayer(paidBy = []) {
   if (!paidBy.length) return null;
-  return paidBy.reduce((best, p) => (p.amount > best.amount ? p : best)).userId;
+  return paidBy.reduce((best, payerEntry) => (payerEntry.amount > best.amount ? payerEntry : best)).userId;
 }
 
 /** Spreads `total` over `userIds`, floor each, leftover to `preferredUserId`. */
 function distribute(total, userIds, preferredUserId) {
-  const n = userIds.length;
-  const base = Math.floor(total / n);
+  const headCount = userIds.length;
+  const base = Math.floor(total / headCount);
   const shares = new Map(userIds.map((id) => [String(id), base]));
 
-  const leftover = total - base * n;
+  const leftover = total - base * headCount;
   if (leftover > 0) {
     const target =
       preferredUserId && shares.has(String(preferredUserId)) ? String(preferredUserId) : String(userIds[0]);
@@ -54,7 +54,7 @@ export function computeSplits({ splitType, totalAmount, participants = [], exact
 
     case 'EXACT': {
       if (!exact.length) throw new SplitError('Enter an amount for at least one person');
-      if (exact.some((e) => !isInt(e.share) || e.share < 0)) throw new SplitError('Amounts must be whole rupees');
+      if (exact.some((exactEntry) => !isInt(exactEntry.share) || exactEntry.share < 0)) throw new SplitError('Amounts must be whole rupees');
 
       const given = sum(exact, 'share');
       if (given !== totalAmount) {
@@ -63,7 +63,7 @@ export function computeSplits({ splitType, totalAmount, participants = [], exact
           diff > 0 ? `You're Rs ${diff.toLocaleString('en-PK')} short` : `You're Rs ${(-diff).toLocaleString('en-PK')} over`,
         );
       }
-      return exact.map((e) => ({ userId: String(e.userId), share: e.share }));
+      return exact.map((exactEntry) => ({ userId: String(exactEntry.userId), share: exactEntry.share }));
     }
 
     case 'PERCENTAGE': {
@@ -73,7 +73,7 @@ export function computeSplits({ splitType, totalAmount, participants = [], exact
       if (totalPct !== 100) throw new SplitError(`Percentages add up to ${totalPct}%, not 100%`);
 
       const shares = new Map(
-        percentages.map((p) => [String(p.userId), Math.floor((totalAmount * p.percent) / 100)]),
+        percentages.map((payerEntry) => [String(payerEntry.userId), Math.floor((totalAmount * payerEntry.percent) / 100)]),
       );
       const leftover = totalAmount - sum([...shares.values()]);
       if (leftover > 0) {
@@ -117,7 +117,7 @@ export function computeSplits({ splitType, totalAmount, participants = [], exact
 /** sum(paidBy.amount) must equal the expense total. */
 export function assertPayersCoverTotal(paidBy, totalAmount) {
   if (!paidBy?.length) throw new SplitError('At least one payer is required');
-  if (paidBy.some((p) => !isInt(p.amount) || p.amount <= 0)) throw new SplitError('Each payer must put in whole rupees above zero');
+  if (paidBy.some((payerEntry) => !isInt(payerEntry.amount) || payerEntry.amount <= 0)) throw new SplitError('Each payer must put in whole rupees above zero');
 
   const covered = sum(paidBy, 'amount');
   if (covered !== totalAmount) {

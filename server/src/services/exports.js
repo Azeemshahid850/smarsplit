@@ -2,8 +2,8 @@ import { Parser } from '@json2csv/plainjs';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
-const money = (n) => `Rs ${Math.round(n || 0).toLocaleString('en-PK')}`;
-const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
+const money = (rupees) => `Rs ${Math.round(rupees || 0).toLocaleString('en-PK')}`;
+const day = (dateValue) => (dateValue ? new Date(dateValue).toISOString().slice(0, 10) : '');
 
 export function toCsv(rows, fields) {
   return new Parser({ fields }).parse(rows);
@@ -14,7 +14,7 @@ export async function toXlsx(rows, columns, sheetName = 'Export') {
   workbook.creator = 'SmartSplit';
   const sheet = workbook.addWorksheet(sheetName);
 
-  sheet.columns = columns.map((c) => ({ header: c.label, key: c.value, width: Math.max(14, c.label.length + 4) }));
+  sheet.columns = columns.map((columnSpec) => ({ header: columnSpec.label, key: columnSpec.value, width: Math.max(14, columnSpec.label.length + 4) }));
   sheet.getRow(1).font = { bold: true };
   rows.forEach((row) => sheet.addRow(row));
 
@@ -26,7 +26,7 @@ function renderPdf(draw) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const chunks = [];
-    doc.on('data', (c) => chunks.push(c));
+    doc.on('data', (columnSpec) => chunks.push(columnSpec));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
     draw(doc);
@@ -40,7 +40,7 @@ function table(doc, headers, rows) {
   const columnWidth = width / headers.length;
 
   doc.font('Helvetica-Bold').fontSize(10);
-  headers.forEach((h, i) => doc.text(h, left + i * columnWidth, doc.y, { width: columnWidth, continued: i < headers.length - 1 }));
+  headers.forEach((headerLabel, columnIndex) => doc.text(headerLabel, left + columnIndex * columnWidth, doc.y, { width: columnWidth, continued: columnIndex < headers.length - 1 }));
   doc.moveDown(0.4);
   doc.moveTo(left, doc.y).lineTo(left + width, doc.y).strokeColor('#cbd5e1').stroke();
   doc.moveDown(0.4);
@@ -48,7 +48,7 @@ function table(doc, headers, rows) {
   doc.font('Helvetica').fontSize(10);
   for (const row of rows) {
     const top = doc.y;
-    row.forEach((cell, i) => doc.text(String(cell), left + i * columnWidth, top, { width: columnWidth, continued: i < row.length - 1 }));
+    row.forEach((cell, columnIndex) => doc.text(String(cell), left + columnIndex * columnWidth, top, { width: columnWidth, continued: columnIndex < row.length - 1 }));
     doc.moveDown(0.3);
     if (doc.y > 740) doc.addPage();
   }
@@ -74,7 +74,7 @@ export function personalMonthlyPdf(report, userName) {
     );
 
     doc.moveDown(1).font('Helvetica-Bold').fontSize(13).text('Where it went').moveDown(0.5);
-    table(doc, ['Category', 'Total', 'Share'], report.topCategories.map((c) => [c.category, money(c.total), `${c.share}%`]));
+    table(doc, ['Category', 'Total', 'Share'], report.topCategories.map((columnSpec) => [columnSpec.category, money(columnSpec.total), `${columnSpec.share}%`]));
 
     if (report.biggestExpense) {
       doc.moveDown(1).font('Helvetica-Bold').fontSize(13).text('Biggest expense').moveDown(0.5);
@@ -107,11 +107,11 @@ export function groupReportPdf(report) {
     table(
       doc,
       ['Member', 'Paid', 'Consumed', 'Net'],
-      report.members.map((m) => [m.name, money(m.paid), money(m.consumed), money(m.paid - m.consumed)]),
+      report.members.map((member) => [member.name, money(member.paid), money(member.consumed), money(member.paid - member.consumed)]),
     );
 
     doc.moveDown(1).font('Helvetica-Bold').fontSize(13).text('By category').moveDown(0.5);
-    table(doc, ['Category', 'Total', 'Share'], report.byCategory.map((c) => [c.category, money(c.total), `${c.share}%`]));
+    table(doc, ['Category', 'Total', 'Share'], report.byCategory.map((columnSpec) => [columnSpec.category, money(columnSpec.total), `${columnSpec.share}%`]));
   });
 }
 
@@ -133,20 +133,20 @@ export const GROUP_EXPENSE_COLUMNS = [
   { label: 'Amount', value: 'amount' },
 ];
 
-export const flattenTransaction = (t) => ({
-  date: day(t.date),
-  title: t.title,
-  type: t.type,
-  category: t.category,
-  paymentMethod: t.paymentMethod,
-  amount: t.amount,
+export const flattenTransaction = (transaction) => ({
+  date: day(transaction.date),
+  title: transaction.title,
+  type: transaction.type,
+  category: transaction.category,
+  paymentMethod: transaction.paymentMethod,
+  amount: transaction.amount,
 });
 
-export const flattenGroupExpense = (e, nameOf) => ({
-  date: day(e.date),
-  title: e.title,
-  category: e.category,
-  splitType: e.splitType,
-  paidBy: e.paidBy.map((p) => nameOf(p.userId)).join(', '),
-  amount: e.totalAmount,
+export const flattenGroupExpense = (expense, nameOf) => ({
+  date: day(expense.date),
+  title: expense.title,
+  category: expense.category,
+  splitType: expense.splitType,
+  paidBy: expense.paidBy.map((payerEntry) => nameOf(payerEntry.userId)).join(', '),
+  amount: expense.totalAmount,
 });

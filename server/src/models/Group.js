@@ -41,7 +41,7 @@ groupSchema.index({ 'members.inviteToken': 1 });
 
 // Active membership lookup — the single source of truth for authorization.
 groupSchema.methods.memberFor = function memberFor(userId) {
-  return this.members.find((m) => m.status === 'active' && String(m.user) === String(userId)) || null;
+  return this.members.find((member) => member.status === 'active' && String(member.user) === String(userId)) || null;
 };
 
 export const Group = mongoose.model('Group', groupSchema);

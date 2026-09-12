@@ -32,8 +32,8 @@ describe('POST /groups/:id/expenses', () => {
 
     expect(res.status).toBe(201);
     const { expense } = res.body.data;
-    expect(expense.splits.reduce((t, s) => t + s.share, 0)).toBe(100);
-    expect(expense.splits.find((s) => s.userId === sara.id).share).toBe(34); // payer takes the remainder
+    expect(expense.splits.reduce((runningTotal, splitEntry) => runningTotal + splitEntry.share, 0)).toBe(100);
+    expect(expense.splits.find((splitEntry) => splitEntry.userId === sara.id).share).toBe(34); // payer takes the remainder
   });
 
   it('accepts multiple payers covering the total', async () => {
@@ -112,7 +112,7 @@ describe('POST /groups/:id/expenses', () => {
     });
 
     expect(res.status).toBe(201);
-    const shares = Object.fromEntries(res.body.data.expense.splits.map((s) => [s.userId, s.share]));
+    const shares = Object.fromEntries(res.body.data.expense.splits.map((splitEntry) => [splitEntry.userId, splitEntry.share]));
     expect(shares).toEqual({ [sara.id]: 300, [bilal.id]: 300, [ali.id]: 300 });
   });
 
@@ -182,13 +182,13 @@ describe('GET /groups/:id/expenses', () => {
     expect(all.body.data.pagination).toMatchObject({ page: 1, total: 2, pages: 1 });
 
     const food = await get(sara, `${api}/groups/${group.id}/expenses?category=Food`);
-    expect(food.body.data.expenses.map((e) => e.title)).toEqual(['Dinner']);
+    expect(food.body.data.expenses.map((expenseRow) => expenseRow.title)).toEqual(['Dinner']);
 
     const byBilal = await get(sara, `${api}/groups/${group.id}/expenses?payer=${bilal.id}`);
-    expect(byBilal.body.data.expenses.map((e) => e.title)).toEqual(['Dinner']);
+    expect(byBilal.body.data.expenses.map((expenseRow) => expenseRow.title)).toEqual(['Dinner']);
 
     const january = await get(sara, `${api}/groups/${group.id}/expenses?from=2026-01-01&to=2026-01-31`);
-    expect(january.body.data.expenses.map((e) => e.title)).toEqual(['Fuel']);
+    expect(january.body.data.expenses.map((expenseRow) => expenseRow.title)).toEqual(['Fuel']);
 
     const paged = await get(sara, `${api}/groups/${group.id}/expenses?limit=1&page=2`);
     expect(paged.body.data.expenses).toHaveLength(1);
@@ -210,8 +210,8 @@ describe('PATCH / DELETE /expenses/:id', () => {
       .send({ totalAmount: 4500, paidBy: [{ userId: sara.id, amount: 4500 }] });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.expense.splits.reduce((t, s) => t + s.share, 0)).toBe(4500);
-    expect(res.body.data.expense.splits.every((s) => s.share === 1500)).toBe(true);
+    expect(res.body.data.expense.splits.reduce((runningTotal, splitEntry) => runningTotal + splitEntry.share, 0)).toBe(4500);
+    expect(res.body.data.expense.splits.every((splitEntry) => splitEntry.share === 1500)).toBe(true);
   });
 
   it('blocks a non-payer, non-admin member from editing', async () => {
@@ -267,7 +267,7 @@ describe('PATCH / DELETE /expenses/:id', () => {
     expect(list.body.data.expenses).toEqual([]);
 
     const balances = await get(sara, `${api}/groups/${group.id}/balances`);
-    expect(balances.body.data.balances.every((b) => b.net === 0)).toBe(true);
+    expect(balances.body.data.balances.every((budgetRow) => budgetRow.net === 0)).toBe(true);
   });
 });
 
@@ -286,7 +286,7 @@ describe('GET /groups/:id/balances', () => {
     });
 
     const res = await get(sara, `${api}/groups/${group.id}/balances`);
-    const net = Object.fromEntries(res.body.data.balances.map((b) => [b.userId, b.net]));
+    const net = Object.fromEntries(res.body.data.balances.map((budgetRow) => [budgetRow.userId, budgetRow.net]));
 
     expect(res.body.data.totalSpent).toBe(12000);
     expect(res.body.data.netsToZero).toBe(true);

@@ -30,15 +30,15 @@ export async function groupBalances(groupId) {
         in: [{ $group: { _id: '$toUser', amount: { $sum: '$amount' } } }],
       },
     },
-  ]).then(([r]) => r ?? { out: [], in: [] });
+  ]).then(([aggregateRow]) => aggregateRow ?? { out: [], in: [] });
 
   const net = new Map();
   const bump = (id, delta) => net.set(String(id), (net.get(String(id)) || 0) + delta);
 
-  facets.paid.forEach((r) => bump(r._id, r.amount));
-  facets.owed.forEach((r) => bump(r._id, -r.amount));
-  settlements.out.forEach((r) => bump(r._id, r.amount)); // paying down what you owe lifts your net
-  settlements.in.forEach((r) => bump(r._id, -r.amount));
+  facets.paid.forEach((aggregateRow) => bump(aggregateRow._id, aggregateRow.amount));
+  facets.owed.forEach((aggregateRow) => bump(aggregateRow._id, -aggregateRow.amount));
+  settlements.out.forEach((aggregateRow) => bump(aggregateRow._id, aggregateRow.amount)); // paying down what you owe lifts your net
+  settlements.in.forEach((aggregateRow) => bump(aggregateRow._id, -aggregateRow.amount));
 
   return {
     net, // Map<userId, integer rupees>
@@ -80,7 +80,7 @@ export async function summariseGroupsFor(userId, groupIds) {
     ]),
   ]);
 
-  const index = (rows, key = 'amount') => Object.fromEntries(rows.map((r) => [String(r._id), r[key]]));
+  const index = (rows, key = 'amount') => Object.fromEntries(rows.map((aggregateRow) => [String(aggregateRow._id), aggregateRow[key]]));
   const spendBy = index(spend, 'totalSpent');
   const paidBy = index(paid);
   const owedBy = index(owed);

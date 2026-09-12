@@ -5,7 +5,7 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
   const result = schema.safeParse(req[source]);
   if (!result.success) {
     const detail = result.error.issues
-      .map((i) => `${i.path.join('.') || source}: ${i.message}`)
+      .map((issue) => `${issue.path.join('.') || source}: ${issue.message}`)
       .join('; ');
     return next(ApiError.badRequest(detail, 'VALIDATION_ERROR'));
   }

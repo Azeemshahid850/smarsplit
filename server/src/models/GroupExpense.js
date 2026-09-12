@@ -54,10 +54,10 @@ groupExpenseSchema.pre('validate', async function enforceMoneyInvariants() {
   const total = this.totalAmount;
   if (!Number.isInteger(total)) throw new Error('totalAmount must be a whole number of rupees');
 
-  const paid = this.paidBy.reduce((t, p) => t + p.amount, 0);
+  const paid = this.paidBy.reduce((runningTotal, payerEntry) => runningTotal + payerEntry.amount, 0);
   if (paid !== total) throw new Error(`sum(paidBy.amount) ${paid} !== totalAmount ${total}`);
 
-  const shared = this.splits.reduce((t, s) => t + s.share, 0);
+  const shared = this.splits.reduce((runningTotal, splitEntry) => runningTotal + splitEntry.share, 0);
   if (shared !== total) throw new Error(`sum(splits.share) ${shared} !== totalAmount ${total}`);
 });
 

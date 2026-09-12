@@ -8,8 +8,8 @@ import { GroupExpense } from '../models/GroupExpense.js';
 import { Settlement } from '../models/Settlement.js';
 
 const api = '/api/v1';
-const post = (u, url, body) => request(app).post(url).set('Authorization', `Bearer ${u.accessToken}`).send(body);
-const get = (u, url) => request(app).get(url).set('Authorization', `Bearer ${u.accessToken}`);
+const post = (seededUser, url, body) => request(app).post(url).set('Authorization', `Bearer ${seededUser.accessToken}`).send(body);
+const get = (seededUser, url) => request(app).get(url).set('Authorization', `Bearer ${seededUser.accessToken}`);
 
 // The Murree Trip from the spec: five members, lopsided spending.
 async function murreeTrip() {
@@ -24,7 +24,7 @@ async function murreeTrip() {
     memberEmails: [bilal.email, azeem.email, hamza.email, ali.email],
   });
 
-  const everyone = [sara, bilal, azeem, hamza, ali].map((u) => u.id);
+  const everyone = [sara, bilal, azeem, hamza, ali].map((seededUser) => seededUser.id);
   const spend = async (payer, title, totalAmount, category = 'Travel') =>
     post(payer, `${api}/groups/${group.id}/expenses`, {
       title,
@@ -66,7 +66,7 @@ describe('POST /groups/:id/settle/preview', () => {
     const { sara, group } = await murreeTrip();
 
     const before = await get(sara, `${api}/groups/${group.id}/balances`);
-    const net = Object.fromEntries(before.body.data.balances.map((b) => [b.userId, b.net]));
+    const net = Object.fromEntries(before.body.data.balances.map((balanceRow) => [balanceRow.userId, balanceRow.net]));
 
     const { payments } = (await post(sara, `${api}/groups/${group.id}/settle/preview`)).body.data;
     for (const p of payments) {
@@ -74,7 +74,7 @@ describe('POST /groups/:id/settle/preview', () => {
       net[p.to] -= p.amount;
     }
 
-    expect(Object.values(net).every((v) => v === 0)).toBe(true);
+    expect(Object.values(net).every((netValue) => netValue === 0)).toBe(true);
   });
 
   it('the aggregation and the pure function agree on the same ledger', async () => {
@@ -108,7 +108,7 @@ describe('POST /groups/:id/settle', () => {
     expect(res.body.data.settlements).toHaveLength(preview.optimizedCount);
     expect(res.body.data.groupStatus).toBe('SETTLED');
     expect(res.body.data.transfersSaved).toBe(preview.transfersSaved);
-    expect(res.body.data.settlements.every((s) => s.isPaid === false)).toBe(true);
+    expect(res.body.data.settlements.every((settlementRow) => settlementRow.isPaid === false)).toBe(true);
 
     const listed = await get(sara, `${api}/groups/${group.id}/settlements`);
     expect(listed.body.data.auditTrail[0]).toMatchObject({ action: 'SETTLEMENT_CREATED' });
@@ -151,7 +151,7 @@ describe('PATCH /settlements/:id/pay', () => {
     expect(res.body.data.outstanding).toBe(settlements.length - 1);
 
     const balances = await get(sara, `${api}/groups/${group.id}/balances`);
-    const net = Object.fromEntries(balances.body.data.balances.map((b) => [b.userId, b.net]));
+    const net = Object.fromEntries(balances.body.data.balances.map((balanceRow) => [balanceRow.userId, balanceRow.net]));
     expect(net[first.from]).toBe(0); // that debtor is square now
     expect(balances.body.data.netsToZero).toBe(true);
   });
@@ -160,12 +160,12 @@ describe('PATCH /settlements/:id/pay', () => {
     const { sara, group } = await murreeTrip();
     const { settlements } = (await post(sara, `${api}/groups/${group.id}/settle`)).body.data;
 
-    for (const s of settlements) {
-      await request(app).patch(`${api}/settlements/${s.id}/pay`).set('Authorization', `Bearer ${sara.accessToken}`).send({ isPaid: true });
+    for (const settlementRow of settlements) {
+      await request(app).patch(`${api}/settlements/${settlementRow.id}/pay`).set('Authorization', `Bearer ${sara.accessToken}`).send({ isPaid: true });
     }
 
     const balances = await get(sara, `${api}/groups/${group.id}/balances`);
-    expect(balances.body.data.balances.every((b) => b.net === 0)).toBe(true);
+    expect(balances.body.data.balances.every((balanceRow) => balanceRow.net === 0)).toBe(true);
 
     const preview = await post(sara, `${api}/groups/${group.id}/settle/preview`);
     expect(preview.body.data.payments).toEqual([]); // nothing left to move

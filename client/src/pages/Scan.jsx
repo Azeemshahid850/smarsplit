@@ -26,7 +26,7 @@ export default function Scan() {
   // Advance the step text while the background job runs.
   useEffect(() => {
     if (phase !== 'working') return;
-    const timer = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 2500);
+    const timer = setInterval(() => setStep((stepIndex) => Math.min(stepIndex + 1, STEPS.length - 1)), 2500);
     return () => clearInterval(timer);
   }, [phase]);
 
@@ -52,7 +52,7 @@ export default function Scan() {
           setPhase('idle');
           return;
         }
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((receiptRow) => setTimeout(receiptRow, 1000));
       }
       setError('Reading the receipt is taking too long. Check the scan history in a moment.');
       setPhase('idle');
@@ -97,15 +97,15 @@ export default function Scan() {
         </div>
       ) : (
         <div
-          onDragOver={(e) => {
-            e.preventDefault();
+          onDragOver={(event) => {
+            event.preventDefault();
             setDragging(true);
           }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
+          onDrop={(event) => {
+            event.preventDefault();
             setDragging(false);
-            upload(e.dataTransfer.files?.[0]);
+            upload(event.dataTransfer.files?.[0]);
           }}
           onClick={() => fileInput.current?.click()}
           className={`mt-6 cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition ${
@@ -124,7 +124,7 @@ export default function Scan() {
             accept="image/*"
             capture="environment"
             className="hidden"
-            onChange={(e) => upload(e.target.files?.[0])}
+            onChange={(event) => upload(event.target.files?.[0])}
           />
         </div>
       )}
@@ -135,21 +135,21 @@ export default function Scan() {
           {history.data?.receipts.length === 0 && <EmptyState title="No scans yet" hint="Your scanned receipts will appear here." />}
           {history.data && history.data.receipts.length > 0 && (
             <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
-              {history.data.receipts.map((r) => (
-                <li key={r.id} className="flex items-center justify-between px-4 py-3">
+              {history.data.receipts.map((receiptRow) => (
+                <li key={receiptRow.id} className="flex items-center justify-between px-4 py-3">
                   <span>
-                    <span className="block text-sm font-medium text-slate-800">{r.store || 'Receipt'}</span>
+                    <span className="block text-sm font-medium text-slate-800">{receiptRow.store || 'Receipt'}</span>
                     <span className="text-xs text-slate-400">
-                      {formatDate(r.receiptDate || r.createdAt)} · {r.lineItems.length} items
-                      {r.committedTo && ' · saved'}
+                      {formatDate(receiptRow.receiptDate || receiptRow.createdAt)} · {receiptRow.lineItems.length} items
+                      {receiptRow.committedTo && ' · saved'}
                     </span>
                   </span>
                   <span className="flex items-center gap-3">
-                    <span className="text-sm text-slate-600">{formatMoney(r.itemsTotal)}</span>
-                    {r.ocrStatus === 'done' && !r.committedTo && (
+                    <span className="text-sm text-slate-600">{formatMoney(receiptRow.itemsTotal)}</span>
+                    {receiptRow.ocrStatus === 'done' && !receiptRow.committedTo && (
                       <button
                         onClick={() => {
-                          setReceipt(r);
+                          setReceipt(receiptRow);
                           setPhase('verify');
                         }}
                         className="rounded-lg border border-slate-300 px-3 py-1 text-xs hover:bg-slate-100"
@@ -157,7 +157,7 @@ export default function Scan() {
                         Review
                       </button>
                     )}
-                    {r.ocrStatus === 'failed' && <span className="text-xs text-red-500">failed</span>}
+                    {receiptRow.ocrStatus === 'failed' && <span className="text-xs text-red-500">failed</span>}
                   </span>
                 </li>
               ))}
@@ -166,15 +166,15 @@ export default function Scan() {
         </div>
       </section>
 
-      {history.data?.receipts.some((r) => r.potentialSavings > 0) && (
+      {history.data?.receipts.some((receiptRow) => receiptRow.potentialSavings > 0) && (
         <section className="mt-8">
           <h2 className="font-medium">Savings found by ExpenseAI</h2>
           <div className="mt-3 space-y-4">
             {history.data.receipts
-              .filter((r) => r.potentialSavings > 0)
+              .filter((receiptRow) => receiptRow.potentialSavings > 0)
               .slice(0, 3)
-              .map((r) => (
-                <SavingsCards key={r.id} lineItems={r.lineItems} totalSavings={r.potentialSavings} />
+              .map((receiptRow) => (
+                <SavingsCards key={receiptRow.id} lineItems={receiptRow.lineItems} totalSavings={receiptRow.potentialSavings} />
               ))}
           </div>
         </section>

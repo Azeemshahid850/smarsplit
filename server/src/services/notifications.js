@@ -21,4 +21,4 @@ export async function notify({ recipients = [], exclude = null, type, message, g
 
 /** Every active member of a group, as plain id strings. */
 export const activeMemberIds = (group) =>
-  group.members.filter((m) => m.status === 'active' && m.user).map((m) => String(m.user._id ?? m.user));
+  group.members.filter((member) => member.status === 'active' && member.user).map((member) => String(member.user._id ?? member.user));
