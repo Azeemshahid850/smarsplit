@@ -5,6 +5,7 @@ import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { extractReceipt, totalsAgree } from '../services/ocr.js';
 import { uploadReceiptImage } from '../services/uploads.js';
+import { matchLineItems } from '../services/priceMatch.js';
 
 const publicReceipt = (r) => ({
   id: r._id,
@@ -46,6 +47,28 @@ export async function processReceipt(receiptId, buffer, mimetype) {
     totalDetected: result.totalDetected,
     totalsAgree: result.totalsAgree,
   });
+}
+
+/**
+ * Cheaper-alternative lookup. Decoupled on purpose: it runs after the commit
+ * response, reads the local price book, and never blocks the UI. A live scraper
+ * replaces `matchLineItems` behind the same call.
+ */
+export async function applyPriceMatches(receiptId, transactionId = null) {
+  const receipt = await Receipt.findById(receiptId);
+  if (!receipt) return;
+
+  const { lineItems, potentialSavings, suggestedAlternatives } = await matchLineItems(
+    receipt.lineItems.map((i) => i.toObject()),
+  );
+
+  // Atomic write, not load-modify-save: this runs in the background and can
+  // overlap a user editing the same receipt in the verification modal.
+  await Receipt.findByIdAndUpdate(receiptId, { lineItems, potentialSavings });
+
+  if (transactionId) {
+    await PersonalExpense.findByIdAndUpdate(transactionId, { potentialSavings, suggestedAlternatives });
+  }
 }
 
 export async function scanReceipt(req, res) {
@@ -139,7 +162,12 @@ export async function commitReceipt(req, res) {
     receipt.committedId = transaction._id;
     await receipt.save();
 
-    return ok(res, { receipt: publicReceipt(receipt), transactionId: transaction._id }, 201);
+    ok(res, { receipt: publicReceipt(receipt), transactionId: transaction._id }, 201);
+
+    // Savings lookup happens after the response — it must never hold up the save.
+    return applyPriceMatches(receipt._id, transaction._id).catch((err) =>
+      console.error('price match failed:', err.message),
+    );
   }
 
   // Group target: hand back a ready-made LINE_ITEM draft rather than writing the

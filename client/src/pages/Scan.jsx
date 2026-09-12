@@ -7,6 +7,7 @@ import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatDate } from '../utils/format.js';
 import { EmptyState } from '../components/States.jsx';
 import VerifyReceiptModal from '../components/VerifyReceiptModal.jsx';
+import SavingsCards from '../components/SavingsCards.jsx';
 
 const STEPS = ['Uploading the image', 'Reading the receipt', 'Matching line items'];
 
@@ -164,6 +165,20 @@ export default function Scan() {
           )}
         </div>
       </section>
+
+      {history.data?.receipts.some((r) => r.potentialSavings > 0) && (
+        <section className="mt-8">
+          <h2 className="font-medium">Savings found by ExpenseAI</h2>
+          <div className="mt-3 space-y-4">
+            {history.data.receipts
+              .filter((r) => r.potentialSavings > 0)
+              .slice(0, 3)
+              .map((r) => (
+                <SavingsCards key={r.id} lineItems={r.lineItems} totalSavings={r.potentialSavings} />
+              ))}
+          </div>
+        </section>
+      )}
 
       {phase === 'verify' && receipt && (
         <VerifyReceiptModal

@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard.jsx';
 import CategoryBars from '../components/CategoryBars.jsx';
 import AddTransactionForm from '../components/AddTransactionForm.jsx';
 import BudgetSettings from '../components/BudgetSettings.jsx';
+import SavingsCards from '../components/SavingsCards.jsx';
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -72,6 +73,20 @@ export default function Personal() {
                   <CategoryBars categories={summary.data.byCategory} />
                 )}
               </div>
+
+              {summary.data.savingsFound > 0 && (
+                <>
+                  <h2 className="mt-6 font-medium">Savings found by ExpenseAI</h2>
+                  <div className="mt-3 space-y-4">
+                    {(transactions.data?.transactions ?? [])
+                      .filter((t) => t.potentialSavings > 0)
+                      .slice(0, 3)
+                      .map((t) => (
+                        <SavingsCards key={t.id} alternatives={t.suggestedAlternatives} totalSavings={t.potentialSavings} />
+                      ))}
+                  </div>
+                </>
+              )}
 
               <h2 className="mt-6 font-medium">Recent transactions</h2>
               <div className="mt-3">
