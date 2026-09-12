@@ -6,6 +6,12 @@ export function notFound(req, res, next) {
 
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, next) {
+  // multer signals upload problems with its own error class.
+  if (err?.name === 'MulterError') {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'That image is larger than 8MB' : err.message;
+    return res.status(400).json({ success: false, error: { code: 'UPLOAD_FAILED', message } });
+  }
+
   const status = err.status || 500;
   const code = err.code || 'INTERNAL_ERROR';
   const message = status === 500 && process.env.NODE_ENV === 'production'

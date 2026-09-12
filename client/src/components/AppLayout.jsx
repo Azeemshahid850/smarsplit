@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank } from 'lucide-react';
+import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 
@@ -7,6 +7,7 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/groups', label: 'Groups', icon: Users },
   { to: '/personal', label: 'Personal', icon: PiggyBank },
+  { to: '/scan', label: 'Scan', icon: ScanLine },
 ];
 
 export default function AppLayout() {

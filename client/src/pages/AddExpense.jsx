@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { listGroups, getGroup } from '../api/groups.js';
 import { createExpense, getExpense, updateExpense } from '../api/expenses.js';
@@ -25,8 +25,10 @@ export default function AddExpense() {
   const { expenseId } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { state } = useLocation();
   const { user } = useAuth();
   const editing = Boolean(expenseId);
+  const receiptDraft = state?.draft; // handed over by the receipt scan flow
 
   const [groups, setGroups] = useState([]);
   const [groupId, setGroupId] = useState(params.get('group') || '');
@@ -66,6 +68,20 @@ export default function AddExpense() {
           const { groups: list } = await listGroups();
           setGroups(list);
           if (!params.get('group') && list.length) setGroupId(list[0].id);
+
+          // A verified receipt arrives as a ready-made LINE_ITEM expense.
+          if (receiptDraft) {
+            setGroupId(receiptDraft.groupId);
+            setForm({
+              title: receiptDraft.title,
+              totalAmount: String(receiptDraft.totalAmount),
+              date: String(receiptDraft.date).slice(0, 10),
+              category: receiptDraft.category,
+              notes: '',
+            });
+            setSplitType('LINE_ITEM');
+            setItems(receiptDraft.items.map((i) => ({ ...i, price: String(i.price), qty: String(i.qty) })));
+          }
         }
       } catch (err) {
         setError(err.message || 'Could not load this page');
