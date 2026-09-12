@@ -12,7 +12,7 @@ import { useConfirm } from './ConfirmDialog.jsx';
 
 const SPLIT_LABEL = { EQUAL: 'equal', EXACT: 'exact', PERCENTAGE: '%', LINE_ITEM: 'items' };
 
-export default function ExpensesTab({ group, onChanged }) {
+export default function ExpensesTab({ group, onChanged, onInvite }) {
   const confirm = useConfirm();
   const { all: CATEGORIES } = useCategories();
   const [filters, setFilters] = useState({ category: '', payer: '', page: 1 });
@@ -82,8 +82,19 @@ export default function ExpensesTab({ group, onChanged }) {
 
         {data && data.expenses.length === 0 && (
           <EmptyState
-            title="No expenses yet"
-            hint="Add the first one — fuel, hotel, dinner — and balances update instantly."
+            title={group.memberCount < 2 ? "It's just you in this group" : 'No expenses yet'}
+            hint={
+              group.memberCount < 2
+                ? 'Add the people you are travelling with — there is nobody to split with yet.'
+                : 'Add the first one — fuel, hotel, dinner — and balances update instantly.'
+            }
+            action={
+              group.memberCount < 2 && group.iAmAdmin && onInvite ? (
+                <button onClick={onInvite} className="mt-2 text-sm font-medium text-emerald-700 hover:underline">
+                  Add people to this group
+                </button>
+              ) : null
+            }
           />
         )}
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Copy, Check, Trash2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { inviteMember, removeMember } from '../api/groups.js';
@@ -6,7 +6,7 @@ import Avatar from './Avatar.jsx';
 import FormError from './FormError.jsx';
 import { useConfirm } from './ConfirmDialog.jsx';
 
-export default function MembersTab({ group, onChange }) {
+export default function MembersTab({ group, onChange, autoFocus = false }) {
   const confirm = useConfirm();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
@@ -14,6 +14,11 @@ export default function MembersTab({ group, onChange }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const emailInput = useRef(null);
+
+  useEffect(() => {
+    if (autoFocus) emailInput.current?.focus();
+  }, [autoFocus]);
 
   const isAdmin = group.iAmAdmin;
 
@@ -93,8 +98,12 @@ export default function MembersTab({ group, onChange }) {
       {isAdmin && (
         <form onSubmit={invite} className="rounded-xl bg-slate-50 p-4">
           <label className="text-sm font-medium text-slate-700">Invite someone</label>
+          <p className="text-xs text-slate-400">
+            Already has an account? They join straight away. Otherwise you get a link to share.
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <input
+              ref={emailInput}
               type="email"
               required
               value={email}

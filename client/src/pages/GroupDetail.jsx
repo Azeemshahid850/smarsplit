@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { getGroup } from '../api/groups.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAsync } from '../hooks/useAsync.js';
 import { formatDate } from '../utils/format.js';
 import { Loading, ErrorState } from '../components/States.jsx';
+import Avatar from '../components/Avatar.jsx';
 import MembersTab from '../components/MembersTab.jsx';
 import ExpensesTab from '../components/ExpensesTab.jsx';
 import BalancesTab from '../components/BalancesTab.jsx';
@@ -16,6 +17,13 @@ export default function GroupDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const [tab, setTab] = useState('Expenses');
+  // Set when the user jumps here to invite someone, so the email box takes focus.
+  const focusInvite = useRef(false);
+
+  const openInvite = () => {
+    focusInvite.current = true;
+    setTab('Members');
+  };
   const { data, loading, error, reload } = useAsync(() => getGroup(id), [id]);
 
   if (loading) return <Loading label="Loading group…" />;
@@ -40,9 +48,26 @@ export default function GroupDetail() {
           </p>
           {group.description && <p className="mt-1 text-sm text-slate-600">{group.description}</p>}
         </div>
-        {group.status === 'SETTLED' && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">settled</span>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-2">
+            {group.members.slice(0, 5).map((m) => (
+              <Avatar key={m.id} name={m.name} avatarUrl={m.avatarUrl} muted={m.status === 'pending'} />
+            ))}
+          </div>
+
+          {view.iAmAdmin && (
+            <button
+              onClick={openInvite}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+            >
+              <UserPlus className="h-4 w-4 text-slate-400" /> Add people
+            </button>
+          )}
+
+          {group.status === 'SETTLED' && (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">settled</span>
+          )}
+        </div>
       </header>
 
       <nav className="mt-6 flex gap-1 border-b border-slate-200">
@@ -60,9 +85,9 @@ export default function GroupDetail() {
       </nav>
 
       <section className="mt-6">
-        {tab === 'Expenses' && <ExpensesTab group={view} onChanged={reload} />}
+        {tab === 'Expenses' && <ExpensesTab group={view} onChanged={reload} onInvite={openInvite} />}
         {tab === 'Balances' && <BalancesTab group={view} />}
-        {tab === 'Members' && <MembersTab group={view} onChange={reload} />}
+        {tab === 'Members' && <MembersTab group={view} onChange={reload} autoFocus={focusInvite.current} />}
       </section>
     </>
   );
