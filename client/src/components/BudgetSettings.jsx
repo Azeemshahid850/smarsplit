@@ -3,12 +3,13 @@ import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { listBudgets, setBudget, deleteBudget } from '../api/personal.js';
 import { useAsync } from '../hooks/useAsync.js';
+import { useCategories } from '../context/CategoriesContext.jsx';
 import { formatMoney } from '../utils/format.js';
 import { Loading, ErrorState } from './States.jsx';
 
-const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 
 export default function BudgetSettings({ onChanged }) {
+  const { all: CATEGORIES } = useCategories();
   const { data, loading, error, reload } = useAsync(listBudgets);
   const [draft, setDraft] = useState({ category: 'Food', monthlyCap: '' });
   const [busy, setBusy] = useState(false);

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { createTransaction } from '../api/personal.js';
+import { useCategories } from '../context/CategoriesContext.jsx';
 import Field from './Field.jsx';
 import SubmitButton from './SubmitButton.jsx';
 import FormError from './FormError.jsx';
 
-const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 const METHODS = ['Cash', 'Bank Transfer', 'Card', 'JazzCash', 'Easypaisa', 'Raast'];
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -22,6 +22,7 @@ const blank = {
 };
 
 export default function AddTransactionForm({ onAdded }) {
+  const { all: CATEGORIES } = useCategories();
   const [form, setForm] = useState(blank);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);

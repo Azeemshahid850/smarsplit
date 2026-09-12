@@ -12,6 +12,7 @@ import settlementRoutes from './routes/settlements.js';
 import personalRoutes from './routes/personal.js';
 import receiptRoutes from './routes/receipts.js';
 import reportRoutes from './routes/reports.js';
+import categoryRoutes from './routes/categories.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { globalLimiter } from './middleware/rateLimits.js';
 
@@ -38,6 +39,7 @@ app.use('/api/v1', settlementRoutes);
 app.use('/api/v1', personalRoutes);
 app.use('/api/v1', receiptRoutes);
 app.use('/api/v1', reportRoutes);
+app.use('/api/v1', categoryRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

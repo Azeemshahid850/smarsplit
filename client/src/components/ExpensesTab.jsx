@@ -4,16 +4,17 @@ import { Plus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { listExpenses, deleteExpense } from '../api/expenses.js';
 import { useAsync } from '../hooks/useAsync.js';
+import { useCategories } from '../context/CategoriesContext.jsx';
 import { formatMoney, formatDate } from '../utils/format.js';
 import { Loading, ErrorState, EmptyState } from './States.jsx';
 import Avatar from './Avatar.jsx';
 import { useConfirm } from './ConfirmDialog.jsx';
 
-const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 const SPLIT_LABEL = { EQUAL: 'equal', EXACT: 'exact', PERCENTAGE: '%', LINE_ITEM: 'items' };
 
 export default function ExpensesTab({ group, onChanged }) {
   const confirm = useConfirm();
+  const { all: CATEGORIES } = useCategories();
   const [filters, setFilters] = useState({ category: '', payer: '', page: 1 });
   const { data, loading, error, reload } = useAsync(
     () => listExpenses(group.id, { ...filters, limit: 20 }),

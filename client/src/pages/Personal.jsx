@@ -9,6 +9,7 @@ import StatCard from '../components/StatCard.jsx';
 import CategoryBars from '../components/CategoryBars.jsx';
 import AddTransactionForm from '../components/AddTransactionForm.jsx';
 import BudgetSettings from '../components/BudgetSettings.jsx';
+import CategorySettings from '../components/CategorySettings.jsx';
 import SavingsCards from '../components/SavingsCards.jsx';
 import { useConfirm } from '../components/ConfirmDialog.jsx';
 
@@ -153,6 +154,7 @@ export default function Personal() {
             <aside className="space-y-6">
               <AddTransactionForm onAdded={refresh} />
               <BudgetSettings onChanged={refresh} />
+              <CategorySettings />
             </aside>
           </div>
         </>

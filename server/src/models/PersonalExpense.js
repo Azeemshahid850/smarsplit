@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { CATEGORIES } from './GroupExpense.js';
 
 export const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Card', 'JazzCash', 'Easypaisa', 'Raast'];
 export const RECURRING_INTERVALS = ['weekly', 'monthly'];
@@ -20,7 +19,7 @@ const personalExpenseSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     title: { type: String, required: true, trim: true },
     amount: { type: Number, required: true, min: 1 },
-    category: { type: String, enum: CATEGORIES, default: 'Misc' },
+    category: { type: String, default: 'Misc', trim: true, maxlength: 30 },
     type: { type: String, enum: ['CREDIT', 'DEBIT'], default: 'DEBIT' },
     paymentMethod: { type: String, enum: PAYMENT_METHODS, default: 'Cash' },
     date: { type: Date, default: Date.now },

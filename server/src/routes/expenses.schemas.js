@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES, SPLIT_TYPES } from '../models/GroupExpense.js';
+import { SPLIT_TYPES } from '../models/GroupExpense.js';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 const rupees = z.number().int('Amounts must be whole rupees').positive('Amount must be above zero');
@@ -7,7 +7,7 @@ const rupees = z.number().int('Amounts must be whole rupees').positive('Amount m
 const base = {
   title: z.string().min(2, 'Title is too short').max(120).trim(),
   totalAmount: rupees,
-  category: z.enum(CATEGORIES).default('Misc'),
+  category: z.string().min(1).max(30).trim().default('Misc'),
   date: z.coerce.date().default(() => new Date()),
   notes: z.string().max(500).default(''),
   receiptImage: z.string().url().nullish(),
@@ -34,7 +34,7 @@ export const updateExpenseSchema = z.object(base).partial().refine((v) => Object
 export const listExpensesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  category: z.enum(CATEGORIES).optional(),
+  category: z.string().min(1).max(30).trim().optional(),
   payer: objectId.optional(),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),

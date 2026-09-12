@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { CATEGORY_COLOR, SERIES } from './palette.js';
+import { categoryColor } from './palette.js';
 import ChartTooltip from './ChartTooltip.jsx';
 import { formatMoney } from '../../utils/format.js';
 
@@ -21,7 +21,7 @@ export default function CategoryDonut({ categories, currency = 'PKR' }) {
           <PieChart>
             <Pie data={data} dataKey="total" nameKey="category" innerRadius="62%" outerRadius="92%" paddingAngle={2} stroke="none">
               {data.map((c) => (
-                <Cell key={c.category} fill={CATEGORY_COLOR[c.category] ?? SERIES[7]} />
+                <Cell key={c.category} fill={categoryColor(c.category)} />
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip currency={currency} />} />
@@ -40,7 +40,7 @@ export default function CategoryDonut({ categories, currency = 'PKR' }) {
             <tr key={c.category}>
               <td className="py-1">
                 <span className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: CATEGORY_COLOR[c.category] ?? SERIES[7] }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: categoryColor(c.category) }} />
                   <span className="text-slate-700">{c.category}</span>
                 </span>
               </td>

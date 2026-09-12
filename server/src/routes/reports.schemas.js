@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { CATEGORIES } from '../models/GroupExpense.js';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 const month = z.string().regex(/^\d{4}-\d{2}$/, 'Month must look like 2026-09');
@@ -13,7 +12,7 @@ export const exportQuerySchema = z.object({
   scope: z.enum(['transactions', 'group']).default('transactions'),
   groupId: objectId.optional(),
   month: month.optional(),
-  category: z.enum(CATEGORIES).optional(),
+  category: z.string().min(1).max(30).trim().optional(),
 }).refine((v) => v.scope !== 'group' || Boolean(v.groupId), {
   message: 'groupId is required to export a group',
   path: ['groupId'],

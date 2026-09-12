@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { updateReceiptItem, addReceiptItem, removeReceiptItem, commitReceipt } from '../api/receipts.js';
 import { formatMoney } from '../utils/format.js';
 import FormError from './FormError.jsx';
+import { useCategories } from '../context/CategoriesContext.jsx';
 
-const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 const METHODS = ['Cash', 'Bank Transfer', 'Card', 'JazzCash', 'Easypaisa', 'Raast'];
 
 /**
@@ -13,6 +13,7 @@ const METHODS = ['Cash', 'Bank Transfer', 'Card', 'JazzCash', 'Easypaisa', 'Raas
  * has looked at these lines and pressed save.
  */
 export default function VerifyReceiptModal({ receipt: initial, groups, onClose, onCommitted }) {
+  const { all: CATEGORIES } = useCategories();
   const [receipt, setReceipt] = useState(initial);
   const [target, setTarget] = useState('personal');
   const [groupId, setGroupId] = useState(groups[0]?.id || '');

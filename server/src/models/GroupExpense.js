@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
-export const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
+// Re-exported for convenience; the authoritative list (defaults + a user's own)
+// lives in services/categories.js.
+export { DEFAULT_CATEGORIES as CATEGORIES } from '../services/categories.js';
 export const SPLIT_TYPES = ['EQUAL', 'EXACT', 'PERCENTAGE', 'LINE_ITEM'];
 
 const payerSchema = new mongoose.Schema(
@@ -28,7 +30,9 @@ const groupExpenseSchema = new mongoose.Schema(
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true, index: true },
     title: { type: String, required: true, trim: true },
     totalAmount: { type: Number, required: true, min: 1 },
-    category: { type: String, enum: CATEGORIES, default: 'Misc' },
+    // Free text by design: a category can be deleted without orphaning the
+    // expenses that already used it. Allowed values are checked in the controller.
+    category: { type: String, default: 'Misc', trim: true, maxlength: 30 },
     date: { type: Date, default: Date.now },
     paidBy: { type: [payerSchema], required: true },
     splitType: { type: String, enum: SPLIT_TYPES, required: true },

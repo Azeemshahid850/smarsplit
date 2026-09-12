@@ -2,10 +2,10 @@ import mongoose from 'mongoose';
 
 import { PersonalExpense } from '../models/PersonalExpense.js';
 import { Budget } from '../models/Budget.js';
-import { CATEGORIES } from '../models/GroupExpense.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { advance } from '../services/recurring.js';
+import { categoriesFor, assertCategoryAllowed } from '../services/categories.js';
 
 /** "2026-09" → the half-open range [start, end) for that month. */
 export function monthRange(month) {
@@ -37,6 +37,9 @@ const recurringFields = (body) =>
     : { isRecurring: false, recurring: { interval: null, nextRunAt: null } };
 
 export async function createTransaction(req, res) {
+  const { all } = await categoriesFor(req.user._id);
+  req.body.category = assertCategoryAllowed(req.body.category, all) ?? req.body.category;
+
   const { recurringInterval, ...rest } = req.body;
   const transaction = await PersonalExpense.create({
     ...rest,
@@ -77,6 +80,10 @@ async function ownTransaction(req) {
 
 export async function updateTransaction(req, res) {
   const transaction = await ownTransaction(req);
+  if (req.body.category) {
+    const { all } = await categoriesFor(req.user._id);
+    req.body.category = assertCategoryAllowed(req.body.category, all);
+  }
   const { recurringInterval, ...rest } = req.body;
 
   Object.assign(transaction, rest);
@@ -121,7 +128,13 @@ export async function summary(req, res) {
   const spend = rows.filter((r) => r._id.type === 'DEBIT').reduce((t, r) => t + r.total, 0);
   const capFor = Object.fromEntries(budgets.map((b) => [b.category, b.monthlyCap]));
 
-  const byCategory = CATEGORIES.map((category) => {
+  // Their categories, plus any older one that still has spend this month, so a
+  // deleted category never hides money that was already recorded against it.
+  const { all } = await categoriesFor(req.user._id);
+  const spent = rows.filter((r) => r._id.type === 'DEBIT').map((r) => r._id.category);
+  const names = [...new Set([...all, ...spent, ...budgets.map((b) => b.category)])];
+
+  const byCategory = names.map((category) => {
     const total = rows.filter((r) => r._id.type === 'DEBIT' && r._id.category === category).reduce((t, r) => t + r.total, 0);
     const cap = capFor[category] ?? null;
     return {
@@ -156,6 +169,9 @@ export async function listBudgets(req, res) {
 
 /** Upsert — one cap per category, so setting it twice just updates it. */
 export async function setBudget(req, res) {
+  const { all } = await categoriesFor(req.user._id);
+  req.body.category = assertCategoryAllowed(req.body.category, all);
+
   const budget = await Budget.findOneAndUpdate(
     { userId: req.user._id, category: req.body.category },
     { monthlyCap: req.body.monthlyCap },

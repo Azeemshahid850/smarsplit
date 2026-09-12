@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ConfirmProvider } from './components/ConfirmDialog.jsx';
+import { CategoriesProvider } from './context/CategoriesContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import Login from './pages/Login.jsx';
@@ -36,7 +37,13 @@ export default function App() {
             <Route path="/join/:inviteToken" element={<Join />} />
 
             <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
+              <Route
+                element={
+                  <CategoriesProvider>
+                    <AppLayout />
+                  </CategoriesProvider>
+                }
+              >
                 <Route path="/" element={<Home />} />
                 <Route path="/groups" element={<Groups />} />
                 <Route path="/personal" element={<Personal />} />

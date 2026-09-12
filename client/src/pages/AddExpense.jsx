@@ -5,13 +5,13 @@ import { toast } from 'sonner';
 import { listGroups, getGroup } from '../api/groups.js';
 import { createExpense, getExpense, updateExpense } from '../api/expenses.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCategories } from '../context/CategoriesContext.jsx';
 import { formatMoney } from '../utils/format.js';
 import Field from '../components/Field.jsx';
 import SubmitButton from '../components/SubmitButton.jsx';
 import FormError from '../components/FormError.jsx';
 import { Loading } from '../components/States.jsx';
 
-const CATEGORIES = ['Food', 'Utilities', 'Travel', 'Shopping', 'Healthcare', 'Housing', 'Misc'];
 const SPLIT_TYPES = [
   { key: 'EQUAL', label: 'Equally' },
   { key: 'EXACT', label: 'Exact amounts' },
@@ -28,6 +28,7 @@ export default function AddExpense() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { user } = useAuth();
+  const { all: CATEGORIES } = useCategories();
   const editing = Boolean(expenseId);
   const receiptDraft = state?.draft; // handed over by the receipt scan flow
 

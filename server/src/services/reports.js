@@ -4,7 +4,7 @@ import { PersonalExpense } from '../models/PersonalExpense.js';
 import { Budget } from '../models/Budget.js';
 import { GroupExpense } from '../models/GroupExpense.js';
 import { Settlement } from '../models/Settlement.js';
-import { CATEGORIES } from '../models/GroupExpense.js';
+import { categoriesFor } from './categories.js';
 import { monthRange } from '../controllers/personal.controller.js';
 
 const oid = (id) => new mongoose.Types.ObjectId(String(id));
@@ -79,10 +79,13 @@ export async function personalTrends(userId, months = 6) {
   const find = (month, type, category) =>
     rows.find((r) => r._id.month === month && r._id.type === type && (!category || r._id.category === category))?.total ?? 0;
 
+  const { all: categoryNames } = await categoriesFor(userId);
+  const seen = [...new Set([...categoryNames, ...rows.map((r) => r._id.category)])];
+
   const series = labels.map((month) => {
     const inflow = rows.filter((r) => r._id.month === month && r._id.type === 'CREDIT').reduce((t, r) => t + r.total, 0);
     const outflow = rows.filter((r) => r._id.month === month && r._id.type === 'DEBIT').reduce((t, r) => t + r.total, 0);
-    const byCategory = Object.fromEntries(CATEGORIES.map((c) => [c, find(month, 'DEBIT', c)]));
+    const byCategory = Object.fromEntries(seen.map((c) => [c, find(month, 'DEBIT', c)]));
     return { month, inflow, outflow, net: inflow - outflow, ...byCategory };
   });
 

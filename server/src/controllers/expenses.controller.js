@@ -5,6 +5,7 @@ import { ok } from '../utils/ok.js';
 import { groupBalances } from '../services/balances.js';
 import { notify, activeMemberIds } from '../services/notifications.js';
 import { computeSplits, assertPayersCoverTotal, assertSplitsBalance, SplitError } from '../services/splitCalculator.js';
+import { categoriesForGroup, assertCategoryAllowed } from '../services/categories.js';
 
 const publicExpense = (e) => ({
   id: e._id,
@@ -57,6 +58,7 @@ const money = (n) => `Rs ${Math.round(n).toLocaleString('en-PK')}`;
 export async function createExpense(req, res) {
   const group = req.group;
   assertEveryoneIsAMember(group, req.body);
+  req.body.category = assertCategoryAllowed(req.body.category, await categoriesForGroup(group)) ?? req.body.category;
 
   const splits = buildSplits(req.body);
   const expense = await GroupExpense.create({
@@ -120,6 +122,9 @@ export async function updateExpense(req, res) {
   }
   if (!req.body.items?.length) merged.items = expense.items;
   assertEveryoneIsAMember(group, merged);
+  if (req.body.category) {
+    req.body.category = assertCategoryAllowed(req.body.category, await categoriesForGroup(group));
+  }
   const splits = buildSplits(merged);
 
   Object.assign(expense, req.body, { splits });
