@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireMember } from '../middleware/membership.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { exportLimiter } from '../middleware/rateLimits.js';
 import {
   monthlyQuerySchema,
   trendsQuerySchema,
@@ -30,7 +31,7 @@ router.get(
   asyncHandler(requireMember),
   asyncHandler(ctrl.groupReport),
 );
-router.get('/reports/export', requireAuth, validate(exportQuerySchema, 'query'), asyncHandler(ctrl.exportReport));
+router.get('/reports/export', requireAuth, exportLimiter, validate(exportQuerySchema, 'query'), asyncHandler(ctrl.exportReport));
 
 router.get('/notifications', requireAuth, validate(notificationsQuerySchema, 'query'), asyncHandler(ctrl.listNotifications));
 router.patch(

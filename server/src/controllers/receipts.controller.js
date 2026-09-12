@@ -4,12 +4,13 @@ import { Group } from '../models/Group.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { extractReceipt, totalsAgree } from '../services/ocr.js';
-import { uploadReceiptImage } from '../services/uploads.js';
+import { uploadReceiptImage, signedReceiptUrl } from '../services/uploads.js';
 import { matchLineItems } from '../services/priceMatch.js';
 
 const publicReceipt = (r) => ({
   id: r._id,
-  imageUrl: r.imageUrl,
+  // Re-signed on every read so the link the client holds always expires.
+  imageUrl: signedReceiptUrl(r.imagePublicId) ?? r.imageUrl,
   store: r.store,
   receiptDate: r.receiptDate,
   ocrStatus: r.ocrStatus,
@@ -74,8 +75,8 @@ export async function applyPriceMatches(receiptId, transactionId = null) {
 export async function scanReceipt(req, res) {
   if (!req.file) throw ApiError.badRequest('Attach a receipt image', 'NO_IMAGE');
 
-  const imageUrl = await uploadReceiptImage(req.file.buffer, req.file.mimetype);
-  const receipt = await Receipt.create({ userId: req.user._id, imageUrl, ocrStatus: 'processing' });
+  const { url, publicId } = await uploadReceiptImage(req.file.buffer, req.file.mimetype);
+  const receipt = await Receipt.create({ userId: req.user._id, imageUrl: url, imagePublicId: publicId, ocrStatus: 'processing' });
 
   // Respond immediately; the client polls GET /receipts/:id.
   ok(res, { receiptId: receipt._id, status: 'processing' }, 202);

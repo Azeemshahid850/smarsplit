@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../middleware/ApiError.js';
+import { scanLimiter } from '../middleware/rateLimits.js';
 import { receiptParamsSchema, itemParamsSchema, updateItemSchema, addItemSchema, commitSchema } from './receipts.schemas.js';
 
 // In memory: the buffer goes straight to Cloudinary and to the OCR call, so
@@ -21,7 +22,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/receipts/scan', requireAuth, upload.single('image'), asyncHandler(ctrl.scanReceipt));
+router.post('/receipts/scan', requireAuth, scanLimiter, upload.single('image'), asyncHandler(ctrl.scanReceipt));
 router.get('/receipts', requireAuth, asyncHandler(ctrl.listReceipts));
 router.get('/receipts/:receiptId', requireAuth, validate(receiptParamsSchema, 'params'), asyncHandler(ctrl.getReceipt));
 

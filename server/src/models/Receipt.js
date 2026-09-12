@@ -28,6 +28,7 @@ const receiptSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     imageUrl: { type: String, required: true },
+    imagePublicId: { type: String, default: null },
     store: { type: String, default: null },
     receiptDate: { type: Date, default: null },
     ocrStatus: { type: String, enum: ['processing', 'done', 'failed'], default: 'processing' },
