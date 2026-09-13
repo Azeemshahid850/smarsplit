@@ -25,16 +25,25 @@ export async function issueRefreshToken(userId) {
   return { token, expiresAt };
 }
 
-// Rotation with reuse detection: an already-revoked token means the cookie
-// leaked, so every token for that user is killed.
+/**
+ * Rotation with reuse detection.
+ *
+ * Only a token that was *rotated* (it has a replacement) and then presented
+ * again is evidence the cookie leaked — that kills every session for the user.
+ * A token revoked deliberately, by signing out or changing a password, is
+ * simply invalid: treating that as theft would sign the user out of the very
+ * session they just created.
+ */
 export async function rotateRefreshToken(token) {
   const existing = await RefreshToken.findOne({ tokenHash: hash(token) });
   if (!existing) return { error: 'INVALID' };
 
-  if (existing.revokedAt || existing.expiresAt < new Date()) {
+  if (existing.revokedAt && existing.replacedBy) {
     await RefreshToken.updateMany({ userId: existing.userId, revokedAt: null }, { revokedAt: new Date() });
     return { error: 'REUSED' };
   }
+
+  if (existing.revokedAt || existing.expiresAt < new Date()) return { error: 'INVALID' };
 
   const next = await issueRefreshToken(existing.userId);
   existing.revokedAt = new Date();

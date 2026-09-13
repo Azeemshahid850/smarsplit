@@ -30,6 +30,13 @@ export function AuthProvider({ children }) {
       login: (body) => authApi.loginUser(body).then(adopt),
       register: (body) => authApi.registerUser(body).then(adopt),
       googleLogin: (idToken) => authApi.loginWithGoogle(idToken).then(adopt),
+      // Profile edits replace the cached user so the nav avatar updates at once.
+      updateProfile: async (body) => {
+        const { user: updated } = await authApi.updateProfile(body);
+        setUser(updated);
+        return updated;
+      },
+      changePassword: (body) => authApi.changePassword(body).then(adopt),
       logout: async () => {
         await authApi.logoutUser().catch(() => {});
         setAccessToken(null);

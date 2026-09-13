@@ -86,6 +86,41 @@ export async function me(req, res) {
   ok(res, { user: req.user.toPublic() });
 }
 
+export async function updateProfile(req, res) {
+  const { notifications, ...rest } = req.body;
+
+  Object.assign(req.user, rest);
+  if (notifications) Object.assign(req.user.notifications, notifications);
+  await req.user.save();
+
+  ok(res, { user: req.user.toPublic() });
+}
+
+/**
+ * Changing a password proves ownership with the current one, then revokes every
+ * other session — the same rule the reset flow follows.
+ */
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (user.passwordHash) {
+    if (!currentPassword) throw ApiError.badRequest('Enter your current password', 'CURRENT_PASSWORD_REQUIRED');
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw ApiError.unauthorized('That current password is not right', 'BAD_CREDENTIALS');
+    }
+  }
+
+  user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  await user.save();
+
+  await revokeAllForUser(user._id);
+  const { token, expiresAt } = await issueRefreshToken(user._id);
+  setRefreshCookie(res, token, expiresAt);
+
+  ok(res, { user: user.toPublic(), accessToken: signAccessToken(user), message: 'Password updated — other devices were signed out' });
+}
+
 export async function google(req, res) {
   const { code, idToken } = req.body;
   const client = new OAuth2Client({

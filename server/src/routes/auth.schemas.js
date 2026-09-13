@@ -22,3 +22,24 @@ export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({ password });
 
 export const resetParamsSchema = z.object({ token: z.string().min(20, 'Invalid reset token') });
+
+export const updateProfileSchema = z
+  .object({
+    name: z.string().min(2, 'Name is too short').max(80).trim().optional(),
+    avatarUrl: z.string().url('Enter a valid image URL').max(500).nullish(),
+    defaultCurrency: z.string().length(3, 'Use a 3-letter code like PKR').toUpperCase().optional(),
+    notifications: z
+      .object({
+        email: z.boolean().optional(),
+        groupActivity: z.boolean().optional(),
+        budgetAlerts: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, 'Nothing to update');
+
+export const changePasswordSchema = z.object({
+  // Absent only for an account created through Google that has no password yet.
+  currentPassword: z.string().min(1).optional(),
+  newPassword: password,
+});

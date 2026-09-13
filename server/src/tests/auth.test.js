@@ -93,6 +93,24 @@ describe('POST /auth/refresh — rotation', () => {
     expect(await RefreshToken.countDocuments({ revokedAt: null })).toBe(0);
   });
 
+  it('a token revoked by signing out is invalid, but does NOT kill other sessions', async () => {
+    const first = await register();
+    const firstCookie = cookieOf(first);
+
+    // A second device signs in.
+    const second = await request(app).post(`/api/v1/auth/login`).send({ email: creds.email, password: creds.password });
+    const secondCookie = cookieOf(second);
+
+    await request(app).post(`/api/v1/auth/logout`).set('Cookie', firstCookie);
+
+    const replayed = await request(app).post(`/api/v1/auth/refresh`).set('Cookie', firstCookie);
+    expect(replayed.status).toBe(401);
+    expect(replayed.body.error.code).toBe('BAD_REFRESH_TOKEN'); // not TOKEN_REUSED
+
+    // The other device is untouched.
+    expect((await request(app).post(`/api/v1/auth/refresh`).set('Cookie', secondCookie)).status).toBe(200);
+  });
+
   it('401s with no cookie at all', async () => {
     const res = await request(app).post('/api/v1/auth/refresh');
     expect(res.status).toBe(401);

@@ -12,6 +12,8 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   resetParamsSchema,
+  updateProfileSchema,
+  changePasswordSchema,
 } from './auth.schemas.js';
 
 const router = Router();
@@ -31,6 +33,14 @@ router.post('/auth/login', limit(10), validate(loginSchema), asyncHandler(ctrl.l
 router.post('/auth/refresh', limit(60), asyncHandler(ctrl.refresh));
 router.post('/auth/logout', asyncHandler(ctrl.logout));
 router.get('/auth/me', requireAuth, asyncHandler(ctrl.me));
+router.patch('/auth/me', requireAuth, validate(updateProfileSchema), asyncHandler(ctrl.updateProfile));
+router.post(
+  '/auth/change-password',
+  requireAuth,
+  limit(10, 60),
+  validate(changePasswordSchema),
+  asyncHandler(ctrl.changePassword),
+);
 router.post('/auth/google', limit(20), validate(googleSchema), asyncHandler(ctrl.google));
 router.post('/auth/forgot-password', limit(5, 60), validate(forgotPasswordSchema), asyncHandler(ctrl.forgotPassword));
 router.post(

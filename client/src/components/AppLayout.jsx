@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3 } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -19,9 +19,9 @@ export default function AppLayout() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
-          <span className="flex items-center gap-2 font-semibold">
+          <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900 hover:opacity-80">
             <Wallet className="h-5 w-5 text-emerald-600" /> SmartSplit
-          </span>
+          </Link>
 
           <nav className="flex flex-1 gap-1">
             {nav.map(({ to, label, icon: Icon, end }) => (
@@ -43,7 +43,9 @@ export default function AppLayout() {
 
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <Avatar name={user.name} avatarUrl={user.avatarUrl} />
+            <Link to="/profile" title="Your profile">
+              <Avatar name={user.name} avatarUrl={user.avatarUrl} />
+            </Link>
             <button onClick={logout} title="Sign out" className="text-slate-400 hover:text-slate-700">
               <LogOut className="h-4 w-4" />
             </button>
