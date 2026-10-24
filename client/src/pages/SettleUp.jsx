@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Sparkles, Check, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getGroup } from '../api/groups.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { getBalances } from '../api/expenses.js';
 import { previewSettlement, recordSettlement, listSettlements, markPaid } from '../api/settlements.js';
 import { useAsync } from '../hooks/useAsync.js';
@@ -42,6 +43,7 @@ function PaymentCard({ payment, currency, onPay, faded }) {
 
 export default function SettleUp() {
   const { id } = useParams();
+  const { user } = useAuth();
   const group = useAsync(() => getGroup(id), [id]);
   const balances = useAsync(() => getBalances(id), [id]);
   const recorded = useAsync(() => listSettlements(id), [id]);
@@ -55,6 +57,7 @@ export default function SettleUp() {
   if (group.error) return <ErrorState message={group.error} onRetry={group.reload} />;
 
   const g = group.data.group;
+  const iAmAdmin = g.members.some((memberRow) => memberRow.userId === user.id && memberRow.role === 'admin');
   const currency = g.baseCurrency;
   const settled = recorded.data.settlements;
   const hasRecorded = settled.length > 0;
@@ -105,7 +108,7 @@ export default function SettleUp() {
         <ArrowLeft className="h-4 w-4" /> {g.title}
       </Link>
       <h1 className="mt-3 text-2xl font-semibold">Settle up</h1>
-      <paymentRow className="text-sm text-slate-500">Min-Cash-Flow finds the fewest payments that clear every debt.</paymentRow>
+      <p className="text-sm text-slate-500">Min-Cash-Flow finds the fewest payments that clear every debt.</p>
 
       <div className="mt-6">
         <FormError message={error} />
@@ -113,12 +116,12 @@ export default function SettleUp() {
 
       {hasRecorded && (
         <section className="mt-4 rounded-xl bg-slate-900 p-5 text-slate-100">
-          <paymentRow className="flex items-center gap-2 font-medium">
+          <p className="flex items-center gap-2 font-medium">
             <Check className="h-4 w-4 text-emerald-400" /> Settlement recorded
-          </paymentRow>
-          <paymentRow className="mt-1 text-sm text-slate-300">
+          </p>
+          <p className="mt-1 text-sm text-slate-300">
             {settled.filter((settlementRow) => settlementRow.isPaid).length} of {settled.length} payments marked paid.
-          </paymentRow>
+          </p>
           <ul className="mt-4 space-y-2">
             {settled.map((settlementRow) => (
               <PaymentCard key={settlementRow.id} payment={settlementRow} currency={currency} onPay={pay} />
@@ -127,7 +130,7 @@ export default function SettleUp() {
 
           {recorded.data.auditTrail.length > 0 && (
             <div className="mt-4 border-t border-slate-700 pt-3 text-xs text-slate-400">
-              <paymentRow className="font-medium text-slate-300">Audit trail</paymentRow>
+              <p className="font-medium text-slate-300">Audit trail</p>
               <ul className="mt-1 space-y-0.5">
                 {recorded.data.auditTrail.map((entry, index) => (
                   <li key={index}>
@@ -150,7 +153,7 @@ export default function SettleUp() {
           {/* Raw debts */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Who owes whom right now</h2>
-            <paymentRow className="text-xs text-slate-400">Straight from the expenses, before optimisation.</paymentRow>
+            <p className="text-xs text-slate-400">Straight from the expenses, before optimisation.</p>
 
             <ul className="mt-3 space-y-2">
               {(preview?.rawDebts ?? []).length === 0 && !preview && (
@@ -167,7 +170,7 @@ export default function SettleUp() {
           {/* Optimized */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Optimized payments</h2>
-            <paymentRow className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</paymentRow>
+            <p className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</p>
 
             {!preview && (
               <button
@@ -184,12 +187,12 @@ export default function SettleUp() {
               <>
                 <div className="mt-3 flex items-center gap-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">
                   <TrendingDown className="h-5 w-5" />
-                  <paymentRow className="text-sm">
+                  <p className="text-sm">
                     <span className="text-lg font-semibold">
                       {preview.rawDebtCount} → {preview.optimizedCount}
                     </span>{' '}
                     payments · {preview.transfersSaved} transfers saved
-                  </paymentRow>
+                  </p>
                 </div>
 
                 <ul className="mt-3 space-y-2">
@@ -198,16 +201,24 @@ export default function SettleUp() {
                   ))}
                 </ul>
 
-                <button
-                  onClick={confirm}
-                  disabled={saving}
-                  className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {saving ? 'Recording…' : 'Record settlement'}
-                </button>
-                <paymentRow className="mt-2 text-center text-xs text-slate-400">
-                  This writes the payments and closes the group. Balances update as each one is marked paid.
-                </paymentRow>
+                {iAmAdmin ? (
+                  <>
+                    <button
+                      onClick={confirm}
+                      disabled={saving}
+                      className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {saving ? 'Recording…' : 'Record settlement'}
+                    </button>
+                    <p className="mt-2 text-center text-xs text-slate-400">
+                      This writes the payments and closes the group. Balances update as each one is marked paid.
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-4 rounded-lg bg-slate-50 p-3 text-center text-xs text-slate-500">
+                    Only a group admin can record the settlement and close the group. Ask them when everyone agrees.
+                  </p>
+                )}
               </>
             )}
           </section>

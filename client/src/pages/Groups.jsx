@@ -1,15 +1,103 @@
-import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { listGroups } from '../api/groups.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Mail, Clock, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { listGroups, listInvites, acceptInvite, declineInvite } from '../api/groups.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatSigned } from '../utils/format.js';
 import Avatar from '../components/Avatar.jsx';
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
+import { useConfirm } from '../components/ConfirmDialog.jsx';
+
+/** Invites sent to my email, and requests I am waiting on. */
+function Invitations({ invites, onChange }) {
+  const navigate = useNavigate();
+  const confirm = useConfirm();
+
+  const accept = async (invite) => {
+    try {
+      await acceptInvite(invite.groupId);
+      toast.success(`You are in ${invite.title}`);
+      navigate(`/groups/${invite.groupId}`);
+    } catch (err) {
+      toast.error(err.message || 'Could not accept that invitation');
+      onChange();
+    }
+  };
+
+  const decline = async (invite) => {
+    const waiting = invite.status === 'requested';
+    const ok = await confirm({
+      title: waiting ? `Withdraw your request to join ${invite.title}?` : `Decline the invitation to ${invite.title}?`,
+      description: waiting ? 'You can ask again with the share link later.' : 'An admin can invite you again if you change your mind.',
+      confirmLabel: waiting ? 'Withdraw' : 'Decline',
+    });
+    if (!ok) return;
+
+    try {
+      await declineInvite(invite.groupId);
+      toast.success(waiting ? 'Request withdrawn' : 'Invitation declined');
+    } catch (err) {
+      toast.error(err.message || 'Could not do that');
+    }
+    onChange();
+  };
+
+  if (!invites.length) return null;
+
+  return (
+    <section className="mt-6">
+      <h2 className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <Mail className="h-4 w-4 text-slate-400" /> Invitations
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{invites.length}</span>
+      </h2>
+      <ul className="mt-2 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-amber-200">
+        {invites.map((invite) => (
+          <li key={invite.groupId} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800">{invite.title}</p>
+              <p className="text-xs text-slate-400">
+                <span className="capitalize">{invite.type}</span> · {invite.memberCount} members
+                {invite.status === 'pending' && invite.invitedBy && ` · ${invite.invitedBy} invited you`}
+              </p>
+            </div>
+
+            {invite.status === 'requested' ? (
+              <>
+                <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                  <Clock className="h-3 w-3" /> waiting for approval
+                </span>
+                <button onClick={() => decline(invite)} className="text-xs text-slate-400 hover:text-slate-700">
+                  Withdraw
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => accept(invite)}
+                  className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+                >
+                  <Check className="h-3.5 w-3.5" /> Join
+                </button>
+                <button
+                  onClick={() => decline(invite)}
+                  className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs hover:bg-slate-100"
+                >
+                  <X className="h-3.5 w-3.5" /> Decline
+                </button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 const balanceTone = (netAmount) => (netAmount > 0 ? 'text-emerald-600' : netAmount < 0 ? 'text-red-600' : 'text-slate-400');
 
 export default function Groups() {
   const { data, loading, error, reload } = useAsync(listGroups);
+  const invites = useAsync(listInvites);
 
   return (
     <>
@@ -25,6 +113,8 @@ export default function Groups() {
           <Plus className="h-4 w-4" /> New group
         </Link>
       </div>
+
+      {invites.data && <Invitations invites={invites.data.invites} onChange={() => Promise.all([invites.reload(), reload()])} />}
 
       <div className="mt-6">
         {loading && <Loading label="Loading groups…" />}
@@ -65,7 +155,7 @@ export default function Groups() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex -space-x-2">
-                        {groupRow.members.slice(0, 5).map((memberRow) => (
+                        {groupRow.members.filter((memberRow) => memberRow.status !== 'requested').slice(0, 5).map((memberRow) => (
                           <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
                         ))}
                         {groupRow.members.length > 5 && (

@@ -1,10 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2, ShieldCheck, Search, Mail, Check, X, Send, Link2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Trash2, ShieldCheck, ShieldOff, Search, Mail, Check, X, Send, Link2, RefreshCw, AlertCircle, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { inviteMember, removeMember, searchUsers, resendInvite, approveMember, rotateJoinCode } from '../api/groups.js';
+import { inviteMember, removeMember, searchUsers, resendInvite, approveMember, rotateJoinCode, setMemberRole } from '../api/groups.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 import CopyButton from './CopyButton.jsx';
 import { useConfirm } from './ConfirmDialog.jsx';
+
+/** Opens WhatsApp with the message ready — the person picks who to send it to. */
+function WhatsAppButton({ text }) {
+  return (
+    <a
+      href={`https://wa.me/?text=${encodeURIComponent(text)}`}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700 hover:underline"
+    >
+      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+    </a>
+  );
+}
 
 /** Row shown for people who asked to join through the share link. */
 function RequestRow({ request, onApprove, onReject }) {
@@ -33,6 +48,7 @@ function RequestRow({ request, onApprove, onReject }) {
 
 export default function MembersTab({ group, onChange, autoFocus = false }) {
   const confirm = useConfirm();
+  const { user } = useAuth();
   const isAdmin = group.iAmAdmin;
 
   const [query, setQuery] = useState('');
@@ -143,6 +159,17 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
     }
   };
 
+  const changeRole = async (member) => {
+    const role = member.role === 'admin' ? 'member' : 'admin';
+    try {
+      await setMemberRole(group.id, member.id, role);
+      await onChange();
+      toast.success(role === 'admin' ? `${member.name} is now an admin` : `${member.name} is no longer an admin`);
+    } catch (err) {
+      toast.error(err.message || 'Could not change that role');
+    }
+  };
+
   const rotate = async () => {
     const ok = await confirm({
       title: 'Generate a new share link?',
@@ -193,10 +220,24 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
               </span>
             )}
 
+            {isAdmin && memberRow.status === 'active' && (
+              <button
+                onClick={() => changeRole(memberRow)}
+                title={memberRow.role === 'admin' ? 'Remove admin' : 'Make admin'}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
+              >
+                {memberRow.role === 'admin' ? <ShieldOff className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                {memberRow.role === 'admin' ? 'Remove admin' : 'Make admin'}
+              </button>
+            )}
+
             {memberRow.status === 'pending' && (
               <>
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">not joined yet</span>
                 {isAdmin && memberRow.joinLink && <CopyButton value={memberRow.joinLink} label="Copy invite link" />}
+                {isAdmin && memberRow.joinLink && (
+                  <WhatsAppButton text={`${user.name} invited you to "${group.title}" on SmartSplit. Join here: ${memberRow.joinLink}`} />
+                )}
                 {isAdmin && (
                   <button onClick={() => resend(memberRow)} title="Resend" className="text-slate-300 hover:text-slate-700">
                     <Send className="h-4 w-4" />
@@ -219,8 +260,8 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
           {!mailConfigured && (
             <p className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Email sending is not set up on this server, so invites are not delivered automatically. Copy each person's
-              invite link above and send it to them yourself.
+              Email sending is not set up on this server, so invites are not delivered automatically. Send each person
+              their invite link above — copy it, or share it on WhatsApp.
             </p>
           )}
 
@@ -323,6 +364,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
               <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-200">
                 <code className="min-w-0 flex-1 truncate text-xs text-slate-500">{group.shareLink}</code>
                 <CopyButton value={group.shareLink} label="Copy share link" />
+                <WhatsAppButton text={`Join "${group.title}" on SmartSplit: ${group.shareLink}`} />
                 <button onClick={rotate} title="Generate a new link" className="text-slate-300 hover:text-slate-700">
                   <RefreshCw className="h-4 w-4" />
                 </button>

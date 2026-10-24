@@ -98,6 +98,13 @@ describe('POST /groups/:id/settle/preview', () => {
 });
 
 describe('POST /groups/:id/settle', () => {
+  it('refuses a plain member — recording closes the group', async () => {
+    const { bilal, group } = await murreeTrip();
+    const res = await post(bilal, `${api}/groups/${group.id}/settle`);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('NOT_ADMIN');
+  });
+
   it('persists the payments, marks the group SETTLED and writes an audit entry', async () => {
     const { sara, group } = await murreeTrip();
 

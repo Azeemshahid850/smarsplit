@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import AuthLayout from '../components/AuthLayout.jsx';
 import Field from '../components/Field.jsx';
@@ -10,8 +10,11 @@ import FormError from '../components/FormError.jsx';
 export default function Register() {
   const { register, googleLogin } = useAuth();
   const navigate = useNavigate();
+  const { state } = useLocation();
+  // An invite link sends people here; after signing up they go back to claim it.
+  const target = state?.from || '/';
 
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: state?.email || '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +28,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register({ ...form, defaultCurrency: 'PKR' });
-      navigate('/', { replace: true });
+      navigate(target, { replace: true });
     } catch (err) {
       setError(err.message || 'Could not create the account');
     } finally {
@@ -38,12 +41,12 @@ export default function Register() {
       setError('');
       try {
         await googleLogin(idToken);
-        navigate('/', { replace: true });
+        navigate(target, { replace: true });
       } catch (err) {
         setError(err.message || 'Google sign-in failed');
       }
     },
-    [googleLogin, navigate],
+    [googleLogin, navigate, target],
   );
 
   return (
@@ -53,7 +56,7 @@ export default function Register() {
       footer={
         <>
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-emerald-700 hover:underline">
+          <Link to="/login" state={state} className="font-medium text-emerald-700 hover:underline">
             Sign in
           </Link>
         </>

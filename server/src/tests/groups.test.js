@@ -239,3 +239,118 @@ describe('PATCH /groups/:id', () => {
     expect(res.body.data.group.settings).toEqual({ simplifyDebts: true, anyoneCanEdit: true });
   });
 });
+
+describe('invitations inbox', () => {
+  const auth = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
+
+  it('previews an invite link without signing in', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: ['later@demo.pk'] });
+    const link = (await request(app).get(`${api}/groups/${group.id}`).use(auth(owner))).body.data.group.members.find(
+      (memberRow) => memberRow.email === 'later@demo.pk',
+    ).joinLink;
+
+    const res = await request(app).get(`${api}/join/${link.split('/join/')[1]}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ email: 'later@demo.pk', inviterName: owner.name, group: { title: 'Murree Trip' } });
+    expect(JSON.stringify(res.body)).not.toMatch(/inviteToken/);
+  });
+
+  it('lists invites to my email and requests I sent, then accepts one', async () => {
+    const owner = await makeUser();
+    const invited = await makeGroup(owner, { title: 'Invited', memberEmails: ['later@demo.pk'] });
+    const asked = await makeGroup(owner, { title: 'Asked' });
+    const later = await makeUser({ email: 'later@demo.pk' });
+
+    const code = (await request(app).get(`${api}/groups/${asked.id}`).use(auth(owner))).body.data.group.joinCode;
+    await request(app).post(`${api}/join-request/${code}`).use(auth(later));
+
+    const inbox = await request(app).get(`${api}/groups/invites`).use(auth(later));
+    expect(inbox.status).toBe(200);
+    expect(inbox.body.data.invites.map((inviteRow) => [inviteRow.title, inviteRow.status])).toEqual([
+      ['Asked', 'requested'],
+      ['Invited', 'pending'],
+    ]);
+    expect(inbox.body.data.invites[1].invitedBy).toBe(owner.name);
+
+    const accepted = await request(app).post(`${api}/groups/${invited.id}/invites/accept`).use(auth(later));
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.data.group.members.find((memberRow) => memberRow.email === 'later@demo.pk').status).toBe('active');
+
+    const groups = await request(app).get(`${api}/groups`).use(auth(later));
+    expect(groups.body.data.groups.map((groupRow) => groupRow.title)).toEqual(['Invited']);
+
+    // Accepting twice, or with no invite, is a 404 — nothing to claim.
+    const again = await request(app).post(`${api}/groups/${invited.id}/invites/accept`).use(auth(later));
+    expect(again.status).toBe(404);
+    expect(again.body.error.code).toBe('NO_INVITE');
+  });
+
+  it('declines an invite and withdraws a request', async () => {
+    const owner = await makeUser();
+    const invited = await makeGroup(owner, { memberEmails: ['later@demo.pk'] });
+    const asked = await makeGroup(owner, { title: 'Asked' });
+    const later = await makeUser({ email: 'later@demo.pk' });
+    const code = (await request(app).get(`${api}/groups/${asked.id}`).use(auth(owner))).body.data.group.joinCode;
+    await request(app).post(`${api}/join-request/${code}`).use(auth(later));
+
+    expect((await request(app).delete(`${api}/groups/${invited.id}/invites`).use(auth(later))).status).toBe(200);
+    expect((await request(app).delete(`${api}/groups/${asked.id}/invites`).use(auth(later))).status).toBe(200);
+    expect((await request(app).get(`${api}/groups/invites`).use(auth(later))).body.data.invites).toEqual([]);
+
+    const fromOwner = await request(app).get(`${api}/groups/${invited.id}`).use(auth(owner));
+    expect(fromOwner.body.data.group.members).toHaveLength(1);
+  });
+
+  it('lets an admin add someone who was invited before they signed up', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: ['later@demo.pk'] });
+    const later = await makeUser({ email: 'later@demo.pk' });
+
+    const res = await request(app).post(`${api}/groups/${group.id}/members`).use(auth(owner)).send({ userId: later.id });
+    expect(res.status).toBe(201);
+    expect(res.body.data.member).toMatchObject({ email: 'later@demo.pk', status: 'active' });
+    expect(res.body.data.joinLink).toBeNull();
+
+    const members = (await request(app).get(`${api}/groups/${group.id}`).use(auth(owner))).body.data.group.members;
+    expect(members).toHaveLength(2); // the pending row was claimed, not duplicated
+  });
+});
+
+describe('PATCH /groups/:id/members/:memberId — roles', () => {
+  const auth = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
+
+  it('promotes and demotes, but never removes the last admin', async () => {
+    const owner = await makeUser();
+    const friend = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: [friend.email] });
+    const [ownerRow, friendRow] = group.members;
+
+    const promoted = await request(app).patch(`${api}/groups/${group.id}/members/${friendRow.id}`).use(auth(owner)).send({ role: 'admin' });
+    expect(promoted.status).toBe(200);
+    expect(promoted.body.data.member.role).toBe('admin');
+
+    // Two admins now, so the owner may step down.
+    const stepDown = await request(app).patch(`${api}/groups/${group.id}/members/${ownerRow.id}`).use(auth(owner)).send({ role: 'member' });
+    expect(stepDown.status).toBe(200);
+
+    // The owner is a plain member now — admin actions are refused.
+    const refused = await request(app).patch(`${api}/groups/${group.id}/members/${ownerRow.id}`).use(auth(owner)).send({ role: 'admin' });
+    expect(refused.status).toBe(403);
+
+    // Friend is the only admin left and cannot demote themself.
+    const last = await request(app).patch(`${api}/groups/${group.id}/members/${friendRow.id}`).use(auth(friend)).send({ role: 'member' });
+    expect(last.status).toBe(400);
+    expect(last.body.error.code).toBe('LAST_ADMIN');
+  });
+
+  it('rejects a role change for someone who has not joined', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: ['later@demo.pk'] });
+    const pending = group.members.find((memberRow) => memberRow.status === 'pending');
+
+    const res = await request(app).patch(`${api}/groups/${group.id}/members/${pending.id}`).use(auth(owner)).send({ role: 'admin' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('NOT_ACTIVE');
+  });
+});

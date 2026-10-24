@@ -55,6 +55,16 @@ function publicGroup(group, { myBalance = 0, totalSpent = 0 } = {}) {
   };
 }
 
+// Claims a pending/requested row for a signed-in account. One place, so every
+// way in (link, accept, share-code honouring an invite) flips the same fields.
+function activate(memberRow, user) {
+  memberRow.user = user._id;
+  memberRow.name = user.name;
+  memberRow.status = 'active';
+  memberRow.joinedAt = new Date();
+  memberRow.inviteToken = null; // single use
+}
+
 // Builds a member subdoc: an existing account joins active, a stranger stays
 // pending behind an invite link.
 async function buildMember(email, role = 'member') {
@@ -130,17 +140,21 @@ export async function inviteMember(req, res) {
   }
 
   const existing = group.members.find((memberRow) => memberRow.email === email);
+  if (existing?.status === 'active') throw ApiError.conflict('They are already in this group', 'ALREADY_INVITED');
+
+  let added;
   if (existing) {
-    throw ApiError.conflict(
-      existing.status === 'active' ? 'They are already in this group' : 'They have already been invited',
-      'ALREADY_INVITED',
-    );
+    // Invited before they had an account — now that they do, let them straight in.
+    const account = await User.findOne({ email });
+    if (!account) throw ApiError.conflict('They have already been invited', 'ALREADY_INVITED');
+    activate(existing, account);
+    existing.role = role;
+    added = existing;
+  } else {
+    group.members.push(await buildMember(email, role));
+    added = group.members.at(-1);
   }
-
-  group.members.push(await buildMember(email, role));
   await group.save();
-
-  const added = group.members.at(-1);
   const joinLink = added.inviteToken ? `${clientUrl()}/join/${added.inviteToken}` : null;
 
   let emailed = false;
@@ -215,11 +229,7 @@ export async function joinGroup(req, res) {
     throw ApiError.conflict('You are already a member of this group', 'ALREADY_MEMBER');
   }
 
-  invite.user = req.user._id;
-  invite.name = req.user.name;
-  invite.status = 'active';
-  invite.joinedAt = new Date();
-  invite.inviteToken = null; // single use
+  activate(invite, req.user);
   await group.save();
 
   ok(res, { group: publicGroup(group) });
@@ -269,11 +279,7 @@ export async function requestToJoin(req, res) {
 
   if (existing?.status === 'pending') {
     // They were invited by email anyway — honour that and let them straight in.
-    existing.user = req.user._id;
-    existing.name = req.user.name;
-    existing.status = 'active';
-    existing.joinedAt = new Date();
-    existing.inviteToken = null;
+    activate(existing, req.user);
     await group.save();
 
     return ok(res, { status: 'active', groupId: group._id });
@@ -337,6 +343,109 @@ export async function approveMember(req, res) {
     message: `${member.name || member.email} joined ${group.title}`,
     groupId: group._id,
   });
+}
+
+/**
+ * Public look at an invite link, so someone without an account sees what they
+ * were invited to before signing up. The token is the secret, nothing else.
+ */
+export async function previewInvite(req, res) {
+  const group = await Group.findOne({ 'members.inviteToken': req.params.inviteToken }).populate('createdBy', 'name');
+  if (!group) throw ApiError.notFound('Invite link is invalid or already used', 'BAD_INVITE');
+
+  const invite = group.members.find((memberRow) => memberRow.inviteToken === req.params.inviteToken);
+  ok(res, {
+    group: { id: group._id, title: group.title, type: group.type, memberCount: group.members.filter((m) => m.status === 'active').length },
+    email: invite.email,
+    inviterName: group.createdBy?.name ?? null,
+  });
+}
+
+/** Everything waiting on me: invites to my email, and requests I sent. */
+export async function listInvites(req, res) {
+  const groups = await Group.find({
+    members: {
+      $elemMatch: {
+        $or: [
+          { email: req.user.email, status: 'pending' },
+          { user: req.user._id, status: 'requested' },
+        ],
+      },
+    },
+  })
+    .populate('createdBy', 'name')
+    .sort({ createdAt: -1 });
+
+  const invites = groups.map((group) => {
+    const row = group.members.find(
+      (memberRow) =>
+        (memberRow.email === req.user.email && memberRow.status === 'pending') ||
+        (String(memberRow.user) === String(req.user._id) && memberRow.status === 'requested'),
+    );
+    return {
+      groupId: group._id,
+      title: group.title,
+      type: group.type,
+      memberCount: group.members.filter((memberRow) => memberRow.status === 'active').length,
+      invitedBy: group.createdBy?.name ?? null,
+      status: row.status,
+      createdAt: group.createdAt,
+    };
+  });
+
+  ok(res, { invites });
+}
+
+/** Accepts an invite that was sent to my email address. */
+export async function acceptInvite(req, res) {
+  const group = await Group.findById(req.params.id);
+  const invite = group?.members.find((memberRow) => memberRow.email === req.user.email && memberRow.status === 'pending');
+  if (!invite) throw ApiError.notFound('No invitation waiting for you here', 'NO_INVITE');
+
+  activate(invite, req.user);
+  await group.save();
+  ok(res, { group: publicGroup(group) });
+
+  await notify({
+    recipients: activeMemberIds(group),
+    exclude: req.user._id,
+    type: 'MEMBER_JOINED',
+    message: `${req.user.name} joined ${group.title}`,
+    groupId: group._id,
+  });
+}
+
+/** Declines an invite, or withdraws a request I sent. */
+export async function declineInvite(req, res) {
+  const group = await Group.findById(req.params.id);
+  const row = group?.members.find(
+    (memberRow) =>
+      (memberRow.email === req.user.email && memberRow.status === 'pending') ||
+      (String(memberRow.user) === String(req.user._id) && memberRow.status === 'requested'),
+  );
+  if (!row) throw ApiError.notFound('No invitation waiting for you here', 'NO_INVITE');
+
+  row.deleteOne();
+  await group.save();
+  ok(res, { declined: true });
+}
+
+/** Admin promotes or demotes a member. The group always keeps one admin. */
+export async function setMemberRole(req, res) {
+  const group = req.group;
+  const member = group.members.id(req.params.memberId);
+  if (!member) throw ApiError.notFound('Member not found', 'MEMBER_NOT_FOUND');
+  if (member.status !== 'active') throw ApiError.badRequest('They have not joined yet', 'NOT_ACTIVE');
+
+  const activeAdmins = group.members.filter((memberRow) => memberRow.role === 'admin' && memberRow.status === 'active');
+  if (member.role === 'admin' && req.body.role === 'member' && activeAdmins.length === 1) {
+    throw ApiError.badRequest('A group must keep at least one admin', 'LAST_ADMIN');
+  }
+
+  member.role = req.body.role;
+  await group.save();
+  await group.populate('members.user', 'name avatarUrl');
+  ok(res, { member: publicMember(group.members.id(req.params.memberId)) });
 }
 
 /** Rotates the share code, which kills every copy of the old link. */

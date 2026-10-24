@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Users, ArrowRight, TrendingDown, Sparkles, HandCoins } from 'lucide-react';
-import { listGroups } from '../api/groups.js';
+import { Users, ArrowRight, TrendingDown, Sparkles, HandCoins, Mail } from 'lucide-react';
+import { listGroups, listInvites } from '../api/groups.js';
 import { getSummary, listTransactions } from '../api/personal.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAsync } from '../hooks/useAsync.js';
@@ -11,6 +11,7 @@ import StatCard from '../components/StatCard.jsx';
 export default function Home() {
   const { user } = useAuth();
   const groups = useAsync(listGroups);
+  const invites = useAsync(listInvites);
   const summary = useAsync(() => getSummary());
   const recent = useAsync(() => listTransactions({ limit: 5 }));
 
@@ -20,6 +21,21 @@ export default function Home() {
     <>
       <h1 className="text-2xl font-semibold">Hi, {user.name.split(' ')[0]}</h1>
       <p className="text-sm text-slate-500">Here is where your money stands today.</p>
+
+      {invites.data?.invites.length > 0 && (
+        <Link
+          to="/groups"
+          className="mt-4 flex items-center gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100"
+        >
+          <Mail className="h-4 w-4 shrink-0" />
+          <span className="flex-1">
+            {invites.data.invites.length === 1
+              ? `You have an invitation to ${invites.data.invites[0].title}`
+              : `You have ${invites.data.invites.length} group invitations waiting`}
+          </span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <StatCard

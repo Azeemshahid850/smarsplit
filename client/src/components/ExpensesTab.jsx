@@ -61,7 +61,7 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
         >
           <option value="">Anyone paid</option>
-          {group.members.filter((memberRow) => memberRow.userId).map((memberRow) => (
+          {group.members.filter((memberRow) => memberRow.status === 'active').map((memberRow) => (
             <option key={memberRow.id} value={memberRow.userId}>
               {memberRow.name}
             </option>
@@ -115,10 +115,10 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                   {data.expenses.map((expenseRow) => (
                     <tr key={expenseRow.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
-                        <payerEntry className="font-medium text-slate-800">{expenseRow.title}</payerEntry>
-                        <payerEntry className="text-xs text-slate-400">
+                        <p className="font-medium text-slate-800">{expenseRow.title}</p>
+                        <p className="text-xs text-slate-400">
                           {expenseRow.category} · {formatDate(expenseRow.date)}
-                        </payerEntry>
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

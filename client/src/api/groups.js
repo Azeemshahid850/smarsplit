@@ -16,3 +16,9 @@ export const approveMember = (groupId, memberId) => api.patch(`/groups/${groupId
 export const rotateJoinCode = (groupId) => api.post(`/groups/${groupId}/join-code/rotate`).then(data);
 export const previewJoinCode = (code) => api.get(`/join-request/${code}`).then(data);
 export const requestToJoin = (code) => api.post(`/join-request/${code}`).then(data);
+
+export const previewInvite = (inviteToken) => api.get(`/join/${inviteToken}`).then(data);
+export const listInvites = () => api.get('/groups/invites').then(data);
+export const acceptInvite = (groupId) => api.post(`/groups/${groupId}/invites/accept`).then(data);
+export const declineInvite = (groupId) => api.delete(`/groups/${groupId}/invites`).then(data);
+export const setMemberRole = (groupId, memberId, role) => api.patch(`/groups/${groupId}/members/${memberId}`, { role }).then(data);

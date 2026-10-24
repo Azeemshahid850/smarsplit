@@ -14,6 +14,7 @@ import {
   joinParamsSchema,
   joinCodeParamsSchema,
   memberIdParamsSchema,
+  memberRoleSchema,
 } from './groups.schemas.js';
 
 const router = Router();
@@ -22,6 +23,11 @@ const router = Router();
 // mounted at /api/v1, so a blanket guard would answer 401 for unknown paths.
 router.post('/groups', requireAuth, validate(createGroupSchema), asyncHandler(ctrl.createGroup));
 router.get('/groups', requireAuth, asyncHandler(ctrl.listGroups));
+
+// Declared before /groups/:id so "invites" is never read as a group id.
+router.get('/groups/invites', requireAuth, asyncHandler(ctrl.listInvites));
+router.post('/groups/:id/invites/accept', requireAuth, validate(groupParamsSchema, 'params'), asyncHandler(ctrl.acceptInvite));
+router.delete('/groups/:id/invites', requireAuth, validate(groupParamsSchema, 'params'), asyncHandler(ctrl.declineInvite));
 
 router.get(
   '/groups/:id',
@@ -51,6 +57,16 @@ router.post(
   asyncHandler(ctrl.inviteMember),
 );
 
+router.patch(
+  '/groups/:id/members/:memberId',
+  requireAuth,
+  validate(memberIdParamsSchema, 'params'),
+  validate(memberRoleSchema),
+  asyncHandler(requireMember),
+  requireAdmin,
+  asyncHandler(ctrl.setMemberRole),
+);
+
 router.delete(
   '/groups/:id/members/:userId',
   requireAuth,
@@ -60,6 +76,8 @@ router.delete(
   asyncHandler(ctrl.removeMember),
 );
 
+// No auth: whoever holds the link can see what it opens before signing up.
+router.get('/join/:inviteToken', validate(joinParamsSchema, 'params'), asyncHandler(ctrl.previewInvite));
 router.post('/join/:inviteToken', requireAuth, validate(joinParamsSchema, 'params'), asyncHandler(ctrl.joinGroup));
 
 // Share-code flow: anyone with the code can ask, an admin decides.

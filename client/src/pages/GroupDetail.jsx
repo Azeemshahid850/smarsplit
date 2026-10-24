@@ -50,7 +50,7 @@ export default function GroupDetail() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex -space-x-2">
-            {group.members.slice(0, 5).map((memberRow) => (
+            {group.members.filter((memberRow) => memberRow.status !== 'requested').slice(0, 5).map((memberRow) => (
               <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
             ))}
           </div>
@@ -85,7 +85,7 @@ export default function GroupDetail() {
             }`}
           >
             {tabName}
-            {tabName === 'Members' && group.requestCount > 0 && (
+            {tabName === 'Members' && view.iAmAdmin && group.requestCount > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-800">
                 {group.requestCount}
               </span>

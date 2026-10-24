@@ -433,7 +433,7 @@ export default function AddExpense() {
 
         <Field label="Notes" name="notes" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional" />
 
-        {problem && <payerEntry className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{problem}</payerEntry>}
+        {problem && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{problem}</p>}
 
         <SubmitButton loading={saving} disabled={Boolean(problem)}>
           {editing ? 'Save changes' : 'Add expense'}

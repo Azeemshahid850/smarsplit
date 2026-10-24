@@ -45,7 +45,7 @@ Generate each secret with `openssl rand -hex 32` — never reuse one.
 | `CLIENT_URL` | your Vercel URL, e.g. `https://smartsplit.vercel.app` — **no trailing slash** |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | from Google Cloud Console (optional) |
 | `GOOGLE_REDIRECT_URI` | `https://<vercel-url>/auth/google/callback` |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | password-reset email (optional — without it the reset link is logged to the server console) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | invite, join-request and password-reset email (optional — without it nothing is emailed; admins share invite links by copy or WhatsApp, and reset links are logged to the server console) |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | receipt image storage (optional — without it images are inlined as data URLs) |
 | `VISION_API_KEY` | Anthropic API key for receipt OCR (optional — without it Tesseract runs offline instead) |
 
@@ -128,7 +128,12 @@ Run this list against the deployed site, in order. Every step should pass before
 - [ ] Add an expense with two payers → "covered Rs X of Y" turns green only when they match
 - [ ] Try to save with an amount mismatch → save stays disabled with a readable message
 - [ ] Balances tab → footnote reads "Balances net to zero"
-- [ ] Members tab → invite an unknown email → a join link appears and copies
+- [ ] Members tab → invite an unknown email → a join link appears, copies, and the WhatsApp button opens wa.me with it
+- [ ] Open that join link in a private window → shows "X invited you to …" with Create account / Sign in
+- [ ] Create the account from there → lands inside the group (no detour through the dashboard)
+- [ ] Invite another email, then register that email normally → Dashboard shows the invitation banner, Groups page shows Join / Decline
+- [ ] Share link → "Ask to join" as another user → their Groups page shows "waiting for approval"; admin approves from the Members tab
+- [ ] Members tab → Make admin / Remove admin on a member; the last admin cannot be demoted
 
 ### Settlement (the viva demo)
 - [ ] Settle up → "Simplify with Min-Cash-Flow"

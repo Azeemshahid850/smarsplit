@@ -18,9 +18,9 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:gap-6">
           <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900 hover:opacity-80">
-            <Wallet className="h-5 w-5 text-emerald-600" /> SmartSplit
+            <Wallet className="h-5 w-5 text-emerald-600" /> <span className="hidden sm:inline">SmartSplit</span>
           </Link>
 
           <nav className="flex flex-1 gap-1">
@@ -30,7 +30,7 @@ export default function AppLayout() {
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition ${
+                  `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition sm:px-3 ${
                     isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
                   }`
                 }

@@ -21,7 +21,7 @@ export default function CategoryBars({ categories, currency = 'PKR' }) {
               <span className="font-medium text-slate-700">{categoryRow.category}</span>
               <span className="text-slate-500">
                 {formatMoney(categoryRow.total, currency)}
-                {categoryRow.cap != null && <span className="text-slate-400"> / {formatMoney(c.cap, currency)}</span>}
+                {categoryRow.cap != null && <span className="text-slate-400"> / {formatMoney(categoryRow.cap, currency)}</span>}
               </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">

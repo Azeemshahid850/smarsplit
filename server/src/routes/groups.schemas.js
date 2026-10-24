@@ -44,3 +44,4 @@ export const memberParamsSchema = z.object({ id: objectId, userId: objectId });
 export const joinParamsSchema = z.object({ inviteToken: z.string().min(20, 'Invalid invite link') });
 export const joinCodeParamsSchema = z.object({ joinCode: z.string().min(6).max(12).trim() });
 export const memberIdParamsSchema = z.object({ id: objectId, memberId: objectId });
+export const memberRoleSchema = z.object({ role: z.enum(['admin', 'member']) });
