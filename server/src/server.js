@@ -12,6 +12,14 @@ try {
   await connectDB(process.env.MONGO_URI);
   app.listen(PORT, () => console.log(`API on http://localhost:${PORT}/api/v1`));
 
+  // Render's free tier sleeps after 15 idle minutes and takes ~30s to wake, so
+  // the first visitor sees a dead site. Render sets RENDER_EXTERNAL_URL itself;
+  // hitting our own public URL counts as traffic and keeps the instance up.
+  // ponytail: self-ping; move to an external uptime monitor if the tier changes.
+  if (process.env.RENDER_EXTERNAL_URL) {
+    setInterval(() => fetch(`${process.env.RENDER_EXTERNAL_URL}/api/v1/health`).catch(() => {}), 10 * 60 * 1000);
+  }
+
   // Materialise due recurring transactions every day at 02:00.
   cron.schedule('0 2 * * *', async () => {
     const { created } = await runDueRecurring();

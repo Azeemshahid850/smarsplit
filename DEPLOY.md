@@ -164,7 +164,12 @@ Run this list against the deployed site, in order. Every step should pass before
 ## Notes and gotchas
 
 - **Render free tier sleeps** after ~15 minutes idle; the first request afterwards takes
-  ~30 seconds. Open the site a minute before demoing.
+  ~30 seconds. The server pings its own `/api/v1/health` every 10 minutes when Render's
+  `RENDER_EXTERNAL_URL` is present, which keeps it awake. Still open the site a minute
+  before demoing in case it was redeployed.
+- **Rate limits are per IP.** A classroom or office shares one, so the auth limits are sized
+  for a room (50 sign-ups, 60 logins, 300 refreshes per 15 min). If a demo audience still
+  sees "Too many attempts", raise them in `server/src/routes/auth.js`.
 - **The recurring-transactions cron** (`0 2 * * *`) only fires while the service is awake. On
   the free tier, treat it as best-effort.
 - **Never commit `.env`.** It is in `.gitignore`; keep it that way.

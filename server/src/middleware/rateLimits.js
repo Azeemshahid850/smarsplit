@@ -10,8 +10,11 @@ const base = (windowMinutes, max, code, message) =>
     message: { success: false, error: { code, message } },
   });
 
-/** Blanket ceiling on the whole API — generous enough that real use never sees it. */
-export const globalLimiter = base(15, 600, 'RATE_LIMITED', 'Too many requests. Slow down and try again shortly.');
+/**
+ * Blanket ceiling on the whole API. Per IP, and a whole classroom can sit behind
+ * one IP: 30 people × a few page loads × ~5 calls each passes 600 in minutes.
+ */
+export const globalLimiter = base(15, 3000, 'RATE_LIMITED', 'Too many requests. Slow down and try again shortly.');
 
 /**
  * Receipt scanning calls a paid vision API, so it gets its own much tighter
