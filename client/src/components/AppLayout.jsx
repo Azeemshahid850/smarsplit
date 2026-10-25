@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import ErrorBoundary from './ErrorBoundary.jsx';
 import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3, ShieldCheck } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -16,6 +17,7 @@ const adminNav = { to: '/admin', label: 'Admin', icon: ShieldCheck };
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { pathname } = useLocation();
 
   return (
     <div className="min-h-screen">
@@ -56,7 +58,9 @@ export default function AppLayout() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <Outlet />
+        <ErrorBoundary resetKey={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ConfirmProvider } from './components/ConfirmDialog.jsx';
 import { CategoriesProvider } from './context/CategoriesContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
@@ -30,6 +31,7 @@ import SettleUp from './pages/SettleUp.jsx';
 export default function App() {
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <AuthProvider>
         <ConfirmProvider>
           <Toaster position="bottom-right" richColors closeButton />
@@ -76,6 +78,7 @@ export default function App() {
           </Routes>
         </ConfirmProvider>
       </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
