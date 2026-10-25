@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3 } from 'lucide-react';
+import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3, ShieldCheck } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
@@ -11,6 +11,8 @@ const nav = [
   { to: '/scan', label: 'Scan', icon: ScanLine },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
 ];
+// Only people listed in ADMIN_EMAILS on the server get this one.
+const adminNav = { to: '/admin', label: 'Admin', icon: ShieldCheck };
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
@@ -24,7 +26,7 @@ export default function AppLayout() {
           </Link>
 
           <nav className="flex flex-1 gap-1">
-            {nav.map(({ to, label, icon: Icon, end }) => (
+            {[...nav, ...(user.isAdmin ? [adminNav] : [])].map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}

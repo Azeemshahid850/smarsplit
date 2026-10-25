@@ -10,6 +10,8 @@ const memberSchema = new mongoose.Schema(
     // requested — asked to join through the share code, waiting on an admin
     status: { type: String, enum: ['active', 'pending', 'requested'], default: 'pending' },
     inviteToken: { type: String, default: null },
+    // When the invite email last went out — resend is throttled against this.
+    inviteSentAt: { type: Date, default: null },
     joinedAt: { type: Date, default: null },
   },
   { _id: true },

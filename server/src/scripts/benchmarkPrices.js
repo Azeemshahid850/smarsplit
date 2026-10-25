@@ -104,10 +104,23 @@ export const BENCHMARK_PRICES = [
   ['Air Freshener 300ml', ['air freshener', 'room spray'], 300, 'ml', [['daraz', 450], ['metro', 490]]],
 ];
 
+// Local supermarkets, priced a little above the cheapest online offer — shelf
+// prices usually are. Indicative demo data: a real figure for a store replaces
+// its row through the Price book. Factors stay above 1 so the online platform
+// remains the cheapest and the matcher's expectations hold.
+const EXTRA_STORES = [
+  ['alfatah', 1.04],
+  ['carrefour', 1.02],
+  ['naheed', 1.06],
+  ['chaseup', 1.03],
+];
+
 /** Expands the compact table above into one row per platform. */
 export function benchmarkRows() {
-  return BENCHMARK_PRICES.flatMap(([canonicalName, aliases, size, unit, offers]) =>
-    offers.map(([platform, price]) => ({
+  return BENCHMARK_PRICES.flatMap(([canonicalName, aliases, size, unit, offers]) => {
+    const floor = Math.min(...offers.map(([, price]) => price));
+    const all = [...offers, ...EXTRA_STORES.map(([platform, factor]) => [platform, Math.round(floor * factor)])];
+    return all.map(([platform, price]) => ({
       canonicalName,
       aliases,
       size,
@@ -116,6 +129,6 @@ export function benchmarkRows() {
       platform,
       url: `https://example.com/${platform}/${canonicalName.toLowerCase().replace(/\s+/g, '-')}`,
       updatedAt: new Date(),
-    })),
-  );
+    }));
+  });
 }

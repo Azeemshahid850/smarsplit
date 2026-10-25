@@ -17,6 +17,8 @@ import Groups from './pages/Groups.jsx';
 import Personal from './pages/Personal.jsx';
 import Scan from './pages/Scan.jsx';
 import Profile from './pages/Profile.jsx';
+import PriceBook from './pages/PriceBook.jsx';
+import Admin from './pages/Admin.jsx';
 
 // Recharts is heavy — only the Reports route pays for it.
 const Reports = lazy(() => import('./pages/Reports.jsx'));
@@ -51,6 +53,8 @@ export default function App() {
                 <Route path="/groups" element={<Groups />} />
                 <Route path="/personal" element={<Personal />} />
                 <Route path="/scan" element={<Scan />} />
+                <Route path="/prices" element={<PriceBook />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route
                   path="/reports"

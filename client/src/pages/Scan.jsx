@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Camera, Loader2, ScanLine, AlertCircle } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Camera, Loader2, ScanLine, AlertCircle, Tag } from 'lucide-react';
 import { scanReceipt, getReceipt, listReceipts } from '../api/receipts.js';
 import { listGroups } from '../api/groups.js';
 import { useAsync } from '../hooks/useAsync.js';
@@ -77,10 +77,20 @@ export default function Scan() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Scan a receipt</h1>
-      <p className="text-sm text-slate-500">
-        The AI reads the lines; you check them before anything is saved.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Scan a receipt</h1>
+          <p className="text-sm text-slate-500">
+            The AI reads the lines; you check them before anything is saved.
+          </p>
+        </div>
+        <Link
+          to="/prices"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+        >
+          <Tag className="h-4 w-4 text-slate-400" /> Price book
+        </Link>
+      </div>
 
       {error && (
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">

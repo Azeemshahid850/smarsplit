@@ -33,10 +33,32 @@ describe('invite by email', () => {
     const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
       (memberRow) => memberRow.email === 'newbie@demo.pk',
     );
+    await Group.updateOne({ _id: group.id, 'members._id': member.id }, { $set: { 'members.$.inviteSentAt': null } });
 
     const res = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
     expect(res.status).toBe(200);
     expect(res.body.data.joinLink).toBe(member.joinLink);
+  });
+
+  it('throttles a second resend inside a minute — a double-click sends once', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: ['newbie@demo.pk'] });
+    const member = (await get(owner, `${api}/groups/${group.id}`)).body.data.group.members.find(
+      (memberRow) => memberRow.email === 'newbie@demo.pk',
+    );
+    // Creating the group already sent the first invite.
+    expect(member.inviteSentAt).toBeTruthy();
+
+    const first = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
+    expect(first.status).toBe(429);
+    expect(first.body.error.code).toBe('RESEND_TOO_SOON');
+
+    // Once the cooldown has passed, it goes out again and the clock resets.
+    await Group.updateOne({ _id: group.id, 'members._id': member.id }, { $set: { 'members.$.inviteSentAt': new Date(Date.now() - 61_000) } });
+    const second = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
+    expect(second.status).toBe(200);
+    const third = await post(owner, `${api}/groups/${group.id}/members/${member.id}/resend`);
+    expect(third.status).toBe(429);
   });
 
   it('refuses to resend for someone who already joined', async () => {

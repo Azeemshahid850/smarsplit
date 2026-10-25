@@ -1,4 +1,16 @@
 const REQUIRED = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+
+/**
+ * App-level super admins: ADMIN_EMAILS, comma-separated. They see the Admin
+ * page and may change the shared price book. Unset means nobody is.
+ */
+export const isSuperAdmin = (user) =>
+  Boolean(user?.email) &&
+  (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(user.email);
 const PLACEHOLDERS = ['replace_with_long_random_string', 'replace_with_different_long_random_string'];
 
 /**

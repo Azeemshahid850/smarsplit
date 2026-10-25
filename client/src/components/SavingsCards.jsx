@@ -1,7 +1,7 @@
 import { Sparkles, ExternalLink } from 'lucide-react';
 import { formatMoney } from '../utils/format.js';
 
-const PLATFORM = { daraz: 'Daraz', metro: 'Metro', imtiaz: 'Imtiaz' };
+import { storeLabel } from '../pages/PriceBook.jsx';
 
 /**
  * "Cooking oil 3L — Rs 1,745 on Daraz, you paid Rs 1,890".
@@ -46,7 +46,7 @@ export default function SavingsCards({ lineItems = [], alternatives = [], totalS
             <span className="min-w-0">
               <span className="block truncate font-medium text-slate-800">{card.name}</span>
               <span className="text-xs text-slate-500">
-                {formatMoney(card.onlinePrice)} on {PLATFORM[card.source] ?? card.source} · you paid {formatMoney(card.paid)}
+                {formatMoney(card.onlinePrice)} on {storeLabel(card.source)} · you paid {formatMoney(card.paid)}
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-2">

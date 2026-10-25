@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { isSuperAdmin } from '../config/env.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -38,6 +39,7 @@ userSchema.methods.toPublic = function toPublic() {
     avatarUrl: this.avatarUrl,
     defaultCurrency: this.defaultCurrency,
     hasPassword: Boolean(this.passwordHash),
+    isAdmin: isSuperAdmin(this),
     notifications: this.notifications,
     createdAt: this.createdAt,
   };

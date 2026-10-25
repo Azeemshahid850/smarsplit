@@ -10,13 +10,14 @@ const benchmarkPriceSchema = new mongoose.Schema(
     size: { type: Number, default: null },
     unit: { type: String, default: null },
     price: { type: Number, required: true },
-    platform: { type: String, enum: ['daraz', 'metro', 'imtiaz'], required: true },
+    // A store or platform name, free text so new ones can be added from the app.
+    platform: { type: String, required: true, lowercase: true, trim: true },
     url: { type: String, default: null },
     updatedAt: { type: Date, default: Date.now },
   },
   { collection: 'benchmark_prices' },
 );
 
-benchmarkPriceSchema.index({ canonicalName: 1, platform: 1 });
+benchmarkPriceSchema.index({ canonicalName: 1, platform: 1 }, { unique: true });
 
 export const BenchmarkPrice = mongoose.model('BenchmarkPrice', benchmarkPriceSchema);

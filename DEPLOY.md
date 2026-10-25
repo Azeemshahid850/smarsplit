@@ -50,6 +50,7 @@ What the Blueprint sets up:
 | Key | Without it |
 |---|---|
 | `VISION_API_KEY` | receipt OCR runs on Tesseract instead of the vision model |
+| `ADMIN_EMAILS` | comma-separated emails of app admins — they get the Admin page and may add stores and prices on the Price book page (optional — unset means nobody is an admin and the book is read-only) |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | receipt images are stored inline as data URLs |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | nothing is emailed; invite links are shared by copy or WhatsApp, reset links go to the server log |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | no Google sign-in button (see step 5) |
@@ -136,6 +137,10 @@ Run this list against the deployed site, in order. Every step should pass before
 - [ ] Add a transaction with JazzCash → appears instantly
 - [ ] Set a Food budget below current spend → the bar turns red
 - [ ] Scan a receipt photo → processing state → verification modal opens
+- [ ] Scan → Price book → shows ~100 products with Daraz / Metro / Imtiaz prices, cheapest highlighted
+- [ ] As an `ADMIN_EMAILS` account: add a price with a brand-new store name → the store chip appears
+- [ ] Download Excel → edit a price, add a row with a new store → Upload → summary shows added / updated / skipped
+- [ ] As any other account: Price book is read-only (no form, no upload, no remove buttons)
 - [ ] Edit a line → the running total updates and the line is marked corrected
 - [ ] Save to Personal → the transaction appears on the Personal page
 - [ ] Reports → donut, six-month lines and budget bars all render

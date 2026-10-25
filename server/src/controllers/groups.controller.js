@@ -12,6 +12,8 @@ const newInviteToken = () => crypto.randomBytes(24).toString('hex');
 // Short and human-shareable — it only gets you a request, never membership.
 const newJoinCode = () => crypto.randomBytes(4).toString('hex').toUpperCase();
 const clientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
+// One invite email per minute per person — a double-click must not send twice.
+const RESEND_COOLDOWN_MS = 60 * 1000;
 
 // Shapes a member for the client: resolved user details, never internal tokens.
 function publicMember(memberRow) {
@@ -25,6 +27,7 @@ function publicMember(memberRow) {
     role: memberRow.role,
     status: memberRow.status,
     joinedAt: memberRow.joinedAt,
+    inviteSentAt: memberRow.inviteSentAt,
     // Pending invites keep their link retrievable, so it can be re-copied at any
     // time rather than only in the moment it was created.
     joinLink: memberRow.inviteToken ? `${clientUrl()}/join/${memberRow.inviteToken}` : null,
@@ -93,6 +96,24 @@ export async function createGroup(req, res) {
   );
 
   const group = await Group.create({ ...rest, createdBy: req.user._id, joinCode: newJoinCode(), members: [owner, ...invited] });
+
+  // Strangers get their invite email now, not only when re-invited from the Members tab.
+  const pending = group.members.filter((memberRow) => memberRow.status === 'pending');
+  await Promise.all(
+    pending.map((memberRow) =>
+      sendGroupInviteMail(memberRow.email, {
+        groupName: group.title,
+        inviterName: req.user.name,
+        joinUrl: `${clientUrl()}/join/${memberRow.inviteToken}`,
+      })
+        .then(() => {
+          memberRow.inviteSentAt = new Date();
+        })
+        .catch(() => {}),
+    ),
+  );
+  if (pending.length) await group.save();
+
   ok(res, { group: publicGroup(group) }, 201);
 }
 
@@ -166,6 +187,8 @@ export async function inviteMember(req, res) {
       joinUrl: joinLink,
     }).catch(() => ({ delivered: false }));
     emailed = result.delivered;
+    added.inviteSentAt = new Date();
+    await group.save();
   }
 
   ok(res, { member: publicMember(added), joinLink, emailed, mailConfigured: isMailConfigured() }, 201);
@@ -187,10 +210,16 @@ export async function resendInvite(req, res) {
   if (!member) throw ApiError.notFound('Member not found', 'MEMBER_NOT_FOUND');
   if (member.status !== 'pending') throw ApiError.badRequest('That invite has already been used', 'NOT_PENDING');
 
-  if (!member.inviteToken) {
-    member.inviteToken = newInviteToken();
-    await group.save();
+  const sinceLast = member.inviteSentAt ? Date.now() - member.inviteSentAt.getTime() : Infinity;
+  if (sinceLast < RESEND_COOLDOWN_MS) {
+    throw new ApiError(
+      429,
+      'RESEND_TOO_SOON',
+      `That invite went out ${Math.max(1, Math.round(sinceLast / 1000))}s ago — wait a minute before sending it again`,
+    );
   }
+
+  if (!member.inviteToken) member.inviteToken = newInviteToken();
 
   const joinLink = `${clientUrl()}/join/${member.inviteToken}`;
   const result = await sendGroupInviteMail(member.email, {
@@ -199,7 +228,10 @@ export async function resendInvite(req, res) {
     joinUrl: joinLink,
   }).catch(() => ({ delivered: false }));
 
-  ok(res, { joinLink, emailed: result.delivered, mailConfigured: isMailConfigured() });
+  member.inviteSentAt = new Date();
+  await group.save();
+
+  ok(res, { joinLink, emailed: result.delivered, mailConfigured: isMailConfigured(), inviteSentAt: member.inviteSentAt });
 }
 
 export async function removeMember(req, res) {

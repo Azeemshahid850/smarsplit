@@ -58,6 +58,13 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
   const [role, setRole] = useState('member');
   const [busy, setBusy] = useState(false);
   const [mailConfigured, setMailConfigured] = useState(true);
+  // Member ids with a resend in flight — the button goes dead until the server answers.
+  const [resending, setResending] = useState({});
+
+  // Server stamps inviteSentAt; inside a minute of it the button stays off, so a
+  // double-click (or an impatient admin) cannot send the same email twice.
+  const RESEND_COOLDOWN_MS = 60 * 1000;
+  const recentlySent = (member) => Boolean(member.inviteSentAt) && Date.now() - new Date(member.inviteSentAt).getTime() < RESEND_COOLDOWN_MS;
   const emailInput = useRef(null);
 
   useEffect(() => {
@@ -150,12 +157,18 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
   };
 
   const resend = async (member) => {
+    if (resending[member.id] || recentlySent(member)) return;
+    setResending((current) => ({ ...current, [member.id]: true }));
     try {
       const res = await resendInvite(group.id, member.id);
       setMailConfigured(res.mailConfigured !== false);
       toast.success(res.emailed ? `Invite re-sent to ${member.email}` : 'Invite refreshed — copy the link and send it');
+      await onChange(); // picks up inviteSentAt, which keeps the button off for a minute
     } catch (err) {
       toast.error(err.message || 'Could not resend that invite');
+      if (err.code === 'RESEND_TOO_SOON') await onChange();
+    } finally {
+      setResending((current) => ({ ...current, [member.id]: false }));
     }
   };
 
@@ -238,11 +251,21 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
                 {isAdmin && memberRow.joinLink && (
                   <WhatsAppButton text={`${user.name} invited you to "${group.title}" on SmartSplit. Join here: ${memberRow.joinLink}`} />
                 )}
-                {isAdmin && (
-                  <button onClick={() => resend(memberRow)} title="Resend" className="text-slate-300 hover:text-slate-700">
-                    <Send className="h-4 w-4" />
-                  </button>
-                )}
+                {isAdmin &&
+                  (recentlySent(memberRow) ? (
+                    <span title="Invite sent — you can resend in a minute" className="flex items-center gap-1 text-xs text-emerald-700">
+                      <Check className="h-3.5 w-3.5" /> sent
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => resend(memberRow)}
+                      disabled={Boolean(resending[memberRow.id])}
+                      title="Resend invite email"
+                      className="text-slate-300 hover:text-slate-700 disabled:cursor-wait disabled:opacity-50"
+                    >
+                      <Send className="h-4 w-4" />
+                    </button>
+                  ))}
               </>
             )}
 

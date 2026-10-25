@@ -5,7 +5,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/User.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
-import { sendPasswordResetMail } from '../services/mailer.js';
+import { sendPasswordResetMail, isMailConfigured } from '../services/mailer.js';
 import {
   REFRESH_COOKIE,
   signAccessToken,
@@ -175,7 +175,8 @@ export async function forgotPassword(req, res) {
     await sendPasswordResetMail(user.email, `${base}/reset-password/${raw}`);
   }
 
-  ok(res, { message: 'If that email is registered, a reset link is on its way.' });
+  // Same message either way (no enumeration); the flag lets the UI say when no mail can go out at all.
+  ok(res, { message: 'If that email is registered, a reset link is on its way.', mailConfigured: isMailConfigured() });
 }
 
 export async function resetPassword(req, res) {
