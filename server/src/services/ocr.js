@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
@@ -26,7 +28,7 @@ Rules:
 - If the quantity is not printed, use 1.
 - If a field is genuinely not on the receipt, use null rather than guessing.`;
 
-const VISION_MODEL = 'claude-opus-5';
+const VISION_MODEL = 'claude-opus-5-5';
 
 /** Vision LLM extraction. Throws so the caller can fall back to Tesseract. */
 export async function extractWithVision(imageBase64, mediaType = 'image/jpeg') {
@@ -55,10 +57,28 @@ export async function extractWithVision(imageBase64, mediaType = 'image/jpeg') {
 const LINE = /^(?<qty>\d+)?\s*[xX*]?\s*(?<name>[A-Za-z][A-Za-z0-9 .'&/-]{2,40}?)\s+(?:rs\.?\s*)?(?<price>[\d,]+(?:\.\d{1,2})?)$/i;
 const SKIP = /(sub\s*total|total|tax|gst|discount|change|cash|card|balance|thank)/i;
 
+// English language data ships as an npm package, so OCR never fetches from a
+// CDN at runtime — the default does, which is an 11 MB download on every cold
+// start and a hard crash of the process when the download fails.
+const TESSDATA_DIR = path.join(path.dirname(createRequire(import.meta.url).resolve('@tesseract.js-data/eng/package.json')), '4.0.0');
+
 /** Offline fallback: Tesseract text plus a line-shape regex. */
 export async function extractWithTesseract(imageBuffer) {
-  const { recognize } = await import('tesseract.js');
-  const { data } = await recognize(imageBuffer, 'eng');
+  const { createWorker } = await import('tesseract.js');
+  // errorHandler matters: without it the worker rethrows on process.nextTick
+  // and takes the API down with it instead of failing this one scan.
+  const worker = await createWorker('eng', 1, {
+    langPath: TESSDATA_DIR,
+    cacheMethod: 'none',
+    errorHandler: (err) => console.error('tesseract worker:', err?.message ?? err),
+  });
+
+  let data;
+  try {
+    ({ data } = await worker.recognize(imageBuffer));
+  } finally {
+    await worker.terminate().catch(() => {});
+  }
 
   const items = [];
   let total = null;
