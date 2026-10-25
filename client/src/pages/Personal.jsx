@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Repeat, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Repeat, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSummary, listTransactions, deleteTransaction } from '../api/personal.js';
 import { useAsync } from '../hooks/useAsync.js';
@@ -11,6 +11,8 @@ import AddTransactionForm from '../components/AddTransactionForm.jsx';
 import BudgetSettings from '../components/BudgetSettings.jsx';
 import CategorySettings from '../components/CategorySettings.jsx';
 import SavingsCards from '../components/SavingsCards.jsx';
+import ReceiptPreview from '../components/ReceiptPreview.jsx';
+import TypeBadge from '../components/TypeBadge.jsx';
 import { useConfirm } from '../components/ConfirmDialog.jsx';
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
@@ -18,6 +20,7 @@ const thisMonth = () => new Date().toISOString().slice(0, 7);
 export default function Personal() {
   const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonth());
+  const [preview, setPreview] = useState(null); // transaction whose receipt photo is open
   const summary = useAsync(() => getSummary(month), [month]);
   const transactions = useAsync(() => listTransactions({ month, limit: 10 }), [month]);
 
@@ -115,6 +118,7 @@ export default function Personal() {
                       <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                           <th className="px-4 py-3 font-medium">Title</th>
+                          <th className="px-4 py-3 font-medium">Type</th>
                           <th className="px-4 py-3 font-medium">Category</th>
                           <th className="px-4 py-3 font-medium">Method</th>
                           <th className="px-4 py-3 text-right font-medium">Amount</th>
@@ -131,16 +135,24 @@ export default function Personal() {
                               </p>
                               <p className="text-xs text-slate-400">{formatDate(transactionRow.date)}</p>
                             </td>
+                            <td className="px-4 py-3"><TypeBadge type={transactionRow.type} /></td>
                             <td className="px-4 py-3 text-slate-600">{transactionRow.category}</td>
                             <td className="px-4 py-3 text-slate-500">{transactionRow.paymentMethod}</td>
-                            <td className={`px-4 py-3 text-right font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                            <td className={`px-4 py-3 text-right font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
                               {transactionRow.type === 'CREDIT' ? '+' : '−'}
                               {formatMoney(transactionRow.amount)}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button onClick={() => remove(transactionRow)} className="text-slate-300 hover:text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              <span className="inline-flex items-center gap-2">
+                                {transactionRow.receiptUrl && (
+                                  <button onClick={() => setPreview(transactionRow)} title="View the receipt photo" className="text-slate-300 hover:text-slate-700">
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+                                )}
+                                <button onClick={() => remove(transactionRow)} title="Delete" className="text-slate-300 hover:text-red-600">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </span>
                             </td>
                           </tr>
                         ))}
@@ -158,6 +170,9 @@ export default function Personal() {
             </aside>
           </div>
         </>
+      )}
+      {preview && (
+        <ReceiptPreview url={preview.receiptUrl} title={`${preview.title} · ${formatDate(preview.date)}`} onClose={() => setPreview(null)} />
       )}
     </>
   );

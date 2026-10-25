@@ -7,6 +7,7 @@ import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatSigned, formatDate } from '../utils/format.js';
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
 import StatCard from '../components/StatCard.jsx';
+import TypeBadge from '../components/TypeBadge.jsx';
 
 export default function Home() {
   const { user } = useAuth();
@@ -127,9 +128,12 @@ export default function Home() {
                       <span className="block text-sm font-medium text-slate-800">{transactionRow.title}</span>
                       <span className="text-xs text-slate-400">{transactionRow.category} · {formatDate(transactionRow.date)}</span>
                     </span>
-                    <span className={`text-sm font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                      {transactionRow.type === 'CREDIT' ? '+' : '−'}
-                      {formatMoney(transactionRow.amount)}
+                    <span className="flex items-center gap-3">
+                      <TypeBadge type={transactionRow.type} />
+                      <span className={`text-sm font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {transactionRow.type === 'CREDIT' ? '+' : '−'}
+                        {formatMoney(transactionRow.amount)}
+                      </span>
                     </span>
                   </li>
                 ))}

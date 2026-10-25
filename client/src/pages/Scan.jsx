@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Camera, Loader2, ScanLine, AlertCircle, Tag } from 'lucide-react';
+import { Camera, Loader2, ScanLine, AlertCircle, Tag, Eye } from 'lucide-react';
 import { scanReceipt, getReceipt, listReceipts } from '../api/receipts.js';
 import { listGroups } from '../api/groups.js';
 import { useAsync } from '../hooks/useAsync.js';
@@ -8,6 +8,7 @@ import { formatMoney, formatDate } from '../utils/format.js';
 import { EmptyState } from '../components/States.jsx';
 import VerifyReceiptModal from '../components/VerifyReceiptModal.jsx';
 import SavingsCards from '../components/SavingsCards.jsx';
+import ReceiptPreview from '../components/ReceiptPreview.jsx';
 
 const STEPS = ['Uploading the image', 'Reading the receipt', 'Matching line items'];
 
@@ -19,6 +20,7 @@ export default function Scan() {
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [dragging, setDragging] = useState(false);
+  const [preview, setPreview] = useState(null); // receipt whose photo is open
 
   const groups = useAsync(listGroups);
   const history = useAsync(listReceipts);
@@ -156,6 +158,11 @@ export default function Scan() {
                   </span>
                   <span className="flex items-center gap-3">
                     <span className="text-sm text-slate-600">{formatMoney(receiptRow.itemsTotal)}</span>
+                    {receiptRow.imageUrl && (
+                      <button onClick={() => setPreview(receiptRow)} title="View the receipt photo" className="text-slate-300 hover:text-slate-700">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    )}
                     {receiptRow.ocrStatus === 'done' && !receiptRow.committedTo && (
                       <button
                         onClick={() => {
@@ -188,6 +195,14 @@ export default function Scan() {
               ))}
           </div>
         </section>
+      )}
+
+      {preview && (
+        <ReceiptPreview
+          url={preview.imageUrl}
+          title={`${preview.store || 'Receipt'} · ${formatDate(preview.receiptDate || preview.createdAt)}`}
+          onClose={() => setPreview(null)}
+        />
       )}
 
       {phase === 'verify' && receipt && (
