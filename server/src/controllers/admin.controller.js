@@ -38,7 +38,7 @@ export async function overview(req, res) {
     services: {
       mail: isMailConfigured(),
       cloudinary: Boolean(process.env.CLOUDINARY_CLOUD_NAME),
-      vision: Boolean(process.env.VISION_API_KEY || process.env.ANTHROPIC_API_KEY),
+      vision: Boolean(process.env.VISION_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OCR_API_KEY),
       google: Boolean(process.env.GOOGLE_CLIENT_ID),
     },
     users: recentUsers.map((userRow) => ({

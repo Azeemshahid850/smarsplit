@@ -30,6 +30,77 @@ Rules:
 
 const VISION_MODEL = 'claude-opus-5-5';
 
+// Same shape, but lenient: free OpenAI-compatible models often return numbers
+// as strings or wrap the JSON in a code fence.
+const LooseReceiptSchema = z.object({
+  store: z.string().nullish(),
+  date: z.string().nullish(),
+  items: z
+    .array(z.object({ name: z.string(), qty: z.coerce.number().nullish(), price: z.coerce.number() }))
+    .default([]),
+  total: z.coerce.number().nullish(),
+});
+
+const JSON_SHAPE = `
+
+Respond with JSON only, no prose, exactly this shape:
+{"store": string|null, "date": "YYYY-MM-DD"|null, "items": [{"name": string, "qty": number, "price": number}], "total": number|null}`;
+
+/** Pulls the first {...} out of a reply that may carry prose or a code fence. */
+function extractJson(text = '') {
+  const unfenced = text.replace(/```(?:json)?/gi, '');
+  const start = unfenced.indexOf('{');
+  const end = unfenced.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('OCR API reply had no JSON');
+  return JSON.parse(unfenced.slice(start, end + 1));
+}
+
+/**
+ * Any OpenAI-compatible chat endpoint with image input: OpenRouter (free
+ * models), Google AI Studio's OpenAI endpoint (free Gemini tier), Groq, etc.
+ * Configured with OCR_API_BASE, OCR_API_KEY, OCR_MODEL. Plain fetch — no SDK.
+ */
+export async function extractWithOpenAICompatible(imageBase64, mediaType = 'image/jpeg') {
+  const base = (process.env.OCR_API_BASE || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+  // "openrouter/free" is OpenRouter's router: it picks a free model that
+  // accepts images, so nobody has to track which :free models exist this week.
+  const model = process.env.OCR_MODEL || 'openrouter/free';
+
+  const res = await fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OCR_API_KEY}`,
+      // OpenRouter attribution headers; harmless elsewhere.
+      'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:5173',
+      'X-Title': 'SmartSplit',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${mediaType};base64,${imageBase64}` } },
+            { type: 'text', text: PROMPT + JSON_SHAPE },
+          ],
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(90_000),
+  });
+
+  if (!res.ok) throw new Error(`OCR API ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const body = await res.json();
+  const text = body.choices?.[0]?.message?.content;
+  if (typeof text !== 'string') throw new Error('OCR API reply had no message content');
+
+  const parsed = LooseReceiptSchema.safeParse(extractJson(text));
+  if (!parsed.success) throw new Error(`OCR API JSON did not match: ${parsed.error.issues[0]?.message}`);
+  return { ...parsed.data, engine: 'vision' };
+}
+
 /** Vision LLM extraction. Throws so the caller can fall back to Tesseract. */
 export async function extractWithVision(imageBase64, mediaType = 'image/jpeg') {
   const client = new Anthropic({ apiKey: process.env.VISION_API_KEY || process.env.ANTHROPIC_API_KEY });
@@ -125,8 +196,13 @@ export async function extractReceipt({ imageBase64, imageBuffer, mediaType }) {
   let error = null;
 
   try {
-    if (!process.env.VISION_API_KEY && !process.env.ANTHROPIC_API_KEY) throw new Error('No vision API key configured');
-    result = await extractWithVision(imageBase64, mediaType);
+    if (process.env.VISION_API_KEY || process.env.ANTHROPIC_API_KEY) {
+      result = await extractWithVision(imageBase64, mediaType);
+    } else if (process.env.OCR_API_KEY) {
+      result = await extractWithOpenAICompatible(imageBase64, mediaType);
+    } else {
+      throw new Error('No vision API key configured');
+    }
   } catch (visionError) {
     error = visionError.message;
     try {

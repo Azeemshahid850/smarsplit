@@ -50,6 +50,7 @@ What the Blueprint sets up:
 | Key | Without it |
 |---|---|
 | `VISION_API_KEY` | receipt OCR runs on Tesseract (offline, English data ships in `node_modules`) instead of the Claude vision model — set it for the AI demo |
+| `OCR_API_KEY` (+ optional `OCR_API_BASE`, `OCR_MODEL`) | free AI OCR when there is no Anthropic key: an OpenRouter key alone uses the `openrouter/free` router (free, rate-limited); for Google AI Studio's free Gemini tier set base `https://generativelanguage.googleapis.com/v1beta/openai` and model `gemini-2.5-flash` |
 | `ADMIN_EMAILS` | comma-separated emails of app admins — they get the Admin page and may add stores and prices on the Price book page (optional — unset means nobody is an admin and the book is read-only) |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | receipt images are stored inline as data URLs |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | nothing is emailed; invite links are shared by copy or WhatsApp, reset links go to the server log |
