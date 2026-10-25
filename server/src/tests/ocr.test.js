@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import tesseract from 'tesseract.js';
-import { totalsAgree, extractWithOpenAICompatible, extractReceipt } from '../services/ocr.js';
+import { totalsAgree, extractWithOpenAICompatible, extractReceipt, parseReceiptText } from '../services/ocr.js';
 
 // The receipt tests mock the whole OCR module, so a broken import of the
 // offline engine never showed up there — until every scan on a server without a
@@ -68,4 +68,31 @@ describe('OpenAI-compatible OCR engine (OpenRouter / Gemini free tier)', () => {
       expect(result.error).toMatch(/OCR API 429/);
     }
   }, 60_000);
+});
+
+describe('parseReceiptText (offline line parser)', () => {
+  it('reads plain lines, qty prefixes, thousands separators and the total', () => {
+    const out = parseReceiptText(['CARREFOUR', 'Packages Mall, Lahore', '2 x Milk 1 Ltr 460', 'Basmati Rice 5 kg 2,150', 'Sub Total 2,610', 'TOTAL 2,610', 'Cash 3000', 'Thank you'].join('\n'));
+    expect(out.store).toBe('CARREFOUR');
+    expect(out.items).toEqual([
+      expect.objectContaining({ name: 'Milk 1 Ltr', qty: 2, price: 460 }),
+      expect.objectContaining({ name: 'Basmati Rice 5 kg', qty: 1, price: 2150 }),
+    ]);
+    expect(out.total).toBe(2610);
+  });
+
+  it('understands Qty / Rate / Amount columns and scrubs stray OCR symbols', () => {
+    const out = parseReceiptText(['METRO', 'Chicken 1 kg 2 710 1420', 'Coffee 100 g 1 1150 1150', 'Nido 900 g¢ 1,750', 'GST 17% (included) 722', 'TOTAL 4320'].join('\n'));
+    expect(out.items).toEqual([
+      expect.objectContaining({ name: 'Chicken 1 kg', qty: 2, price: 1420 }),
+      expect.objectContaining({ name: 'Coffee 100 g', qty: 1, price: 1150 }),
+      expect.objectContaining({ name: 'Nido 900 g', qty: 1, price: 1750 }),
+    ]);
+    expect(out.total).toBe(4320);
+  });
+
+  it('does not invent a quantity when the trailing numbers are just part of a name', () => {
+    const out = parseReceiptText('Batteries AA 4 Pack 420\nLED Bulb 12W 340');
+    expect(out.items.map((item) => [item.name, item.qty, item.price])).toEqual([['Batteries AA 4 Pack', 1, 420], ['LED Bulb 12W', 1, 340]]);
+  });
 });

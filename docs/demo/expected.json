@@ -1,0 +1,227 @@
+[
+  {
+    "file": "receipt-01-alfatah.png",
+    "store": "AL-FATAH SUPERSTORE",
+    "total": 7320,
+    "items": [
+      {
+        "name": "Cooking Oil 3 Ltr",
+        "qty": 1,
+        "price": 1890
+      },
+      {
+        "name": "Basmati Rice 5 kg",
+        "qty": 1,
+        "price": 2250
+      },
+      {
+        "name": "Sugar 1 kg",
+        "qty": 1,
+        "price": 190
+      },
+      {
+        "name": "Milk 1 Ltr",
+        "qty": 2,
+        "price": 460
+      },
+      {
+        "name": "Tea 500 g",
+        "qty": 1,
+        "price": 1250
+      },
+      {
+        "name": "Eggs Dozen",
+        "qty": 1,
+        "price": 360
+      },
+      {
+        "name": "Detergent 1 kg",
+        "qty": 1,
+        "price": 750
+      },
+      {
+        "name": "Bread Large",
+        "qty": 1,
+        "price": 170
+      }
+    ]
+  },
+  {
+    "file": "receipt-02-imtiaz.png",
+    "store": "IMTIAZ SUPER MARKET",
+    "total": 5590,
+    "items": [
+      {
+        "name": "Olpers Milk 1 Ltr",
+        "qty": 3,
+        "price": 690
+      },
+      {
+        "name": "Tapal Danedar 500 g",
+        "qty": 1,
+        "price": 1230
+      },
+      {
+        "name": "Anday 12 Pcs",
+        "qty": 1,
+        "price": 370
+      },
+      {
+        "name": "Sunflower Oil 3 Ltr",
+        "qty": 1,
+        "price": 1850
+      },
+      {
+        "name": "Surf Excel 1 kg",
+        "qty": 1,
+        "price": 760
+      },
+      {
+        "name": "Colgate 150 g",
+        "qty": 1,
+        "price": 340
+      },
+      {
+        "name": "Lifebuoy Soap 3 Pack",
+        "qty": 1,
+        "price": 450
+      }
+    ]
+  },
+  {
+    "file": "receipt-03-carrefour.png",
+    "store": "CARREFOUR",
+    "total": 7379,
+    "items": [
+      {
+        "name": "Basmati Rice 5 kg",
+        "qty": 1,
+        "price": 2150
+      },
+      {
+        "name": "Atta 10 kg",
+        "qty": 1,
+        "price": 1390
+      },
+      {
+        "name": "Sugar 5 kg",
+        "qty": 1,
+        "price": 850
+      },
+      {
+        "name": "Nido 900 g",
+        "qty": 1,
+        "price": 1750
+      },
+      {
+        "name": "Ketchup 800 g",
+        "qty": 1,
+        "price": 540
+      },
+      {
+        "name": "Dishwash 500 ml",
+        "qty": 1,
+        "price": 350
+      },
+      {
+        "name": "Tissue Box",
+        "qty": 1,
+        "price": 199
+      },
+      {
+        "name": "Bread Large",
+        "qty": 1,
+        "price": 150
+      }
+    ]
+  },
+  {
+    "file": "receipt-04-metro.png",
+    "store": "METRO CASH & CARRY",
+    "total": 4970,
+    "items": [
+      {
+        "name": "Chicken 1 kg",
+        "qty": 2,
+        "price": 1420
+      },
+      {
+        "name": "Potatoes 5 kg",
+        "qty": 1,
+        "price": 590
+      },
+      {
+        "name": "Onions 5 kg",
+        "qty": 1,
+        "price": 670
+      },
+      {
+        "name": "Tomato Paste 400 g",
+        "qty": 2,
+        "price": 620
+      },
+      {
+        "name": "Lays Chips 70 g",
+        "qty": 3,
+        "price": 180
+      },
+      {
+        "name": "Pepsi 1.5 Ltr",
+        "qty": 2,
+        "price": 340
+      },
+      {
+        "name": "Coffee 100 g",
+        "qty": 1,
+        "price": 1150
+      }
+    ]
+  },
+  {
+    "file": "receipt-05-naheed.png",
+    "store": "NAHEED SUPERMARKET",
+    "total": 8160,
+    "items": [
+      {
+        "name": "Dalda Cooking Oil 3 Ltr",
+        "qty": 1,
+        "price": 1900
+      },
+      {
+        "name": "Super Basmati 5 kg",
+        "qty": 1,
+        "price": 2300
+      },
+      {
+        "name": "Dahi 1 kg",
+        "qty": 1,
+        "price": 300
+      },
+      {
+        "name": "Blue Band 200 g",
+        "qty": 1,
+        "price": 600
+      },
+      {
+        "name": "Shan Biryani Masala",
+        "qty": 1,
+        "price": 150
+      },
+      {
+        "name": "Nestle Water 6 Pack",
+        "qty": 1,
+        "price": 500
+      },
+      {
+        "name": "Panadol 20 Tablets",
+        "qty": 1,
+        "price": 110
+      },
+      {
+        "name": "Nescafe 100 g",
+        "qty": 2,
+        "price": 2300
+      }
+    ]
+  }
+]

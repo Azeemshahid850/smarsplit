@@ -133,7 +133,55 @@ const SKIP = /(sub\s*total|total|tax|gst|discount|change|cash|card|balance|thank
 // start and a hard crash of the process when the download fails.
 const TESSDATA_DIR = path.join(path.dirname(createRequire(import.meta.url).resolve('@tesseract.js-data/eng/package.json')), '4.0.0');
 
-/** Offline fallback: Tesseract text plus a line-shape regex. */
+// Column receipts print "Chicken 1 kg   2   710   1420": the regex above keeps
+// "2 710" inside the name and reads qty as 1. When the two trailing numbers
+// multiply to the line total they are the quantity and the unit rate.
+const QTY_RATE = /^(?<name>.+?)\s+(?<qty>\d{1,3})\s+(?<rate>[\d,]+(?:\.\d{1,2})?)$/;
+
+/** Pure: raw OCR text → store, line items, total. Exported for tests. */
+export function parseReceiptText(text = '') {
+  const items = [];
+  let total = null;
+  let store = null;
+
+  for (const [index, raw] of text.split('\n').entries()) {
+    // OCR sprinkles stray symbols ("900 g¢") that would break the line regex.
+    const line = raw.replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!line) continue;
+    if (!store && index < 3 && /[A-Za-z]{3}/.test(line)) store = line.slice(0, 60);
+
+    const totalMatch = line.match(/(?:grand\s*)?total\D{0,5}([\d,]+(?:\.\d{1,2})?)/i);
+    if (totalMatch) {
+      total = Math.round(Number(totalMatch[1].replace(/,/g, '')));
+      continue;
+    }
+    if (SKIP.test(line)) continue;
+
+    const match = line.match(LINE);
+    if (!match) continue;
+
+    const price = Math.round(Number(match.groups.price.replace(/,/g, '')));
+    if (!price) continue;
+
+    let name = match.groups.name.trim();
+    let qty = Number(match.groups.qty || 1);
+    const columns = name.match(QTY_RATE);
+    if (columns) {
+      const columnQty = Number(columns.groups.qty);
+      const rate = Math.round(Number(columns.groups.rate.replace(/,/g, '')));
+      if (columnQty > 0 && Math.abs(columnQty * rate - price) <= columnQty) {
+        name = columns.groups.name.trim();
+        qty = columnQty;
+      }
+    }
+
+    items.push({ rawText: line, name, qty, price });
+  }
+
+  return { store, date: null, items, total };
+}
+
+/** Offline fallback: Tesseract text plus the line parser above. */
 export async function extractWithTesseract(imageBuffer) {
   const { createWorker } = await import('tesseract.js');
   // errorHandler matters: without it the worker rethrows on process.nextTick
@@ -151,32 +199,7 @@ export async function extractWithTesseract(imageBuffer) {
     await worker.terminate().catch(() => {});
   }
 
-  const items = [];
-  let total = null;
-  let store = null;
-
-  for (const [index, raw] of data.text.split('\n').entries()) {
-    const line = raw.trim();
-    if (!line) continue;
-    if (!store && index < 3 && /[A-Za-z]{3}/.test(line)) store = line.slice(0, 60);
-
-    const totalMatch = line.match(/(?:grand\s*)?total\D{0,5}([\d,]+(?:\.\d{1,2})?)/i);
-    if (totalMatch) {
-      total = Math.round(Number(totalMatch[1].replace(/,/g, '')));
-      continue;
-    }
-    if (SKIP.test(line)) continue;
-
-    const match = line.match(LINE);
-    if (!match) continue;
-
-    const price = Math.round(Number(match.groups.price.replace(/,/g, '')));
-    if (!price) continue;
-
-    items.push({ rawText: line, name: match.groups.name.trim(), qty: Number(match.groups.qty || 1), price });
-  }
-
-  return { store, date: null, items, total, engine: 'tesseract' };
+  return { ...parseReceiptText(data.text), engine: 'tesseract' };
 }
 
 /** Do the extracted lines add up to the printed total, within 5%? */

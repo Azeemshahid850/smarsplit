@@ -137,7 +137,7 @@ Run this list against the deployed site, in order. Every step should pass before
 - [ ] Personal page → three stat cards, category bars, recent transactions
 - [ ] Add a transaction with JazzCash → appears instantly
 - [ ] Set a Food budget below current spend → the bar turns red
-- [ ] Scan `docs/demo/receipt-demo.png` (Al-Fatah, 8 items, Rs 7,320) → processing state → verification modal lists all 8 lines, store and total
+- [ ] Scan `docs/demo/receipt-01-alfatah.png` (Al-Fatah, 8 items, Rs 7,320; four more receipts and a comparison in `docs/demo/README.md`) → processing state → verification modal lists all 8 lines, store and total
 - [ ] Save it to Personal → "Savings found" shows ~Rs 650 across every line (prices sit above the price book on purpose)
 - [ ] Scan → Price book → shows ~100 products with Daraz / Metro / Imtiaz prices, cheapest highlighted
 - [ ] As an `ADMIN_EMAILS` account: add a price with a brand-new store name → the store chip appears
