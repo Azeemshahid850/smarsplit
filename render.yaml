@@ -1,0 +1,27 @@
+# Render Blueprint: one free web service runs the API and serves the built React app.
+# Render → New → Blueprint → pick this repo. It asks only for MONGO_URI.
+services:
+  - type: web
+    name: smartsplit
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    # NODE_ENV=production also applies at build time, so the client's build tools
+    # (devDependencies) must be installed explicitly.
+    buildCommand: npm --prefix server ci --omit=dev && npm --prefix client ci --include=dev && npm --prefix client run build
+    startCommand: npm --prefix server start
+    healthCheckPath: /api/v1/health
+    # Deploy on every push to main, but only after the GitHub Actions tests pass.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true

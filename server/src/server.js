@@ -7,6 +7,9 @@ import { runDueRecurring } from './services/recurring.js';
 
 const PORT = process.env.PORT || 5000;
 
+// On Render the client is served by this same service, so its public URL is the client URL.
+process.env.CLIENT_URL ||= process.env.RENDER_EXTERNAL_URL;
+
 try {
   assertEnv();
   await connectDB(process.env.MONGO_URI);
