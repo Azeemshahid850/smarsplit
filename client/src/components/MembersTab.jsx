@@ -100,6 +100,9 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
         toast.success(`${res.member.name} added to ${group.title}`);
       } else if (res.emailed) {
         toast.success(`Invite emailed to ${res.member.email}`);
+      } else if (res.mailConfigured) {
+        // SMTP is set up but the provider refused — say so, or people assume it went.
+        toast.warning(`The email to ${res.member.email} could not be sent — send them the link below (WhatsApp or copy)`);
       } else {
         toast.success(`${label} invited — copy their link below and send it to them`);
       }
@@ -162,7 +165,9 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
     try {
       const res = await resendInvite(group.id, member.id);
       setMailConfigured(res.mailConfigured !== false);
-      toast.success(res.emailed ? `Invite re-sent to ${member.email}` : 'Invite refreshed — copy the link and send it');
+      if (res.emailed) toast.success(`Invite re-sent to ${member.email}`);
+      else if (res.mailConfigured) toast.warning(`The email could not be sent — share the link by WhatsApp or copy it`);
+      else toast.success('Invite refreshed — copy the link and send it');
       await onChange(); // picks up inviteSentAt, which keeps the button off for a minute
     } catch (err) {
       toast.error(err.message || 'Could not resend that invite');

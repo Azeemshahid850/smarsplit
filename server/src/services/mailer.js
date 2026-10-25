@@ -19,8 +19,16 @@ export async function sendMail({ to, subject, html, text }) {
     console.log(`[mail:dev] to=${to} subject="${subject}"\n${text}`);
     return { delivered: false };
   }
-  await transporter.sendMail({ from: process.env.MAIL_FROM || 'SmartSplit <no-reply@smartsplit.app>', to, subject, html, text });
-  return { delivered: true };
+  // Callers swallow failures so a mail problem never fails a money operation —
+  // which means this log line is the only place the reason ever shows up.
+  try {
+    const info = await transporter.sendMail({ from: process.env.MAIL_FROM || 'SmartSplit <no-reply@smartsplit.app>', to, subject, html, text });
+    console.log(`[mail] sent to=${to} subject="${subject}" response=${info.response ?? info.messageId ?? ''}`);
+    return { delivered: true };
+  } catch (err) {
+    console.error(`[mail] FAILED to=${to} subject="${subject}": ${err.message}`);
+    throw err;
+  }
 }
 
 export function sendPasswordResetMail(to, resetUrl) {
