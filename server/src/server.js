@@ -4,6 +4,7 @@ import app from './app.js';
 import { connectDB } from './config/db.js';
 import { assertEnv } from './config/env.js';
 import { runDueRecurring } from './services/recurring.js';
+import { ensurePriceBook } from './services/priceBook.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,6 +14,8 @@ process.env.CLIENT_URL ||= process.env.RENDER_EXTERNAL_URL;
 try {
   assertEnv();
   await connectDB(process.env.MONGO_URI);
+  const seeded = await ensurePriceBook();
+  if (seeded) console.log(`price book was empty — loaded ${seeded.products} products / ${seeded.rows} prices`);
   app.listen(PORT, () => console.log(`API on http://localhost:${PORT}/api/v1`));
 
   // Render's free tier sleeps after 15 idle minutes and takes ~30s to wake, so

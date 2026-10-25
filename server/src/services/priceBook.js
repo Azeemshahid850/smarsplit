@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs';
 
 import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
 import { upsertPriceSchema } from '../routes/prices.schemas.js';
+import { seedBenchmarkPrices } from '../scripts/seedPrices.js';
 import { normalize } from './priceMatch.js';
 
 export const COLUMNS = [
@@ -32,6 +33,16 @@ const cellText = (value) => {
   if (typeof value === 'object') return String(value.text ?? value.result ?? value.richText?.map((part) => part.text).join('') ?? '');
   return String(value);
 };
+
+/**
+ * A fresh database has no price book, so receipts would never find a cheaper
+ * price and the page would just say "empty". Load the bundled catalogue once;
+ * anything already there (seeded, imported, hand-entered) is left alone.
+ */
+export async function ensurePriceBook() {
+  if (await BenchmarkPrice.estimatedDocumentCount()) return null;
+  return seedBenchmarkPrices();
+}
 
 /** The current book as a workbook — or a one-row example when it is empty, so it doubles as the template. */
 export async function buildPriceWorkbook() {

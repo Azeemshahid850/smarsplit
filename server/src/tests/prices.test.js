@@ -4,6 +4,7 @@ import app from '../app.js';
 import { makeUser } from './helpers.js';
 import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
 import { findBenchmark } from '../services/priceMatch.js';
+import { ensurePriceBook } from '../services/priceBook.js';
 
 const api = '/api/v1';
 const as = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
@@ -162,5 +163,18 @@ describe('price book import and export', () => {
     const ws = workbook.worksheets[0];
     expect(ws.getRow(1).values.slice(1, 4)).toEqual(['Product', 'Store', 'Price (Rs)']);
     expect(ws.getRow(2).values.slice(1, 4)).toEqual(['Sugar 1kg', 'imtiaz', 175]);
+  });
+});
+
+describe('ensurePriceBook (server start)', () => {
+  it('loads the bundled catalogue into an empty book and leaves a filled one alone', async () => {
+    const first = await ensurePriceBook();
+    expect(first.products).toBe(100);
+    expect(await BenchmarkPrice.distinct('platform')).toEqual(expect.arrayContaining(['alfatah', 'metro', 'daraz']));
+
+    await BenchmarkPrice.deleteMany({});
+    await BenchmarkPrice.create({ canonicalName: 'Only Thing', aliases: [], price: 1, platform: 'mine' });
+    expect(await ensurePriceBook()).toBeNull();
+    expect(await BenchmarkPrice.countDocuments()).toBe(1);
   });
 });
