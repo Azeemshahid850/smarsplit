@@ -1,7 +1,10 @@
-// Money is integer rupees everywhere. Display only: "Rs 4,200".
+// Money is integer rupees everywhere. Display only: "Rs 4,200". Foreign amounts
+// (as typed on a trip expense) keep up to 2 decimals: "AED 12.50".
 export const formatMoney = (amount, currency = 'PKR') => {
-  const prefix = currency === 'PKR' ? 'Rs' : currency;
-  return `${prefix} ${Math.round(Number(amount) || 0).toLocaleString('en-PK')}`;
+  if (currency !== 'PKR') {
+    return `${currency} ${(Number(amount) || 0).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }
+  return `Rs ${Math.round(Number(amount) || 0).toLocaleString('en-PK')}`;
 };
 
 export const formatSigned = (amount, currency = 'PKR') =>

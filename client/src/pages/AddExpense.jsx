@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { listGroups, getGroup } from '../api/groups.js';
 import { createExpense, getExpense, updateExpense } from '../api/expenses.js';
+import { getRates } from '../api/fx.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCategories } from '../context/CategoriesContext.jsx';
 import { formatMoney } from '../utils/format.js';
@@ -19,7 +20,6 @@ const SPLIT_TYPES = [
   { key: 'LINE_ITEM', label: 'Line items' },
 ];
 
-const int = (fieldValue) => (fieldValue === '' || fieldValue == null ? 0 : Math.round(Number(fieldValue)) || 0);
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function AddExpense() {
@@ -46,6 +46,17 @@ export default function AddExpense() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  // Trip expenses can be typed in the currency they were paid in; the server
+  // converts them to whole rupees. storedFx is the rate an edited expense used.
+  const [entryCurrency, setEntryCurrency] = useState('PKR');
+  const [storedFx, setStoredFx] = useState(null);
+  const [rates, setRates] = useState({ data: null, error: '' });
+
+  useEffect(() => {
+    getRates()
+      .then((ratesData) => setRates({ data: ratesData, error: '' }))
+      .catch((err) => setRates({ data: null, error: err.message || 'Rates unavailable' }));
+  }, []);
 
   // Load the group list (create mode) or the expense being edited.
   useEffect(() => {
@@ -53,19 +64,25 @@ export default function AddExpense() {
       try {
         if (editing) {
           const { expense, groupId: gid } = await getExpense(expenseId);
+          // A foreign-currency expense is edited in the figures it was typed in.
+          const fx = expense.fx;
           setGroupId(gid);
+          setEntryCurrency(fx?.currency || 'PKR');
+          setStoredFx(fx);
           setForm({
             title: expense.title,
-            totalAmount: String(expense.totalAmount),
+            totalAmount: String(fx ? fx.totalAmount : expense.totalAmount),
             date: expense.date.slice(0, 10),
             category: expense.category,
             notes: expense.notes || '',
           });
-          setPayers(expense.paidBy.map((payerEntry) => ({ userId: payerEntry.userId, amount: String(payerEntry.amount) })));
+          setPayers((fx ? fx.paidBy : expense.paidBy).map((payerEntry) => ({ userId: payerEntry.userId, amount: String(payerEntry.amount) })));
           setSplitType(expense.splitType);
           setParticipants(expense.splits.map((splitOption) => splitOption.userId));
-          setExact(Object.fromEntries(expense.splits.map((splitOption) => [splitOption.userId, String(splitOption.share)])));
-          setItems(expense.items.map((rowIndex) => ({ ...rowIndex, price: String(rowIndex.price), qty: String(rowIndex.qty) })));
+          setExact(Object.fromEntries((fx?.exact?.length ? fx.exact : expense.splits).map((splitOption) => [splitOption.userId, String(splitOption.share)])));
+          setItems(
+            expense.items.map((rowIndex, index) => ({ ...rowIndex, price: String(fx?.itemPrices?.[index] ?? rowIndex.price), qty: String(rowIndex.qty) })),
+          );
         } else {
           const { groups: list } = await listGroups();
           setGroups(list);
@@ -110,25 +127,35 @@ export default function AddExpense() {
   const members = useMemo(() => (group?.members || []).filter((memberRow) => memberRow.status === 'active' && memberRow.userId), [group]);
   const nameOf = (userId) => members.find((memberRow) => memberRow.userId === userId)?.name || '—';
 
-  const total = int(form.totalAmount);
-  const covered = payers.reduce((runningTotal, payerEntry) => runningTotal + int(payerEntry.amount), 0);
-  const currency = group?.baseCurrency || 'PKR';
+  // Every check runs in whole units — rupees, or cents of a foreign currency —
+  // so 0.1 + 0.2 never fails to equal 0.3.
+  const scale = entryCurrency === 'PKR' ? 1 : 100;
+  const step = scale === 1 ? '1' : '0.01';
+  const units = (fieldValue) => (fieldValue === '' || fieldValue == null ? 0 : Math.round(Number(fieldValue) * scale) || 0);
+  const shown = (amountInUnits) => formatMoney(amountInUnits / scale, entryCurrency);
+
+  const total = units(form.totalAmount);
+  const covered = payers.reduce((runningTotal, payerEntry) => runningTotal + units(payerEntry.amount), 0);
+  const keepsStoredRate = storedFx?.currency === entryCurrency;
+  const rate = entryCurrency === 'PKR' ? 1 : keepsStoredRate ? storedFx.rate : rates.data?.rates?.[entryCurrency];
+  const currencyOptions = rates.data?.currencies ?? [...new Set(['PKR', entryCurrency])];
 
   // Live mirror of the server invariants — the button stays off until they hold.
   const problem = useMemo(() => {
     if (!groupId) return 'Pick a group';
     if (form.title.trim().length < 2) return 'Give the expense a title';
+    if (!rate) return 'Live exchange rates are unavailable right now — enter this expense in PKR';
     if (total <= 0) return 'Enter an amount above zero';
     if (covered !== total) {
       const diff = total - covered;
-      return diff > 0 ? `You're ${formatMoney(diff, currency)} short` : `You're ${formatMoney(-diff, currency)} over`;
+      return diff > 0 ? `You're ${shown(diff)} short` : `You're ${shown(-diff)} over`;
     }
     if (splitType === 'EQUAL' && participants.length === 0) return 'Pick at least one person';
     if (splitType === 'EXACT') {
-      const given = participants.reduce((runningTotal, id) => runningTotal + int(exact[id]), 0);
+      const given = participants.reduce((runningTotal, id) => runningTotal + units(exact[id]), 0);
       if (given !== total) {
         const diff = total - given;
-        return diff > 0 ? `Shares are ${formatMoney(diff, currency)} short` : `Shares are ${formatMoney(-diff, currency)} over`;
+        return diff > 0 ? `Shares are ${shown(diff)} short` : `Shares are ${shown(-diff)} over`;
       }
     }
     if (splitType === 'PERCENTAGE') {
@@ -138,11 +165,12 @@ export default function AddExpense() {
     if (splitType === 'LINE_ITEM') {
       if (!items.length) return 'Add at least one line item';
       if (items.some((rowIndex) => !rowIndex.sharedBy?.length)) return 'Every item needs at least one person';
-      const lines = items.reduce((runningTotal, rowIndex) => runningTotal + Math.round(int(rowIndex.price) * (Number(rowIndex.qty) || 1)), 0);
-      if (lines !== total) return `Line items add up to ${formatMoney(lines, currency)}, not ${formatMoney(total, currency)}`;
+      const lines = items.reduce((runningTotal, rowIndex) => runningTotal + Math.round(Number(rowIndex.price || 0) * (Number(rowIndex.qty) || 1) * scale), 0);
+      if (lines !== total) return `Line items add up to ${shown(lines)}, not ${shown(total)}`;
     }
     return '';
-  }, [groupId, form.title, total, covered, splitType, participants, exact, percentages, items, currency]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, form.title, total, covered, splitType, participants, exact, percentages, items, entryCurrency, rate]);
 
   const perHead = participants.length ? Math.floor(total / participants.length) : 0;
 
@@ -155,28 +183,31 @@ export default function AddExpense() {
     setError('');
     setSaving(true);
 
+    // Rupees go as whole numbers, a foreign currency as at most 2 decimals.
+    const amount = (fieldValue) => units(fieldValue) / scale;
     const body = {
       title: form.title.trim(),
-      totalAmount: total,
+      currency: entryCurrency,
+      totalAmount: amount(form.totalAmount),
       category: form.category,
       date: form.date,
       notes: form.notes,
       splitType,
-      paidBy: payers.map((payerEntry) => ({ userId: payerEntry.userId, amount: int(payerEntry.amount) })),
+      paidBy: payers.map((payerEntry) => ({ userId: payerEntry.userId, amount: amount(payerEntry.amount) })),
       participants: splitType === 'EQUAL' ? participants : [],
-      exact: splitType === 'EXACT' ? participants.map((id) => ({ userId: id, share: int(exact[id]) })) : [],
+      exact: splitType === 'EXACT' ? participants.map((id) => ({ userId: id, share: amount(exact[id]) })) : [],
       percentages:
         splitType === 'PERCENTAGE' ? participants.map((id) => ({ userId: id, percent: Number(percentages[id] || 0) })) : [],
       items:
         splitType === 'LINE_ITEM'
-          ? items.map((rowIndex) => ({ name: rowIndex.name, qty: Number(rowIndex.qty) || 1, price: int(rowIndex.price), sharedBy: rowIndex.sharedBy }))
+          ? items.map((rowIndex) => ({ name: rowIndex.name, qty: Number(rowIndex.qty) || 1, price: amount(rowIndex.price), sharedBy: rowIndex.sharedBy }))
           : [],
     };
 
     try {
       if (editing) await updateExpense(expenseId, body);
       else await createExpense(groupId, body);
-      toast.success(editing ? `"${body.title}" updated` : `"${body.title}" added — ${formatMoney(total, currency)}`);
+      toast.success(editing ? `"${body.title}" updated` : `"${body.title}" added — ${shown(total)}`);
       navigate(`/groups/${groupId}`, { replace: true });
     } catch (err) {
       setError(err.message || 'Could not save the expense');
@@ -222,16 +253,31 @@ export default function AddExpense() {
         <Field label="Title" name="title" required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Hotel in Murree" />
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field
-            label={`Amount (${currency})`}
-            name="totalAmount"
-            type="number"
-            min="1"
-            step="1"
-            required
-            value={form.totalAmount}
-            onChange={(event) => setForm((current) => ({ ...current, totalAmount: event.target.value }))}
-          />
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Amount</span>
+            <div className="mt-1 flex gap-1">
+              <select
+                aria-label="Currency"
+                value={entryCurrency}
+                onChange={(event) => setEntryCurrency(event.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm"
+              >
+                {currencyOptions.map((code) => (
+                  <option key={code}>{code}</option>
+                ))}
+              </select>
+              <input
+                name="totalAmount"
+                type="number"
+                min={step}
+                step={step}
+                required
+                value={form.totalAmount}
+                onChange={(event) => setForm((current) => ({ ...current, totalAmount: event.target.value }))}
+                className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+              />
+            </div>
+          </label>
           <Field label="Date" name="date" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} />
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Category</span>
@@ -247,12 +293,37 @@ export default function AddExpense() {
           </label>
         </div>
 
+        {entryCurrency !== 'PKR' && (
+          <p className="-mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900">
+            {rate ? (
+              <>
+                ≈ <span className="font-semibold">{formatMoney(Math.round((total / scale) * rate))}</span> at 1 {entryCurrency} ={' '}
+                Rs {rate.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                {keepsStoredRate ? (
+                  ' — the rate this expense was added at.'
+                ) : (
+                  <>
+                    {' '}· rates by{' '}
+                    <a href={rates.data.source.url} target="_blank" rel="noreferrer" className="underline">
+                      {rates.data.source.name}
+                    </a>
+                    {rates.data.stale && ' (last saved rates — live rates are unavailable)'}
+                  </>
+                )}
+                <span className="block text-sky-700/80">Balances and settle-up stay in rupees.</span>
+              </>
+            ) : (
+              'Live exchange rates are unavailable right now — switch to PKR to add this expense.'
+            )}
+          </p>
+        )}
+
         {/* Multi-payer */}
         <section className="rounded-xl bg-slate-50 p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-700">Paid by</span>
             <span className={`text-xs ${covered === total && total > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
-              covered {formatMoney(covered, currency)} of {formatMoney(total, currency)}
+              covered {shown(covered)} of {shown(total)}
             </span>
           </div>
 
@@ -272,8 +343,8 @@ export default function AddExpense() {
                 </select>
                 <input
                   type="number"
-                  min="1"
-                  step="1"
+                  min={step}
+                  step={step}
                   value={payerEntry.amount}
                   placeholder="0"
                   onChange={(event) => setPayers((list) => list.map((entry, rowIndex) => (rowIndex === index ? { ...entry, amount: event.target.value } : entry)))}
@@ -331,13 +402,13 @@ export default function AddExpense() {
                     />
                     <span className="flex-1 text-sm text-slate-700">{memberRow.name}</span>
 
-                    {splitType === 'EQUAL' && on && <span className="text-sm text-slate-500">{formatMoney(perHead, currency)}</span>}
+                    {splitType === 'EQUAL' && on && <span className="text-sm text-slate-500">{shown(perHead)}</span>}
 
                     {splitType === 'EXACT' && on && (
                       <input
                         type="number"
                         min="0"
-                        step="1"
+                        step={step}
                         value={exact[memberRow.userId] ?? ''}
                         onChange={(event) => setExact((entry) => ({ ...entry, [memberRow.userId]: event.target.value }))}
                         className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-sm"
@@ -384,6 +455,7 @@ export default function AddExpense() {
                       <input
                         type="number"
                         min="0"
+                        step={step}
                         placeholder="Price"
                         value={item.price}
                         onChange={(event) => setItems((currentList) => currentList.map((entry, rowIndex) => (rowIndex === index ? { ...entry, price: event.target.value } : entry)))}

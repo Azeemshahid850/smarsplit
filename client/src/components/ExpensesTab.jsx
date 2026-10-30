@@ -135,7 +135,14 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                           {SPLIT_LABEL[expenseRow.splitType]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">{formatMoney(expenseRow.totalAmount, group.baseCurrency)}</td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {formatMoney(expenseRow.totalAmount, group.baseCurrency)}
+                        {expenseRow.fx && (
+                          <span className="block text-xs font-normal text-slate-400" title={`1 ${expenseRow.fx.currency} = Rs ${expenseRow.fx.rate}`}>
+                            {formatMoney(expenseRow.fx.totalAmount, expenseRow.fx.currency)}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           <Link to={`/expenses/${expenseRow.id}/edit`} title="Edit" className="text-slate-300 hover:text-slate-700">

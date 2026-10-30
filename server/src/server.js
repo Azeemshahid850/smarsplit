@@ -4,12 +4,14 @@ import app from './app.js';
 import { connectDB } from './config/db.js';
 import { assertEnv } from './config/env.js';
 import { runDueRecurring } from './services/recurring.js';
+import { refreshRates } from './services/fx.js';
 import { ensurePriceBook } from './services/priceBook.js';
 
 const PORT = process.env.PORT || 5000;
 
 // On Render the client is served by this same service, so its public URL is the client URL.
-process.env.CLIENT_URL ||= process.env.RENDER_EXTERNAL_URL;
+// (Guarded: assigning undefined to process.env would store the string "undefined".)
+if (!process.env.CLIENT_URL && process.env.RENDER_EXTERNAL_URL) process.env.CLIENT_URL = process.env.RENDER_EXTERNAL_URL;
 
 try {
   assertEnv();
@@ -31,6 +33,14 @@ try {
     const { created } = await runDueRecurring();
     if (created) console.log(`recurring: created ${created} transactions`);
   });
+
+  // Pull the day's exchange rates at 03:00 so foreign-currency expenses never
+  // wait on the provider; requests fall back to the saved copy if this fails.
+  cron.schedule('0 3 * * *', () =>
+    refreshRates()
+      .then(({ updatedAt }) => console.log(`fx: rates refreshed (published ${updatedAt.toISOString()})`))
+      .catch((err) => console.error('fx: daily refresh failed:', err.message)),
+  );
 } catch (err) {
   console.error('Startup failed:', err.message);
   process.exit(1);

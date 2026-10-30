@@ -16,6 +16,7 @@ import JoinRequest from './pages/JoinRequest.jsx';
 import Home from './pages/Home.jsx';
 import Groups from './pages/Groups.jsx';
 import Personal from './pages/Personal.jsx';
+import Goals from './pages/Goals.jsx';
 import Scan from './pages/Scan.jsx';
 import Profile from './pages/Profile.jsx';
 import PriceBook from './pages/PriceBook.jsx';
@@ -54,6 +55,7 @@ export default function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/groups" element={<Groups />} />
                 <Route path="/personal" element={<Personal />} />
+                <Route path="/goals" element={<Goals />} />
                 <Route path="/scan" element={<Scan />} />
                 <Route path="/prices" element={<PriceBook />} />
                 <Route path="/admin" element={<Admin />} />

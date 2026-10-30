@@ -25,6 +25,21 @@ const itemSchema = new mongoose.Schema(
   { _id: false },
 );
 
+// The figures as typed for an expense paid in another currency. Every money
+// field above them is still integer rupees; this only records where they came from.
+const fxSchema = new mongoose.Schema(
+  {
+    currency: { type: String, required: true },
+    rate: { type: Number, required: true }, // rupees per one unit, as used for the conversion
+    rateDate: { type: Date, default: null },
+    totalAmount: { type: Number, required: true },
+    paidBy: { type: [payerSchema], default: [] },
+    exact: { type: [splitSchema], default: [] },
+    itemPrices: { type: [Number], default: [] },
+  },
+  { _id: false },
+);
+
 const groupExpenseSchema = new mongoose.Schema(
   {
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true, index: true },
@@ -38,6 +53,7 @@ const groupExpenseSchema = new mongoose.Schema(
     splitType: { type: String, enum: SPLIT_TYPES, required: true },
     splits: { type: [splitSchema], required: true },
     items: { type: [itemSchema], default: [] },
+    fx: { type: fxSchema, default: null }, // null = entered in PKR
     notes: { type: String, default: '' },
     receiptImage: { type: String, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

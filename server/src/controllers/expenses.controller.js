@@ -6,12 +6,27 @@ import { groupBalances } from '../services/balances.js';
 import { notify, activeMemberIds } from '../services/notifications.js';
 import { computeSplits, assertPayersCoverTotal, assertSplitsBalance, SplitError } from '../services/splitCalculator.js';
 import { categoriesForGroup, assertCategoryAllowed } from '../services/categories.js';
+import { convertToPkr } from '../services/currency.js';
+import { pkrRate } from '../services/fx.js';
+
+const publicFx = (fx) =>
+  fx && {
+    currency: fx.currency,
+    rate: fx.rate,
+    rateDate: fx.rateDate,
+    totalAmount: fx.totalAmount,
+    paidBy: fx.paidBy.map((payerEntry) => ({ userId: payerEntry.userId, amount: payerEntry.amount })),
+    exact: fx.exact.map((exactEntry) => ({ userId: exactEntry.userId, share: exactEntry.share })),
+    itemPrices: fx.itemPrices,
+  };
 
 const publicExpense = (expenseRow) => ({
   id: expenseRow._id,
   groupId: expenseRow.groupId,
   title: expenseRow.title,
   totalAmount: expenseRow.totalAmount,
+  currency: expenseRow.fx?.currency ?? 'PKR',
+  fx: publicFx(expenseRow.fx) ?? null,
   category: expenseRow.category,
   date: expenseRow.date,
   notes: expenseRow.notes,
@@ -55,14 +70,30 @@ function buildSplits(body) {
 
 const money = (rupees) => `Rs ${Math.round(rupees).toLocaleString('en-PK')}`;
 
+// A foreign-currency body is converted to integer rupees before anything else
+// sees it; from there on it is an ordinary PKR expense. New expenses use today's
+// rate; an edit that keeps the currency keeps the rate it was entered at.
+async function inRupees({ currency = 'PKR', ...body }, previousFx = null) {
+  if (currency === 'PKR') return { body, fx: null };
+  const fxRate = previousFx?.currency === currency ? previousFx : await pkrRate(currency);
+  try {
+    return convertToPkr(body, fxRate);
+  } catch (err) {
+    if (err instanceof SplitError) throw ApiError.badRequest(err.message, 'SPLIT_INVALID');
+    throw err;
+  }
+}
+
 export async function createExpense(req, res) {
   const group = req.group;
-  assertEveryoneIsAMember(group, req.body);
-  req.body.category = assertCategoryAllowed(req.body.category, await categoriesForGroup(group)) ?? req.body.category;
+  const { body, fx } = await inRupees(req.body);
+  assertEveryoneIsAMember(group, body);
+  body.category = assertCategoryAllowed(body.category, await categoriesForGroup(group)) ?? body.category;
 
-  const splits = buildSplits(req.body);
+  const splits = buildSplits(body);
   const expense = await GroupExpense.create({
-    ...req.body,
+    ...body,
+    fx,
     groupId: group._id,
     splits,
     createdBy: req.user._id,
@@ -111,23 +142,36 @@ export async function updateExpense(req, res) {
 
   // Recompute from the merged document so a partial edit still balances. A
   // partial body arrives carrying Zod's [] defaults, so anything the caller did
-  // not actually send is rebuilt from the stored splits.
+  // not actually send is rebuilt from the stored splits — except when the caller
+  // sends a currency: then every amount came with it, in that currency, and
+  // stored rupee figures must not be mixed in.
+  const sentCurrency = req.body.currency !== undefined;
   const previous = expense.splits.map((splitEntry) => ({ userId: String(splitEntry.userId), share: splitEntry.share }));
-  const merged = { ...publicExpense(expense), ...req.body };
+  const { currency: _stored, fx: _storedFx, ...stored } = publicExpense(expense);
+  const merged = { ...stored, ...req.body };
 
   if (!req.body.participants?.length) merged.participants = previous.map((splitEntry) => splitEntry.userId);
-  if (!req.body.exact?.length) merged.exact = previous;
+  if (!sentCurrency && !req.body.exact?.length) merged.exact = previous;
   if (!req.body.percentages?.length) {
     merged.percentages = previous.map((splitEntry) => ({ userId: splitEntry.userId, percent: (splitEntry.share / expense.totalAmount) * 100 }));
   }
-  if (!req.body.items?.length) merged.items = expense.items;
-  assertEveryoneIsAMember(group, merged);
-  if (req.body.category) {
-    req.body.category = assertCategoryAllowed(req.body.category, await categoriesForGroup(group));
-  }
-  const splits = buildSplits(merged);
+  if (!sentCurrency && !req.body.items?.length) merged.items = expense.items;
 
-  Object.assign(expense, req.body, { splits });
+  // Rupee amounts sent without a currency replace any foreign figures on record.
+  const sentAmounts = req.body.totalAmount !== undefined || req.body.paidBy !== undefined || req.body.exact?.length || req.body.items?.length;
+  const { body, fx } = sentCurrency ? await inRupees(merged, expense.fx) : { body: merged, fx: sentAmounts ? null : expense.fx };
+
+  assertEveryoneIsAMember(group, body);
+  if (req.body.category) {
+    body.category = assertCategoryAllowed(req.body.category, await categoriesForGroup(group));
+  }
+  const splits = buildSplits(body);
+
+  const { currency: _sent, ...changes } = req.body;
+  const converted = sentCurrency
+    ? { totalAmount: body.totalAmount, paidBy: body.paidBy, exact: body.exact, items: body.items }
+    : {};
+  Object.assign(expense, changes, converted, { category: body.category ?? expense.category, splits, fx });
   await expense.save();
 
   ok(res, { expense: publicExpense(expense) });

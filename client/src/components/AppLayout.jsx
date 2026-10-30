@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary.jsx';
-import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3, ShieldCheck } from 'lucide-react';
+import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3, ShieldCheck, Target } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
@@ -9,6 +9,7 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/groups', label: 'Groups', icon: Users },
   { to: '/personal', label: 'Personal', icon: PiggyBank },
+  { to: '/goals', label: 'Goals', icon: Target },
   { to: '/scan', label: 'Scan', icon: ScanLine },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
 ];
