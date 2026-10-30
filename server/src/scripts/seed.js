@@ -13,6 +13,7 @@ import { Receipt } from '../models/Receipt.js';
 import { Notification } from '../models/Notification.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { RefreshToken } from '../models/RefreshToken.js';
+import { SavingsGoal } from '../models/SavingsGoal.js';
 import { seedBenchmarkPrices } from './seedPrices.js';
 import { computeSplits } from '../services/splitCalculator.js';
 import { matchLineItems } from '../services/priceMatch.js';
@@ -102,7 +103,7 @@ async function seed() {
 
   console.log('Clearing existing data…');
   await Promise.all(
-    [User, Group, GroupExpense, Settlement, PersonalExpense, Budget, Receipt, Notification, AuditLog, RefreshToken].map((model) =>
+    [User, Group, GroupExpense, Settlement, PersonalExpense, Budget, Receipt, Notification, AuditLog, RefreshToken, SavingsGoal].map((model) =>
       model.deleteMany({}),
     ),
   );
