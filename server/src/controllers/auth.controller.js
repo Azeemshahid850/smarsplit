@@ -172,7 +172,8 @@ export async function forgotPassword(req, res) {
     user.resetTokenExpiresAt = new Date(Date.now() + RESET_TTL_MS);
     await user.save();
     const base = process.env.CLIENT_URL || 'http://localhost:5173';
-    await sendPasswordResetMail(user.email, `${base}/reset-password/${raw}`);
+    // A refused send is logged by the mailer; answering differently would reveal the account exists.
+    await sendPasswordResetMail(user.email, `${base}/reset-password/${raw}`).catch(() => {});
   }
 
   // Same message either way (no enumeration); the flag lets the UI say when no mail can go out at all.

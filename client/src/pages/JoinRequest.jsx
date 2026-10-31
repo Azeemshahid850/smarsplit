@@ -20,7 +20,8 @@ export default function JoinRequest() {
 
   if (booting) return <div className="grid min-h-screen place-items-center text-sm text-slate-400">…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  if (preview.loading) return <Loading label="Looking up that group…" />;
+  // Opened while already signed in: for one render after boot the null pre-login result is still in data.
+  if (preview.loading || (!preview.data && !preview.error)) return <Loading label="Looking up that group…" />;
 
   if (preview.error) {
     return (

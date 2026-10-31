@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
+
+// Real mailer unless a test flips this — Brevo refusing a send must not turn into a 500.
+const mail = vi.hoisted(() => ({ refuse: false }));
+vi.mock('../services/mailer.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    sendPasswordResetMail: (...args) =>
+      mail.refuse ? Promise.reject(new Error('502 5.7.0 Your SMTP account is not yet activated')) : actual.sendPasswordResetMail(...args),
+  };
+});
 import app from '../app.js';
 import { User } from '../models/User.js';
 import { RefreshToken } from '../models/RefreshToken.js';
@@ -170,6 +181,16 @@ describe('password reset', () => {
     expect(known.status).toBe(200);
     expect(unknown.status).toBe(200);
     expect(known.body).toEqual(unknown.body);
+  });
+
+  it('still answers 200 when the mail provider refuses the send', async () => {
+    await register();
+    mail.refuse = true;
+    const res = await request(app).post('/api/v1/auth/forgot-password').send({ email: creds.email });
+    mail.refuse = false;
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.message).toMatch(/reset link is on its way/);
   });
 
   it('resets the password with a valid token, kills sessions, and lets the new password log in', async () => {

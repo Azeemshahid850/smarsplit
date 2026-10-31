@@ -49,7 +49,7 @@ export default function Admin() {
         <p className="text-xs text-slate-400">Set the matching env vars on the server to turn these on.</p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {SERVICES.map(({ key, label, hint }) => (
-            <li key={key} className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+            <li key={key} className="flex min-w-0 items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
               {services[key] ? (
                 <Check className="h-4 w-4 shrink-0 text-emerald-600" />
               ) : (

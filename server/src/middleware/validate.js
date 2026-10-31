@@ -5,7 +5,8 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
   const result = schema.safeParse(req[source]);
   if (!result.success) {
     const detail = result.error.issues
-      .map((issue) => `${issue.path.join('.') || source}: ${issue.message}`)
+      // A bad link is not a form field — "inviteToken: Invalid invite link" means nothing to the person who tapped it.
+      .map((issue) => (source === 'params' ? issue.message : `${issue.path.join('.') || source}: ${issue.message}`))
       .join('; ');
     return next(ApiError.badRequest(detail, 'VALIDATION_ERROR'));
   }

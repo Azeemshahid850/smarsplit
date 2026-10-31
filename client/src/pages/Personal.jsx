@@ -81,7 +81,7 @@ export default function Personal() {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
-            <section className="lg:col-span-2">
+            <section className="min-w-0 lg:col-span-2">
               <h2 className="font-medium">Where it went</h2>
               <div className="mt-3 rounded-xl bg-white p-5 ring-1 ring-slate-200">
                 {summary.data.byCategory.length === 0 ? (
