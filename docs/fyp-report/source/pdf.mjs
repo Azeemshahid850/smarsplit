@@ -131,7 +131,7 @@ function buildHtml(pages) {
     <div style="height:6mm"></div>
     <div style="font-weight:bold">${esc(meta.department)}</div>
     <div style="font-size:11pt">${esc(meta.college)}, ${esc(meta.campus)}</div>
-    <div style="font-size:11pt">Session ${esc(meta.session)} · ${esc(meta.date)}</div>
+    <div style="font-size:11pt">${meta.session ? `Session ${esc(meta.session)} · ` : ''}${esc(meta.date)}</div>
   </section>
 
   <h1>DECLARATION</h1>

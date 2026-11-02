@@ -185,7 +185,7 @@ const titlePage = [
   centered(`A report submitted in partial fulfilment of the requirements for the award of the ${meta.degree}`, { run: { size: 22 }, after: 240 }),
   centered(meta.department, { run: { bold: true, size: 24 }, after: 40 }),
   centered(`${meta.college}, ${meta.campus}`, { run: { size: 22 }, after: 40 }),
-  centered(`Session ${meta.session}  ·  ${meta.date}`, { run: { size: 22 }, after: 0 }),
+  centered(meta.session ? `Session ${meta.session}  ·  ${meta.date}` : meta.date, { run: { size: 22 }, after: 0 }),
 ];
 
 const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
