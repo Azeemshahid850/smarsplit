@@ -6,6 +6,7 @@ import { assertEnv } from './config/env.js';
 import { runDueRecurring } from './services/recurring.js';
 import { refreshRates } from './services/fx.js';
 import { ensurePriceBook } from './services/priceBook.js';
+import { startPriceSync, syncIfStale } from './services/priceSync.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -41,6 +42,11 @@ try {
       .then(({ updatedAt }) => console.log(`fx: rates refreshed (published ${updatedAt.toISOString()})`))
       .catch((err) => console.error('fx: daily refresh failed:', err.message)),
   );
+
+  // Refresh store prices every day at 04:00 (09:00 in Pakistan); also runs from the Admin page.
+  cron.schedule('0 4 * * *', () => startPriceSync('schedule').catch((err) => console.error('price sync:', err.message)));
+  // …and right after a deploy or a wake-up, unless today's refresh already ran.
+  syncIfStale().catch((err) => console.error('price sync:', err.message));
 } catch (err) {
   console.error('Startup failed:', err.message);
   process.exit(1);

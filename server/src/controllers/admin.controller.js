@@ -6,6 +6,8 @@ import { Receipt } from '../models/Receipt.js';
 import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
 import { ok } from '../utils/ok.js';
 import { isMailConfigured } from '../services/mailer.js';
+import { PriceSyncRun } from '../models/PriceSyncRun.js';
+import { STORES, startPriceSync, isPriceSyncRunning } from '../services/priceSync.js';
 
 /**
  * One read for the Admin page: totals, the newest people and groups, and
@@ -61,4 +63,16 @@ export async function overview(req, res) {
       pendingCount: groupRow.members.filter((memberRow) => memberRow.status !== 'active').length,
     })),
   });
+}
+
+/** The store-price refresh: which stores it reads and its last ten runs. */
+export async function priceSyncRuns(req, res) {
+  const runs = await PriceSyncRun.find().sort({ startedAt: -1 }).limit(10).lean();
+  ok(res, { running: isPriceSyncRunning(), stores: STORES.map((store) => ({ key: store.key, origin: store.origin })), runs });
+}
+
+/** Starts a refresh now; it carries on in the background and the page polls the runs above. */
+export async function runPriceSync(req, res) {
+  const { run, alreadyRunning } = await startPriceSync('manual');
+  ok(res, { run, alreadyRunning }, 202);
 }

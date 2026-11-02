@@ -7,7 +7,9 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
-    "seed": "node src/scripts/seed.js"
+    "seed": "node src/scripts/seed.js",
+    "prices:sync": "node src/scripts/syncPrices.js",
+    "gmail:token": "node src/scripts/gmailToken.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

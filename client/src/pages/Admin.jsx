@@ -6,9 +6,10 @@ import { formatDate } from '../utils/format.js';
 import { Loading, ErrorState } from '../components/States.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Avatar from '../components/Avatar.jsx';
+import PriceSyncPanel from '../components/PriceSyncPanel.jsx';
 
 const SERVICES = [
-  { key: 'mail', label: 'Email (SMTP)', hint: 'invites, join requests, password resets' },
+  { key: 'mail', label: 'Email (Gmail or SMTP)', hint: 'invites, join requests, password resets' },
   { key: 'cloudinary', label: 'Cloudinary', hint: 'receipt image storage' },
   { key: 'vision', label: 'Vision OCR', hint: 'AI receipt reading; Tesseract otherwise' },
   { key: 'google', label: 'Google sign-in', hint: 'one-tap login' },
@@ -63,6 +64,8 @@ export default function Admin() {
           ))}
         </ul>
       </section>
+
+      <PriceSyncPanel />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section>
