@@ -120,8 +120,13 @@ export async function findBenchmark(rawName, catalogue = null) {
   return cheapest(family, bestScore);
 }
 
+// A price the daily store refresh confirmed this week beats any older figure:
+// once a product has fresh prices, stale or bundled demo rows stop counting.
+const FRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
 function cheapest(rows, score) {
-  const sorted = [...rows].sort((leftText, rightText) => leftText.price - rightText.price);
+  const fresh = rows.filter((priceRow) => Date.now() - new Date(priceRow.updatedAt ?? 0) < FRESH_MS);
+  const sorted = [...(fresh.length ? fresh : rows)].sort((leftText, rightText) => leftText.price - rightText.price);
   return { match: sorted[0], alternatives: sorted.slice(0, 3), score };
 }
 

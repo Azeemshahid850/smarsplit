@@ -95,6 +95,20 @@ describe('the price book', () => {
   });
 });
 
+describe('fresh prices win', () => {
+  it('ignores an old figure once a store confirmed the price this week', async () => {
+    const old = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    await BenchmarkPrice.insertMany([
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 120, platform: 'naheed', updatedAt: old },
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 158, platform: 'alfatah', updatedAt: new Date() },
+    ]);
+    expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('alfatah');
+
+    await BenchmarkPrice.updateMany({}, { updatedAt: old }); // nothing fresh: every figure counts again
+    expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('naheed');
+  });
+});
+
 describe('matchLineItems', () => {
   beforeEach(async () => {
     await seedBenchmarkPrices();

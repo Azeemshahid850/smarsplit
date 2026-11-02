@@ -116,12 +116,13 @@ const sitemapStore = ({ key, origin, productPath, slugOf }) => ({
 const blinkcoSlug = (pathname) => pathname.split('/').pop().replace(/-\d+$/, '');
 
 export const STORES = [
-  shopify('al-fatah', 'https://alfatah.pk'),
+  // Keys match the bundled catalogue's store names, so live prices replace its demo figures.
+  shopify('alfatah', 'https://alfatah.pk'),
   grocerApp,
   // Metro: /detail/<category…>/<name-slug>/<id>. Its search API needs a signed header, so the sitemap it is.
   sitemapStore({ key: 'metro', origin: 'https://www.metro-online.pk', productPath: '/detail/', slugOf: (pathname) => pathname.split('/').at(-2) }),
   sitemapStore({ key: 'jalal sons', origin: 'https://www.jalalsons.com.pk', productPath: '/product/', slugOf: blinkcoSlug }),
-  sitemapStore({ key: 'chase up', origin: 'https://www.chaseupgrocery.com', productPath: '/product/', slugOf: blinkcoSlug }),
+  sitemapStore({ key: 'chaseup', origin: 'https://www.chaseupgrocery.com', productPath: '/product/', slugOf: blinkcoSlug }),
 ];
 
 // ── robots.txt ───────────────────────────────────────────────────────────

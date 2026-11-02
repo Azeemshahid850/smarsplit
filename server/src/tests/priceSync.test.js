@@ -75,7 +75,7 @@ describe('Shopify stores', () => {
         },
       }),
     );
-    const alFatah = STORES.find((store) => store.key === 'al-fatah');
+    const alFatah = STORES.find((store) => store.key === 'alfatah');
     expect(await alFatah.search('cooking oil 3 ltr')).toEqual([
       { title: 'DALDA COOKING OIL BOTTLE 3 LTR', price: 1930, url: 'https://alfatah.pk/products/dalda-3-ltr' },
     ]);
@@ -215,6 +215,6 @@ describe('/admin/price-sync', () => {
     }
     expect(list.body.data.running).toBe(false);
     expect(list.body.data.runs[0]).toMatchObject({ trigger: 'manual', status: 'done' });
-    expect(list.body.data.stores.map((store) => store.key)).toEqual(['al-fatah', 'grocerapp', 'metro', 'jalal sons', 'chase up']);
+    expect(list.body.data.stores.map((store) => store.key)).toEqual(['alfatah', 'grocerapp', 'metro', 'jalal sons', 'chaseup']);
   });
 });
