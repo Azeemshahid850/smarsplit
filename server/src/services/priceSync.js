@@ -19,6 +19,7 @@ const UNREACHABLE = 'robots.txt could not be read';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const rupees = (value) => Math.round(Number(String(value ?? '').replace(/[^\d.]/g, '')));
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const slugify = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 async function get(url, as = 'json') {
@@ -32,7 +33,8 @@ async function get(url, as = 'json') {
 
 // ── Stores ───────────────────────────────────────────────────────────────
 // Every adapter has a key (the store's name in the price book), an origin and
-// the paths it reads (all checked against that origin's robots.txt), plus either
+// the paths it reads (all checked against that origin's robots.txt), a site when
+// its product links live somewhere other than the origin, plus either
 //   search(query) → [{ title, price, url }]            a search the store allows, or
 //   catalogue() → [{ title, url }] + listing(url) → { title, price, url } | null
 // for stores whose search is off-limits: their sitemap lists the product pages,
@@ -55,6 +57,7 @@ const shopify = (key, origin) => ({
 const grocerApp = {
   key: 'grocerapp',
   origin: 'https://endpoints.grocerapps.com',
+  site: 'https://grocerapp.pk',
   paths: ['/v15/search'],
   async search(query) {
     const body = await get(`${this.origin}/v15/search?query=${encodeURIComponent(query)}&page=0&per=30`);
@@ -131,7 +134,7 @@ export const STORES = [
 
 // A robots path pattern as a regex: "*" is any run of characters, a trailing "$" pins the end.
 const patternOf = (value) =>
-  new RegExp(`^${value.replace(/\$$/, '').split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}${value.endsWith('$') ? '$' : ''}`);
+  new RegExp(`^${value.replace(/\$$/, '').split('*').map(escapeRegex).join('.*')}${value.endsWith('$') ? '$' : ''}`);
 
 /** True when the "User-agent: *" rules let us fetch `path` (the longest matching rule wins). */
 export function robotsAllows(robotsText, path) {
@@ -307,10 +310,10 @@ async function syncStore(store, products, { gapMs, log }) {
         }
       }
       if (!listing) {
-        // The store answered and nothing fits (sold out, or a wrong match from an older run): its
-        // synced price goes. Prices typed in without a link, like the bundled demo figures, stay.
+        // The store answered and nothing fits (sold out, or a wrong match from an older run): the
+        // price an earlier sync took from its site goes. Demo figures and prices typed in stay.
         if (failed === failedBefore) {
-          const { deletedCount } = await BenchmarkPrice.deleteOne({ canonicalName: product.canonicalName, platform: store.key, url: { $ne: null } });
+          const { deletedCount } = await BenchmarkPrice.deleteOne({ canonicalName: product.canonicalName, platform: store.key, url: { $regex: `^${escapeRegex(store.site ?? store.origin)}/` } });
           if (deletedCount) log(`${store.key}: ${product.canonicalName} no longer listed — old price removed`);
         }
         continue;

@@ -192,13 +192,14 @@ describe('syncPrices', () => {
   it("removes a store's synced price once the store no longer lists the product", async () => {
     await seedOil();
     await BenchmarkPrice.create({ canonicalName: 'Cooking Oil 3L', aliases: [], size: 3, unit: 'L', price: 999, platform: 'shop', url: 'https://shop.test/p/wrong' });
+    await BenchmarkPrice.updateOne({ platform: 'metro' }, { url: 'https://example.com/metro/cooking-oil-3l' });
     const store = fakeStore('shop', [{ title: 'ENGINE OIL 3 LTR', price: 1800 }]);
-    const metro = { ...store, key: 'metro' };
+    const metro = { ...store, key: 'metro', origin: 'https://metro.test' };
 
     await syncPrices({ stores: [store, metro], gapMs: 0 });
 
     expect(await BenchmarkPrice.findOne({ platform: 'shop' })).toBeNull();
-    expect((await BenchmarkPrice.findOne({ platform: 'metro' })).price).toBe(1790); // no link: typed in, stays
+    expect((await BenchmarkPrice.findOne({ platform: 'metro' })).price).toBe(1790); // a demo figure, not from metro's site: stays
   });
 
   it('tries a store that was down once more', async () => {
