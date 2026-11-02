@@ -117,12 +117,13 @@ export default function AddExpense() {
     getGroup(groupId)
       .then(({ group: groupRow }) => {
         setGroup(groupRow);
+        if (!editing && !receiptDraft) setEntryCurrency(groupRow.baseCurrency || 'PKR');
         const active = groupRow.members.filter((memberRow) => memberRow.status === 'active' && memberRow.userId);
         setParticipants((prev) => (prev.length ? prev : active.map((memberRow) => memberRow.userId)));
         setPayers((prev) => (prev.length ? prev : [{ userId: user.id, amount: '' }]));
       })
       .catch((err) => setError(err.message || 'Could not load that group'));
-  }, [groupId, user.id]);
+  }, [groupId, user.id, editing, receiptDraft]);
 
   const members = useMemo(() => (group?.members || []).filter((memberRow) => memberRow.status === 'active' && memberRow.userId), [group]);
   const nameOf = (userId) => members.find((memberRow) => memberRow.userId === userId)?.name || '—';
@@ -138,7 +139,7 @@ export default function AddExpense() {
   const covered = payers.reduce((runningTotal, payerEntry) => runningTotal + units(payerEntry.amount), 0);
   const keepsStoredRate = storedFx?.currency === entryCurrency;
   const rate = entryCurrency === 'PKR' ? 1 : keepsStoredRate ? storedFx.rate : rates.data?.rates?.[entryCurrency];
-  const currencyOptions = rates.data?.currencies ?? [...new Set(['PKR', entryCurrency])];
+  const currencyOptions = [...new Set([...(rates.data?.currencies ?? ['PKR']), entryCurrency])];
 
   // Live mirror of the server invariants — the button stays off until they hold.
   const problem = useMemo(() => {

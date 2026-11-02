@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { X, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { createGroup } from '../api/groups.js';
+import { getRates } from '../api/fx.js';
+import { useAsync } from '../hooks/useAsync.js';
 import Field from '../components/Field.jsx';
 import SubmitButton from '../components/SubmitButton.jsx';
 import FormError from '../components/FormError.jsx';
@@ -24,6 +26,8 @@ export default function CreateGroup() {
   const [emailDraft, setEmailDraft] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const rates = useAsync(getRates, []);
+  const currencies = rates.data?.currencies ?? ['PKR'];
 
   const change = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 
@@ -87,7 +91,22 @@ export default function CreateGroup() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Currency" name="baseCurrency" value={form.baseCurrency} onChange={change} maxLength={3} />
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Trip currency</span>
+            <select
+              name="baseCurrency"
+              value={form.baseCurrency}
+              onChange={change}
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
+            >
+              {currencies.map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-slate-400">New expenses start in this currency. Balances stay in rupees.</span>
+          </label>
           <Field label="Start date" name="startDate" type="date" value={form.startDate} onChange={change} />
         </div>
 

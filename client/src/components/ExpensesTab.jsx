@@ -136,7 +136,7 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
-                        {formatMoney(expenseRow.totalAmount, group.baseCurrency)}
+                        {formatMoney(expenseRow.totalAmount)}
                         {expenseRow.fx && (
                           <span className="block text-xs font-normal text-slate-400" title={`1 ${expenseRow.fx.currency} = Rs ${expenseRow.fx.rate}`}>
                             {formatMoney(expenseRow.fx.totalAmount, expenseRow.fx.currency)}

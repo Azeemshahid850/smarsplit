@@ -165,9 +165,9 @@ export default function Groups() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{formatMoney(groupRow.totalSpent, groupRow.baseCurrency)}</td>
+                    <td className="px-4 py-3 text-slate-700">{formatMoney(groupRow.totalSpent)}</td>
                     <td className={`px-4 py-3 font-medium ${balanceTone(groupRow.myBalance)}`}>
-                      {groupRow.myBalance === 0 ? 'settled up' : formatSigned(groupRow.myBalance, groupRow.baseCurrency)}
+                      {groupRow.myBalance === 0 ? 'settled up' : formatSigned(groupRow.myBalance)}
                     </td>
                     <td className="px-4 py-3">
                       <span

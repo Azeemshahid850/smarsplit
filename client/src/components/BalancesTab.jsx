@@ -20,7 +20,7 @@ export default function BalancesTab({ group }) {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm text-slate-500">
-          {data.expenseCount} expenses · {formatMoney(data.totalSpent, group.baseCurrency)} spent
+          {data.expenseCount} expenses · {formatMoney(data.totalSpent)} spent
         </p>
         <Link
           to={`/groups/${group.id}/settle`}
@@ -45,7 +45,7 @@ export default function BalancesTab({ group }) {
             </div>
             <div className="text-right">
               <p className={`text-sm font-semibold ${balanceRow.net > 0 ? 'text-emerald-600' : balanceRow.net < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                {balanceRow.net === 0 ? 'settled' : formatSigned(balanceRow.net, group.baseCurrency)}
+                {balanceRow.net === 0 ? 'settled' : formatSigned(balanceRow.net)}
               </p>
               <p className="text-xs text-slate-400">{balanceRow.net > 0 ? 'is owed' : balanceRow.net < 0 ? 'owes' : ''}</p>
             </div>

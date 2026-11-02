@@ -154,8 +154,8 @@ function GroupReport({ groups }) {
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <StatCard label="Total spent" value={formatMoney(r.total, r.baseCurrency)} />
-        <StatCard label="Per person" value={formatMoney(r.perPerson, r.baseCurrency)} icon={Users} />
+        <StatCard label="Total spent" value={formatMoney(r.total)} />
+        <StatCard label="Per person" value={formatMoney(r.perPerson)} icon={Users} />
         <StatCard label="Payments" value={eff.optimizedCount ? `${eff.rawDebtCount} → ${eff.optimizedCount}` : '—'} />
         <StatCard label="Transfers saved" value={String(eff.transfersSaved)} tone="emerald" />
       </div>
@@ -171,7 +171,6 @@ function GroupReport({ groups }) {
               { key: 'paid', label: 'Paid' },
               { key: 'consumed', label: 'Consumed' },
             ]}
-            currency={r.baseCurrency}
             empty="No expenses in this group yet."
           />
         </div>
@@ -180,7 +179,7 @@ function GroupReport({ groups }) {
       <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
         <h2 className="font-medium">Category split</h2>
         <div className="mt-4">
-          <CategoryDonut categories={r.byCategory} currency={r.baseCurrency} />
+          <CategoryDonut categories={r.byCategory} />
         </div>
       </section>
     </>

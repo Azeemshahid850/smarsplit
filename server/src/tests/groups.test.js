@@ -36,6 +36,20 @@ describe('POST /groups', () => {
     expect(JSON.stringify(group)).not.toMatch(/inviteToken/);
   });
 
+  it('keeps a trip currency it can convert, and refuses one it cannot', async () => {
+    const owner = await makeUser();
+    const create = (baseCurrency) =>
+      request(app).post(`${api}/groups`).set('Authorization', `Bearer ${owner.accessToken}`).send({ title: 'Dubai Trip', baseCurrency });
+
+    const dubai = await create('AED');
+    expect(dubai.status).toBe(201);
+    expect(dubai.body.data.group.baseCurrency).toBe('AED');
+
+    const madeUp = await create('XYZ');
+    expect(madeUp.status).toBe(400);
+    expect(madeUp.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('rejects a short title', async () => {
     const owner = await makeUser();
     const res = await request(app)

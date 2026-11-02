@@ -12,7 +12,7 @@ import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
 import FormError from '../components/FormError.jsx';
 import Avatar from '../components/Avatar.jsx';
 
-function PaymentCard({ payment, currency, onPay, faded }) {
+function PaymentCard({ payment, onPay, faded }) {
   return (
     <li
       className={`flex items-center gap-3 rounded-xl bg-white p-4 ring-1 transition-all duration-500 ${
@@ -25,7 +25,7 @@ function PaymentCard({ payment, currency, onPay, faded }) {
       <Avatar name={payment.toName} />
       <span className="text-sm font-medium text-slate-700">{payment.toName}</span>
 
-      <span className="ml-auto font-semibold text-slate-900">{formatMoney(payment.amount, currency)}</span>
+      <span className="ml-auto font-semibold text-slate-900">{formatMoney(payment.amount)}</span>
 
       {onPay &&
         (payment.isPaid ? (
@@ -58,7 +58,6 @@ export default function SettleUp() {
 
   const g = group.data.group;
   const iAmAdmin = g.members.some((memberRow) => memberRow.userId === user.id && memberRow.role === 'admin');
-  const currency = g.baseCurrency;
   const settled = recorded.data.settlements;
   const hasRecorded = settled.length > 0;
 
@@ -124,7 +123,7 @@ export default function SettleUp() {
           </p>
           <ul className="mt-4 space-y-2">
             {settled.map((settlementRow) => (
-              <PaymentCard key={settlementRow.id} payment={settlementRow} currency={currency} onPay={pay} />
+              <PaymentCard key={settlementRow.id} payment={settlementRow} onPay={pay} />
             ))}
           </ul>
 
@@ -162,7 +161,7 @@ export default function SettleUp() {
                 </li>
               )}
               {preview?.rawDebts.map((debtRow, index) => (
-                <PaymentCard key={index} payment={debtRow} currency={currency} faded />
+                <PaymentCard key={index} payment={debtRow} faded />
               ))}
             </ul>
           </section>
@@ -197,7 +196,7 @@ export default function SettleUp() {
 
                 <ul className="mt-3 space-y-2">
                   {preview.payments.map((paymentRow, index) => (
-                    <PaymentCard key={index} payment={paymentRow} currency={currency} />
+                    <PaymentCard key={index} payment={paymentRow} />
                   ))}
                 </ul>
 

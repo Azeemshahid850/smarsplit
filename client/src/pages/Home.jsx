@@ -93,10 +93,10 @@ export default function Home() {
                     <Link to={`/groups/${groupRow.id}`} className="flex items-center justify-between rounded-xl bg-white p-4 ring-1 ring-slate-200 hover:ring-slate-300">
                       <span>
                         <span className="block font-medium text-slate-800">{groupRow.title}</span>
-                        <span className="text-xs text-slate-400">{groupRow.memberCount} members · {formatMoney(groupRow.totalSpent, groupRow.baseCurrency)} spent</span>
+                        <span className="text-xs text-slate-400">{groupRow.memberCount} members · {formatMoney(groupRow.totalSpent)} spent</span>
                       </span>
                       <span className={`text-sm font-medium ${groupRow.myBalance > 0 ? 'text-emerald-600' : groupRow.myBalance < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                        {groupRow.myBalance === 0 ? 'settled' : formatSigned(groupRow.myBalance, groupRow.baseCurrency)}
+                        {groupRow.myBalance === 0 ? 'settled' : formatSigned(groupRow.myBalance)}
                       </span>
                     </Link>
                   </li>

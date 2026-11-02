@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CURRENCIES } from '../services/fx.js';
 
 const email = z.string().email('Enter a valid email').toLowerCase().trim();
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
@@ -7,7 +8,8 @@ export const createGroupSchema = z.object({
   title: z.string().min(2, 'Group name is too short').max(80).trim(),
   description: z.string().max(500).default(''),
   type: z.enum(['trip', 'home', 'event', 'other']).default('trip'),
-  baseCurrency: z.string().length(3).default('PKR'),
+  // The trip's usual currency: new expenses start in it. Balances are always rupees.
+  baseCurrency: z.enum(CURRENCIES, { message: 'Pick a currency from the list' }).default('PKR'),
   tags: z.array(z.string().max(30)).max(10).default([]),
   startDate: z.coerce.date().nullish(),
   memberEmails: z.array(email).max(50).default([]),
@@ -20,7 +22,7 @@ export const updateGroupSchema = z.object({
   title: z.string().min(2).max(80).trim().optional(),
   description: z.string().max(500).optional(),
   type: z.enum(['trip', 'home', 'event', 'other']).optional(),
-  baseCurrency: z.string().length(3).optional(),
+  baseCurrency: z.enum(CURRENCIES, { message: 'Pick a currency from the list' }).optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
   startDate: z.coerce.date().nullish(),
   status: z.enum(['ACTIVE', 'SETTLED']).optional(),
