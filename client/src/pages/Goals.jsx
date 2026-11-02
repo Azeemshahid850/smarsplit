@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Target, Plus, Pencil, Trash2, X, PartyPopper } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Target, Plus, Pencil, Trash2, X, PartyPopper, HandCoins } from 'lucide-react';
 import { listGoals, createGoal, updateGoal, deleteGoal, addContribution, removeContribution } from '../api/goals.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { useConfirm } from '../components/ConfirmDialog.jsx';
@@ -259,11 +260,16 @@ export default function Goals() {
           </h1>
           <p className="text-sm text-slate-500">Put money aside for something specific and see if you are on pace.</p>
         </div>
-        {!creating && (
-          <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
-            <Plus className="h-4 w-4" /> New goal
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/zakat" className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">
+            <HandCoins className="h-4 w-4 text-slate-400" /> Zakat calculator
+          </Link>
+          {!creating && (
+            <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              <Plus className="h-4 w-4" /> New goal
+            </button>
+          )}
+        </div>
       </div>
 
       {creating && (

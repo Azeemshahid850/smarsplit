@@ -21,6 +21,7 @@ import priceRoutes from './routes/prices.js';
 import adminRoutes from './routes/admin.js';
 import fxRoutes from './routes/fx.js';
 import goalRoutes from './routes/goals.js';
+import zakatRoutes from './routes/zakat.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { globalLimiter } from './middleware/rateLimits.js';
 
@@ -65,6 +66,7 @@ app.use('/api/v1', priceRoutes);
 app.use('/api/v1', adminRoutes);
 app.use('/api/v1', fxRoutes);
 app.use('/api/v1', goalRoutes);
+app.use('/api/v1', zakatRoutes);
 
 // In production the built React app is served from this same origin, so the
 // SameSite=Strict refresh cookie stays first-party and CORS never comes into it.
