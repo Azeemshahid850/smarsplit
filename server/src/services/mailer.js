@@ -1,8 +1,12 @@
 import nodemailer from 'nodemailer';
 
-// No SMTP configured (dev / FYP demo): log the link instead of sending.
-// ponytail: console fallback, swap for a real provider before production.
-const transporter = process.env.SMTP_HOST
+// Three ways out, first one configured wins:
+// 1. Gmail API over HTTPS (GMAIL_*) — works on hosts that block SMTP ports, like Render's free tier.
+// 2. SMTP (SMTP_*), e.g. Brevo on port 2525.
+// 3. Nothing configured (dev / FYP demo): log the message instead of sending.
+const gmail = process.env.GMAIL_REFRESH_TOKEN && process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET;
+
+const smtp = process.env.SMTP_HOST
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
@@ -11,19 +15,56 @@ const transporter = process.env.SMTP_HOST
     })
   : null;
 
-/** False when no SMTP is configured — the UI then tells the user to share the link itself. */
-export const isMailConfigured = () => Boolean(transporter);
+// Builds the raw RFC 822 message the Gmail API wants; sends nothing itself.
+const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: 'unix' });
+
+let gmailToken = null; // { value, expiresAt }
+
+async function gmailAccessToken() {
+  if (gmailToken && Date.now() < gmailToken.expiresAt) return gmailToken.value;
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: process.env.GMAIL_CLIENT_ID,
+      client_secret: process.env.GMAIL_CLIENT_SECRET,
+      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+      grant_type: 'refresh_token',
+    }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Gmail sign-in refused: ${body.error_description || body.error || res.status}`);
+  gmailToken = { value: body.access_token, expiresAt: Date.now() + (body.expires_in - 60) * 1000 };
+  return gmailToken.value;
+}
+
+async function sendWithGmail(message) {
+  const { message: raw } = await composer.sendMail(message);
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await gmailAccessToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: raw.toString('base64url') }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Gmail refused the message: ${body.error?.message || res.status}`);
+  return `gmail id ${body.id}`;
+}
+
+/** False when no email is configured — the UI then tells the user to share the link itself. */
+export const isMailConfigured = () => Boolean(gmail || smtp);
 
 export async function sendMail({ to, subject, html, text }) {
-  if (!transporter) {
+  if (!isMailConfigured()) {
     console.log(`[mail:dev] to=${to} subject="${subject}"\n${text}`);
     return { delivered: false };
   }
+  const message = { from: process.env.MAIL_FROM || 'SmartSplit <no-reply@smartsplit.app>', to, subject, html, text };
   // Callers swallow failures so a mail problem never fails a money operation —
   // which means this log line is the only place the reason ever shows up.
   try {
-    const info = await transporter.sendMail({ from: process.env.MAIL_FROM || 'SmartSplit <no-reply@smartsplit.app>', to, subject, html, text });
-    console.log(`[mail] sent to=${to} subject="${subject}" response=${info.response ?? info.messageId ?? ''}`);
+    const response = gmail ? await sendWithGmail(message) : ((await smtp.sendMail(message)).response ?? '');
+    console.log(`[mail] sent to=${to} subject="${subject}" response=${response}`);
     return { delivered: true };
   } catch (err) {
     console.error(`[mail] FAILED to=${to} subject="${subject}": ${err.message}`);

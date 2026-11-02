@@ -53,6 +53,7 @@ What the Blueprint sets up:
 | `OCR_API_KEY` (+ optional `OCR_API_BASE`, `OCR_MODEL`) | free AI OCR when there is no Anthropic key: an OpenRouter key alone uses the `openrouter/free` router (free, rate-limited); for Google AI Studio's free Gemini tier set base `https://generativelanguage.googleapis.com/v1beta/openai` and model `gemini-2.5-flash` |
 | `ADMIN_EMAILS` | comma-separated emails of app admins — they get the Admin page and may add stores and prices on the Price book page (optional — unset means nobody is an admin and the book is read-only) |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | receipt images are stored inline as data URLs |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REFRESH_TOKEN` + `MAIL_FROM` | email goes out through the Gmail API over HTTPS (see "Email through Gmail" below); takes priority over SMTP |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `MAIL_FROM` | nothing is emailed; invite links are shared by copy or WhatsApp, reset links go to the server log |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | no Google sign-in button (see step 5) |
 
@@ -171,3 +172,34 @@ Run this list against the deployed site, in order. Every step should pass before
   the free tier, treat it as best-effort.
 - **Never commit `.env`.** It is in `.gitignore`; keep it that way.
 - **Rotating a JWT secret signs everybody out** — that is the intended behaviour.
+
+---
+
+## Email through Gmail
+
+Render's free tier blocks the SMTP ports (587/465), so SmartSplit can send from a
+Gmail account through the Gmail API over HTTPS instead. About ten minutes, once:
+
+1. https://console.cloud.google.com → create a project (or reuse one).
+2. **APIs & Services → Library → Gmail API → Enable.**
+3. **OAuth consent screen** (Google Auth Platform): user type **External**, app name
+   SmartSplit, your email as support and developer contact. Under **Audience**,
+   press **Publish app** ("In production"). In "Testing" Google expires the token
+   after 7 days. You don't need Google's verification for your own account; you
+   will see an "unverified app" warning and can continue past it.
+4. **Credentials → Create credentials → OAuth client ID → Desktop app.** Copy the
+   client ID and secret.
+5. On your laptop:
+   ```bash
+   cd server
+   GMAIL_CLIENT_ID=... GMAIL_CLIENT_SECRET=... npm run gmail:token
+   ```
+   Open the link, sign in with the Gmail account that should send the emails,
+   choose **Advanced → Go to SmartSplit (unsafe) → Allow**. The terminal prints
+   `GMAIL_REFRESH_TOKEN=...`. The token can only *send* mail; it cannot read the inbox.
+6. Render → smartsplit → **Environment**: add `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`,
+   `GMAIL_REFRESH_TOKEN` and `MAIL_FROM="SmartSplit <that-address@gmail.com>"`, then save.
+   The Brevo `SMTP_*` values can stay; Gmail is used first.
+7. Check: Admin page → Services shows Email ✓; Forgot password with your own email
+   delivers the link. Gmail allows about 500 emails a day.
+
