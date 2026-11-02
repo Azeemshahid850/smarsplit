@@ -160,6 +160,21 @@ describe('syncPrices', () => {
     expect((await BenchmarkPrice.findOne({ platform: 'metro' })).price).toBe(1790);
   });
 
+  it('treats a missing robots.txt as no rules, but an unreachable one as keep out', async () => {
+    await seedOil();
+    const missing = fakeStore('shop', [{ title: 'DALDA COOKING OIL BOTTLE 3 LTR', price: 1930 }]);
+    vi.restoreAllMocks();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('not here', { status: 404 }));
+    expect((await syncPrices({ stores: [missing], gapMs: 0 })).stores[0]).toMatchObject({ skipped: null, matched: 1 });
+
+    const down = { ...missing, key: 'down', search: vi.fn(async () => []) };
+    vi.restoreAllMocks();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('oops', { status: 503 }));
+    const run = await syncPrices({ stores: [down], gapMs: 0 });
+    expect(run.stores[0].skipped).toBe('robots.txt could not be read');
+    expect(down.search).not.toHaveBeenCalled();
+  });
+
   it('gives up on a failing store and keeps its old prices', async () => {
     await seedOil();
     await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 168, platform: 'metro' });

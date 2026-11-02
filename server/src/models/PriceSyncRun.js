@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// One run of the weekly store-price refresh, so the Admin page can show when it
+// One run of the daily store-price refresh, so the Admin page can show when it
 // last ran, what each store gave back and why a store was skipped.
 const storeResultSchema = new mongoose.Schema(
   {

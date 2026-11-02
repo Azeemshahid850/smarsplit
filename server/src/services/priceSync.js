@@ -24,7 +24,7 @@ async function get(url, as = 'json') {
     headers: { 'User-Agent': USER_AGENT, Accept: as === 'json' ? 'application/json' : 'text/html,application/xml' },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
   return as === 'json' ? res.json() : res.text();
 }
 
@@ -156,15 +156,20 @@ export function robotsAllows(robotsText, path) {
   return !hit || hit.allow;
 }
 
-/** The first path robots.txt forbids, or null when every path the store reads is allowed. */
+/**
+ * Why the store must be left alone today, or null when every path it reads is
+ * allowed. RFC 9309: a missing robots.txt (4xx) means no rules, but one we
+ * cannot reach (5xx, time-out) means assume everything is disallowed.
+ */
 async function forbiddenPath(store) {
   let robots;
   try {
     robots = await get(`${store.origin}/robots.txt`, 'text');
-  } catch {
-    return null; // no robots.txt (404) means no rules
+  } catch (err) {
+    return err.status >= 400 && err.status < 500 ? null : 'robots.txt could not be read';
   }
-  return store.paths.find((path) => !robotsAllows(robots, path)) ?? null;
+  const path = store.paths.find((candidate) => !robotsAllows(robots, candidate));
+  return path ? `robots.txt disallows ${path}` : null;
 }
 
 // ── Matching ─────────────────────────────────────────────────────────────
@@ -230,7 +235,7 @@ async function syncStore(store, products, { gapMs, log }) {
   const result = { store: store.key, searched: 0, matched: 0, updated: 0, skipped: null, error: null };
   const forbidden = await forbiddenPath(store);
   if (forbidden) {
-    result.skipped = `robots.txt disallows ${forbidden}`;
+    result.skipped = forbidden;
     return result;
   }
 
