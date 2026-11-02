@@ -59,6 +59,20 @@ describe('matching a store listing to a price book product', () => {
     expect(pickListing(oil, [{ title: 'DALDA COOKING OIL 3 LTR', price: 99 }])).toBeNull();
     expect(pickListing(oil, [{ title: 'DALDA COOKING OIL 3 LTR', price: 3200 }])).toBeNull();
   });
+
+  it('refuses a listing that is something else under the same word', () => {
+    // Every one of these was picked by an earlier run.
+    const product = (canonicalName, size, unit, price, rivals) => ({ canonicalName, size, unit, prices: [{ price }], rivals });
+    const sugar = product('Sugar 1kg', 1, 'kg', 168);
+    expect(pickListing(sugar, [{ title: 'Sugar Cane Cut Pieces 0.95 - 1 kg 1 kg', price: 164 }])).toBeNull();
+    expect(pickListing(sugar, [{ title: 'Dco Sugar 1Kg', price: 149 }]).title).toBe('Dco Sugar 1Kg');
+    expect(pickListing(product('Beef 1kg', 1, 'kg', 1200), [{ title: 'Pk Beef Burger 1Kg', price: 1169 }, { title: 'Meaoon Cat Food Beef & Vegetable 1kg', price: 944 }])).toBeNull();
+    expect(pickListing(product('Cheese Slices 200g', 200, 'g', 650), [{ title: 'FF BURGER CHEESE SLICES 200GM', price: 695 }]).price).toBe(695);
+    expect(pickListing(product('Detergent 1kg', 1, 'kg', 700), [{ title: 'Spark Detergent 1Kg X 2Pcs (Promo Pack)', price: 920 }])).toBeNull();
+    const tea = product('Tea 200g', 200, 'g', 500, [['face', 'wash'], ['green', 'tea']]);
+    expect(pickListing(tea, [{ title: 'Derma Shine Face Wash Tea Tree 200g', price: 598 }])).toBeNull();
+    expect(pickListing(tea, [{ title: 'Tapal Danedar Tea Jar 200Gm', price: 440 }]).price).toBe(440);
+  });
 });
 
 describe('Shopify stores', () => {
@@ -175,6 +189,29 @@ describe('syncPrices', () => {
     expect(down.search).not.toHaveBeenCalled();
   });
 
+  it("removes a store's synced price once the store no longer lists the product", async () => {
+    await seedOil();
+    await BenchmarkPrice.create({ canonicalName: 'Cooking Oil 3L', aliases: [], size: 3, unit: 'L', price: 999, platform: 'shop', url: 'https://shop.test/p/wrong' });
+    const store = fakeStore('shop', [{ title: 'ENGINE OIL 3 LTR', price: 1800 }]);
+    const metro = { ...store, key: 'metro' };
+
+    await syncPrices({ stores: [store, metro], gapMs: 0 });
+
+    expect(await BenchmarkPrice.findOne({ platform: 'shop' })).toBeNull();
+    expect((await BenchmarkPrice.findOne({ platform: 'metro' })).price).toBe(1790); // no link: typed in, stays
+  });
+
+  it('tries a store that was down once more', async () => {
+    await seedOil();
+    await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 168, platform: 'metro' });
+    const store = fakeStore('shop', [{ title: 'DALDA COOKING OIL BOTTLE 3 LTR', price: 1930 }]);
+    store.search.mockRejectedValueOnce(new Error('HTTP 500')).mockRejectedValueOnce(new Error('HTTP 500')).mockRejectedValueOnce(new Error('HTTP 500'));
+
+    const run = await syncPrices({ stores: [store], gapMs: 0 });
+
+    expect(run.stores[0]).toMatchObject({ matched: 1, error: null });
+  });
+
   it('gives up on a failing store and keeps its old prices', async () => {
     await seedOil();
     await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 168, platform: 'metro' });
@@ -191,7 +228,7 @@ describe('syncPrices', () => {
 
 describe('start-up refresh', () => {
   it('does not start while a recent run is done or still going', async () => {
-    await PriceSyncRun.create({ trigger: 'cli', status: 'running', startedAt: new Date(Date.now() - 60 * 60 * 1000) });
+    await PriceSyncRun.create({ trigger: 'cli', status: 'running', startedAt: new Date(Date.now() - 10 * 60 * 1000) });
     expect(await syncIfStale()).toBeNull();
     await PriceSyncRun.updateMany({}, { status: 'done' });
     expect(await syncIfStale()).toBeNull();
@@ -199,6 +236,17 @@ describe('start-up refresh', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
     const started = await syncIfStale();
     expect(started.run.trigger).toBe('startup');
+    for (let attempt = 0; attempt < 50 && (await PriceSyncRun.countDocuments({ status: 'running' })); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  });
+
+  it('does not wait on a run whose server stopped', async () => {
+    const dead = await PriceSyncRun.create({ trigger: 'startup', status: 'running', startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) });
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+
+    expect((await syncIfStale()).run.trigger).toBe('startup');
+    expect((await PriceSyncRun.findById(dead._id)).status).toBe('failed');
     for (let attempt = 0; attempt < 50 && (await PriceSyncRun.countDocuments({ status: 'running' })); attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }

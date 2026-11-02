@@ -14,6 +14,8 @@ const TIMEOUT_MS = 20_000;
 const GAP_MS = process.env.NODE_ENV === 'test' ? 0 : 2000; // between two requests to the same store
 const GIVE_UP_AFTER = 3; // consecutive failures before a store is left for tomorrow
 const PAGES_PER_PRODUCT = 4; // sitemap stores: product pages opened per book product, at most
+const RETRY_AFTER_MS = process.env.NODE_ENV === 'test' ? 0 : 5 * 60_000; // a store that was down gets one more go
+const UNREACHABLE = 'robots.txt could not be read';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const rupees = (value) => Math.round(Number(String(value ?? '').replace(/[^\d.]/g, '')));
@@ -166,7 +168,7 @@ async function forbiddenPath(store) {
   try {
     robots = await get(`${store.origin}/robots.txt`, 'text');
   } catch (err) {
-    return err.status >= 400 && err.status < 500 ? null : 'robots.txt could not be read';
+    return err.status >= 400 && err.status < 500 ? null : UNREACHABLE;
   }
   const path = store.paths.find((candidate) => !robotsAllows(robots, candidate));
   return path ? `robots.txt disallows ${path}` : null;
@@ -185,13 +187,28 @@ export function queriesFor(product) {
   return [...new Set([sized, base].filter(Boolean))];
 }
 
-/** Same pack size (2% tolerance) and every word of the product's name in the title. */
+// After the product's name these make it something else — "Beef Burger", "Sugar Cane",
+// "Almond Jam Cookies", "Tea Cake Rusk", "Garlic Mayo" — while "Burger Cheese Slices" is still cheese.
+const MADE_INTO = /\b(burgers?|nuggets?|sausages?|cane|cookies?|cakes?|rusks?|mayo)\b/i;
+// Anywhere in the title: pet food, a kitchen towel, a multipack ("1Kg X 2Pcs").
+const NOT_THE_ITEM = /\b(cat|dog|towels?)\b|\bx\s*[2-9]\s*pcs?\b/i;
+
+/**
+ * Same pack size (2% tolerance), every word of the product's name in the title,
+ * and nothing that makes it a different thing: a word above, or the whole name
+ * of another product in the book ("Tea" must not take a "Face Wash Tea Tree").
+ */
 function sameProduct(product, title) {
   const wanted = product.size != null && product.unit ? parseSize(`${product.size}${product.unit}`) : null;
   const size = parseSize(title);
   if (wanted && (!size || size.unit !== wanted.unit || Math.abs(size.amount - wanted.amount) > wanted.amount * 0.02)) return false;
+  if (NOT_THE_ITEM.test(title) && !NOT_THE_ITEM.test(product.canonicalName)) return false;
+  const name = words(baseName(product.canonicalName));
   const titleWords = new Set(words(title));
-  return words(baseName(product.canonicalName)).every((word) => titleWords.has(word));
+  const has = (other) => other.every((word) => titleWords.has(word));
+  if (!has(name) || (product.rivals ?? []).some(has)) return false;
+  const rest = title.slice(title.search(new RegExp(`\\b${name[0]}`, 'i')));
+  return !MADE_INTO.test(rest) || MADE_INTO.test(product.canonicalName);
 }
 
 /**
@@ -226,7 +243,14 @@ async function productsInBook() {
     product.prices.push(row);
     byName.set(row.canonicalName, product);
   }
-  return [...byName.values()].map((product) => ({ ...product, aliases: [...product.aliases] }));
+  // Rivals: the other products' names, for sameProduct. Only names of two words or more —
+  // a one-word name like "Tomatoes" sits inside too many others ("Tomato Ketchup").
+  const names = [...byName.keys()].map((name) => words(baseName(name)));
+  return [...byName.values()].map((product, index) => {
+    const own = new Set(names[index]);
+    const rivals = names.filter((name) => name.length > 1 && !name.every((word) => own.has(word)));
+    return { ...product, aliases: [...product.aliases], rivals };
+  });
 }
 
 class StoreDown extends Error {}
@@ -241,6 +265,7 @@ async function syncStore(store, products, { gapMs, log }) {
 
   // One polite request at a time; GIVE_UP_AFTER failures in a row and the store waits for tomorrow.
   let failures = 0;
+  let failed = 0; // every failed request, so a product whose lookup failed keeps its old price
   const request = async (call) => {
     await sleep(gapMs);
     try {
@@ -250,6 +275,7 @@ async function syncStore(store, products, { gapMs, log }) {
       return answer;
     } catch (err) {
       failures += 1;
+      failed += 1;
       if (failures >= GIVE_UP_AFTER) throw new StoreDown(`stopped after ${failures} failed requests (${err.message}) — previous prices kept`);
       return null;
     }
@@ -260,6 +286,7 @@ async function syncStore(store, products, { gapMs, log }) {
     if (store.catalogue && !catalogue) throw new StoreDown('could not read its sitemap — previous prices kept');
 
     for (const product of products) {
+      const failedBefore = failed;
       let listing = null;
       if (catalogue) {
         // Shortest matching titles first: "dalda cooking oil 3ltr" before a gift-pack bundle.
@@ -279,7 +306,15 @@ async function syncStore(store, products, { gapMs, log }) {
           if (listing) break;
         }
       }
-      if (!listing) continue;
+      if (!listing) {
+        // The store answered and nothing fits (sold out, or a wrong match from an older run): its
+        // synced price goes. Prices typed in without a link, like the bundled demo figures, stay.
+        if (failed === failedBefore) {
+          const { deletedCount } = await BenchmarkPrice.deleteOne({ canonicalName: product.canonicalName, platform: store.key, url: { $ne: null } });
+          if (deletedCount) log(`${store.key}: ${product.canonicalName} no longer listed — old price removed`);
+        }
+        continue;
+      }
 
       result.matched += 1;
       const { modifiedCount, upsertedCount } = await BenchmarkPrice.updateOne(
@@ -305,7 +340,15 @@ let running = null;
 async function execute(run, { stores, gapMs, log }) {
   try {
     const products = await productsInBook();
-    run.stores = await Promise.all(stores.map((store) => syncStore(store, products, { gapMs, log })));
+    run.stores = await Promise.all(
+      stores.map(async (store) => {
+        const first = await syncStore(store, products, { gapMs, log });
+        if (!first.error && first.skipped !== UNREACHABLE) return first;
+        // A store that was down (Chase Up answers HTTP 500 now and then) gets one more go a few minutes later.
+        await sleep(RETRY_AFTER_MS);
+        return syncStore(store, products, { gapMs, log });
+      }),
+    );
     run.status = 'done';
   } catch (err) {
     run.status = 'failed';
@@ -344,12 +387,19 @@ export async function startPriceSync(trigger, { stores = STORES, gapMs = GAP_MS,
 /**
  * On start-up: refresh unless a run started in the last 20 hours finished or is
  * still going (perhaps from a terminal) — a deploy or a wake-up shouldn't wait
- * for tomorrow, and two runs must not hit the same stores at once.
+ * for tomorrow, and two runs must not hit the same stores at once. A run takes
+ * about 15 minutes, so one still "running" after an hour lost its server (a
+ * restart, or Render putting the free instance to sleep) and no longer counts.
  */
 export async function syncIfStale() {
+  const now = Date.now();
+  await PriceSyncRun.updateMany(
+    { status: 'running', startedAt: { $lt: new Date(now - 60 * 60 * 1000) } },
+    { status: 'failed', error: 'server stopped before the run finished', finishedAt: new Date(now) },
+  );
   const recent = await PriceSyncRun.findOne({
     status: { $in: ['done', 'running'] },
-    startedAt: { $gt: new Date(Date.now() - 20 * 60 * 60 * 1000) },
+    startedAt: { $gt: new Date(now - 20 * 60 * 60 * 1000) },
   }).lean();
   return recent ? null : startPriceSync('startup');
 }
