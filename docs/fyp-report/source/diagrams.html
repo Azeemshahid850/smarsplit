@@ -1,0 +1,326 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  body { margin: 0; background: #fff; font-family: 'Liberation Sans', Arial, sans-serif; }
+  .fig { display: inline-block; padding: 8px; background: #fff; }
+  svg text { font-family: 'Liberation Sans', Arial, sans-serif; fill: #111; }
+</style></head>
+<body>
+<div id="root"></div>
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const INK = '#1f2937', SOFT = '#4b5563', TINT = '#eef2f7', ACC = '#0f5132', ACCT = '#e7f3ec';
+
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function figure(id, w, h) {
+  const d = document.createElement('div'); d.className = 'fig'; d.id = id;
+  document.getElementById('root').appendChild(d);
+  const s = el('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}` });
+  d.appendChild(s);
+  const defs = el('defs', {}, s);
+  const m = el('marker', { id: `a-${id}`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
+  el('path', { d: 'M0 0L10 5L0 10z', fill: INK }, m);
+  const t = el('marker', { id: `t-${id}`, viewBox: '0 0 12 12', refX: 11, refY: 6, markerWidth: 12, markerHeight: 12, orient: 'auto' }, defs);
+  el('path', { d: 'M0 0L12 6L0 12z', fill: '#fff', stroke: INK, 'stroke-width': 1 }, t);
+  s.arrow = `url(#a-${id})`; s.tri = `url(#t-${id})`;
+  return s;
+}
+function text(s, x, y, str, o = {}) {
+  const t = el('text', { x, y, 'font-size': o.size || 13, 'text-anchor': o.anchor || 'middle', 'font-weight': o.bold ? 700 : 400, 'font-style': o.italic ? 'italic' : 'normal', fill: o.fill || INK }, s);
+  t.textContent = str; return t;
+}
+function lines(s, x, y, arr, o = {}) {
+  const lh = o.lh || 16; arr.forEach((str, i) => text(s, x, y + i * lh, str, o));
+}
+function box(s, x, y, w, h, arr, o = {}) {
+  el('rect', { x, y, width: w, height: h, rx: o.rx ?? 6, fill: o.fill || '#fff', stroke: o.stroke || INK, 'stroke-width': o.sw || 1.2, 'stroke-dasharray': o.dash || '' }, s);
+  const lh = o.lh || 16, n = arr.length;
+  const y0 = y + h / 2 - ((n - 1) * lh) / 2 + 4.5;
+  arr.forEach((str, i) => text(s, x + w / 2, y0 + i * lh, str, { size: o.size || 13, bold: o.bold && i === 0 }));
+}
+function line(s, pts, o = {}) {
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]} ${p[1]}`).join('');
+  el('path', { d, fill: 'none', stroke: o.stroke || INK, 'stroke-width': o.sw || 1.2, 'stroke-dasharray': o.dash || '', 'marker-end': o.end === false ? '' : (o.tri ? s.tri : s.arrow), 'marker-start': o.both ? s.arrow : '' }, s);
+}
+function band(s, x, y, w, h, title) {
+  el('rect', { x, y, width: w, height: h, rx: 10, fill: TINT, stroke: '#9aa5b4', 'stroke-width': 1 }, s);
+  text(s, x + 14, y + 22, title, { anchor: 'start', bold: true, size: 14 });
+}
+function actor(s, x, y, label) {
+  el('circle', { cx: x, cy: y - 34, r: 10, fill: '#fff', stroke: INK, 'stroke-width': 1.3 }, s);
+  line(s, [[x, y - 24], [x, y]], { end: false }); line(s, [[x - 16, y - 14], [x + 16, y - 14]], { end: false });
+  line(s, [[x, y], [x - 13, y + 20]], { end: false }); line(s, [[x, y], [x + 13, y + 20]], { end: false });
+  lines(s, x, y + 38, Array.isArray(label) ? label : [label], { size: 13, bold: true });
+}
+function usecase(s, cx, cy, label, w = 250, h = 36) {
+  el('ellipse', { cx, cy, rx: w / 2, ry: h / 2, fill: '#fff', stroke: INK, 'stroke-width': 1.2 }, s);
+  text(s, cx, cy + 4.5, label, { size: 12.5 });
+}
+function diamond(s, cx, cy, w, h, arr) {
+  el('polygon', { points: `${cx},${cy - h / 2} ${cx + w / 2},${cy} ${cx},${cy + h / 2} ${cx - w / 2},${cy}`, fill: '#fff', stroke: INK, 'stroke-width': 1.2 }, s);
+  lines(s, cx, cy + 4.5 - ((arr.length - 1) * 15) / 2, arr, { size: 12.5, lh: 15 });
+}
+function terminal(s, cx, cy, w, label) {
+  el('rect', { x: cx - w / 2, y: cy - 18, width: w, height: 36, rx: 18, fill: ACCT, stroke: ACC, 'stroke-width': 1.4 }, s);
+  text(s, cx, cy + 4.5, label, { bold: true });
+}
+
+/* ---------- Fig: architecture ---------- */
+{
+  const s = figure('architecture', 960, 760);
+  band(s, 10, 10, 940, 140, 'Presentation tier  —  React 19 single-page application (Vite, Tailwind CSS, Recharts)');
+  [['Pages (21 routes)', 'React Router'], ['Components', 'tables, forms, charts'], ['AuthContext', 'access token in memory'], ['API layer', 'Axios + silent refresh']]
+    .forEach((b, i) => box(s, 34 + i * 228, 48, 200, 78, b, { bold: true }));
+  line(s, [[480, 150], [480, 200]], { both: true });
+  text(s, 492, 180, 'HTTPS  ·  JSON  ·  /api/v1  ·  Bearer access token + HttpOnly refresh cookie', { anchor: 'start', size: 12, fill: SOFT });
+
+  band(s, 10, 200, 940, 310, 'Application tier  —  Node.js + Express 5 REST API');
+  text(s, 30, 246, 'Request pipeline', { anchor: 'start', size: 12, bold: true, fill: SOFT });
+  const mw = ['Helmet · CORS', 'Rate limiter', 'requireAuth (JWT)', 'Membership check', 'validate (Zod)', 'Controller', 'errorHandler'];
+  mw.forEach((m, i) => {
+    box(s, 26 + i * 132, 256, 116, 44, [m], { size: 11.5, fill: i === 5 ? ACCT : '#fff', stroke: i === 5 ? ACC : INK });
+    if (i < mw.length - 1) line(s, [[142 + i * 132, 278], [158 + i * 132, 278]]);
+  });
+  text(s, 30, 334, 'Services (pure business logic)', { anchor: 'start', size: 12, bold: true, fill: SOFT });
+  const sv = [['splitCalculator', '4 split methods'], ['settlement', 'Min-Cash-Flow'], ['balances', 'aggregation'], ['ocr', 'vision + Tesseract'], ['priceMatch', 'Dice ≥ 0.8'], ['priceSync', 'stores 04:00 UTC'], ['currency · fx', 'rates 03:00'], ['zakat · metalRates', 'nisab, gold, silver'], ['recurring', 'node-cron 02:00'], ['reports', 'CSV · XLSX · PDF'], ['notifications', 'in-app feed'], ['mailer', 'Gmail API or SMTP']];
+  sv.forEach((b, i) => box(s, 26 + (i % 6) * 152.5, 346 + Math.floor(i / 6) * 62, 140, 52, b, { size: 11, lh: 15 }));
+  line(s, [[744, 300], [744, 346]]);
+  text(s, 30, 492, 'Mongoose models  ·  16 collections  ·  integer-rupee and split-sum validation hooks', { anchor: 'start', size: 12, fill: SOFT });
+
+  line(s, [[480, 510], [480, 560]], { both: true });
+  band(s, 10, 560, 940, 190, 'Data tier and external services');
+  [['MongoDB Atlas', 'documents'], ['Cloudinary', 'private images'], ['Vision AI API', 'receipt extraction'], ['Tesseract.js', 'offline OCR'], ['Google OAuth 2.0', 'single sign-on'],
+   ['ExchangeRate-API', 'daily PKR rates'], ['Gold API', 'gold, silver prices'], ['Five online stores', 'robots.txt-checked'], ['Gmail API', 'reset + invites'], ['Brevo SMTP', 'reset + invites']]
+    .forEach((b, i) => box(s, 26 + (i % 5) * 183, 596 + Math.floor(i / 5) * 76, 170, 64, b, { bold: true, size: 11.5 }));
+}
+
+/* ---------- Fig: use case (account + personal) ---------- */
+{
+  const s = figure('usecase-personal', 900, 645);
+  el('rect', { x: 190, y: 20, width: 500, height: 615, rx: 4, fill: '#fff', stroke: INK, 'stroke-width': 1.3 }, s);
+  text(s, 440, 44, 'SmartSplit & ExpenseAI — Account and Personal Workspace', { bold: true, size: 13.5 });
+  const cx = 440, L = cx - 125, R = cx + 125;
+  const uc = { reg: 80, login: 125, reset: 170, tx: 240, budget: 285, scan: 330, verify: 400, save: 445, report: 490, goals: 535, recur: 600 };
+  usecase(s, cx, uc.reg, 'Register account');
+  usecase(s, cx, uc.login, 'Log in (email or Google SSO)');
+  usecase(s, cx, uc.reset, 'Reset forgotten password');
+  usecase(s, cx, uc.tx, 'Manage income and expenses');
+  usecase(s, cx, uc.budget, 'Set monthly category budgets');
+  usecase(s, cx, uc.scan, 'Scan a receipt');
+  usecase(s, cx, uc.verify, 'Verify and edit OCR line items');
+  usecase(s, cx, uc.save, 'View savings suggestions');
+  usecase(s, cx, uc.report, 'View reports and export');
+  usecase(s, cx, uc.goals, 'Track savings goals');
+  usecase(s, cx, uc.recur, 'Generate recurring entries');
+  line(s, [[cx, uc.scan + 18], [cx, uc.verify - 18]], { dash: '5 4' });
+  text(s, cx + 8, 370, '«include»', { anchor: 'start', size: 11.5, italic: true });
+  actor(s, 90, 140, 'Guest');
+  [uc.reg, uc.login, uc.reset].forEach((y) => line(s, [[108, 120], [L, y]], { end: false }));
+  actor(s, 90, 380, ['Registered', 'User']);
+  [uc.tx, uc.budget, uc.scan, uc.verify, uc.save, uc.report, uc.goals].forEach((y) => line(s, [[108, 360], [L, y]], { end: false }));
+  actor(s, 800, 140, ['Google', 'OAuth']);
+  line(s, [[782, 120], [R, uc.login]], { end: false });
+  actor(s, 800, 350, ['Vision AI', 'Service']);
+  line(s, [[782, 330], [R, uc.scan]], { end: false });
+  actor(s, 800, 585, ['Scheduler', '(node-cron)']);
+  line(s, [[782, 565], [R, uc.recur]], { end: false });
+}
+
+/* ---------- Fig: use case (groups) ---------- */
+{
+  const s = figure('usecase-group', 900, 640);
+  el('rect', { x: 190, y: 20, width: 500, height: 610, rx: 4, fill: '#fff', stroke: INK, 'stroke-width': 1.3 }, s);
+  text(s, 440, 44, 'SmartSplit & ExpenseAI — Group Workspace', { bold: true, size: 13.5 });
+  const cx = 440, L = cx - 125, R = cx + 125;
+  const member = [['Create a group', 80], ['Join via invite link or share code', 125], ['Add a shared expense (any currency)', 170], ['Choose a split method', 215], ['View member balances', 260], ['Preview settlement (Min-Cash-Flow)', 305], ['Record settlement (admin)', 350], ['Mark a payment as paid', 395], ['Export group report', 440]];
+  const admin = [['Add or invite members', 505], ['Approve join requests', 550], ['Change role / remove / rotate code', 595]];
+  [...member, ...admin].forEach(([l, y]) => usecase(s, cx, y, l, 270));
+  actor(s, 90, 240, ['Group', 'Member']);
+  member.forEach(([, y]) => line(s, [[108, 220], [L - 10, y]], { end: false }));
+  actor(s, 90, 520, ['Group', 'Admin']);
+  admin.forEach(([, y]) => line(s, [[108, 500], [L - 10, y]], { end: false }));
+  line(s, [[90, 466], [90, 300]], { tri: true });
+  text(s, 98, 390, 'is a', { anchor: 'start', size: 11.5, italic: true, fill: SOFT });
+  actor(s, 800, 520, ['Email', 'Service']);
+  line(s, [[782, 500], [R + 10, 505]], { end: false });
+  actor(s, 800, 200, ['Notification', 'Feed']);
+  line(s, [[782, 180], [R + 10, 170]], { end: false, dash: '5 4' });
+  line(s, [[782, 186], [R + 10, 350]], { end: false, dash: '5 4' });
+}
+
+/* ---------- Fig: ERD ---------- */
+{
+  const s = figure('erd', 1250, 1045);
+  const O = 125; // lower rows centred under the five-wide top row
+  const W = 210;
+  const ent = (x, y, name, fields) => {
+    const h = 30 + fields.length * 16 + 10;
+    el('rect', { x, y, width: W, height: h, rx: 4, fill: '#fff', stroke: INK, 'stroke-width': 1.3 }, s);
+    el('rect', { x, y, width: W, height: 28, rx: 4, fill: ACCT, stroke: INK, 'stroke-width': 1.3 }, s);
+    text(s, x + W / 2, y + 19, name, { bold: true, size: 13.5 });
+    fields.forEach((f, i) => text(s, x + 10, y + 46 + i * 16, f, { anchor: 'start', size: 11.5, fill: f.includes('PK') || f.includes('FK') ? INK : SOFT }));
+    return { x, y, w: W, h, cx: x + W / 2, cy: y + h / 2, b: y + h, r: x + W };
+  };
+  const rt = ent(20, 20, 'RefreshToken', ['_id  PK', 'userId  FK → User', 'tokenHash  (unique)', 'expiresAt  (TTL index)', 'revokedAt, replacedBy']);
+  const nt = ent(270, 20, 'Notification', ['_id  PK', 'userId  FK → User', 'groupId  FK → Group', 'type, message', 'readAt']);
+  const bu = ent(520, 20, 'Budget', ['_id  PK', 'userId  FK → User', 'category', 'monthlyCap  (int Rs)', 'unique (userId, category)']);
+  const ca = ent(770, 20, 'Category', ['_id  PK', 'userId  FK → User', 'name', 'unique (userId, name)']);
+  const us = ent(O + 395, 210, 'User', ['_id  PK', 'name', 'email  (unique)', 'passwordHash  (bcrypt)', 'googleId', 'avatarUrl', 'defaultCurrency = PKR', 'notifications { … }']);
+  const re = ent(O + 20, 210, 'Receipt', ['_id  PK', 'userId  FK → User', 'imageUrl, store, receiptDate', 'ocrStatus, ocrEngine', 'lineItems [ name, qty, price,', '   corrected, priceMatch ]', 'totalDetected, totalsAgree', 'committedTo, committedId']);
+  const pe = ent(O + 770, 210, 'PersonalExpense', ['_id  PK', 'userId  FK → User', 'title, amount  (int Rs)', 'type  CREDIT | DEBIT', 'category, paymentMethod, date', 'isRecurring, recurring { … }', 'generatedFrom  FK → self', 'suggestedAlternatives [ ]']);
+  const ge = ent(O + 145, 470, 'GroupExpense', ['_id  PK', 'groupId  FK → Group', 'title, totalAmount  (int Rs)', 'category, date, splitType', 'paidBy [ userId FK, amount ]', 'splits [ userId FK, share ]', 'items [ name, qty, price,', '   sharedBy ]', 'currency, fx { rate, originals }', 'createdBy  FK, deletedAt']);
+  const gr = ent(O + 395, 470, 'Group', ['_id  PK', 'title, type, baseCurrency', 'status  ACTIVE | SETTLED', 'joinCode', 'settings { simplifyDebts,', '   anyoneCanEdit }', 'members [ user FK, email,', '   role, status, inviteToken ]', 'createdBy  FK → User']);
+  const se = ent(O + 645, 470, 'Settlement', ['_id  PK', 'groupId  FK → Group', 'fromUser  FK → User', 'toUser  FK → User', 'amount  (int Rs)', 'isPaid, paidAt', 'rawDebtCount, optimizedCount']);
+  const au = ent(O + 395, 730, 'AuditLog', ['_id  PK', 'groupId  FK → Group', 'userId  FK → User', 'action, detail, createdAt']);
+  const bp = ent(O + 20, 730, 'BenchmarkPrice', ['_id  PK', 'canonicalName, aliases [ ]', 'size, unit, price  (int Rs)', 'store, url, updatedAt']);
+  const sg = ent(1020, 20, 'SavingsGoal', ['_id  PK', 'userId  FK → User', 'title, targetAmount  (int Rs)', 'targetDate, reachedAt', 'contributions [ amount, note,', '   date ]']);
+  const fx = ent(O + 770, 730, 'FxRate', ['_id  PK', 'base = PKR  (unique)', 'rates { USD, AED, SAR, … }', 'updatedAt, fetchedAt']);
+  const mr = ent(O + 770, 885, 'MetalRate', ['_id  PK', 'base = PKR  (unique)', 'goldPerTola, silverPerTola', '   (admin bazaar price, int Rs)', 'updatedAt, updatedBy  FK', 'market { goldPerTola,', '   silverPerTola, fetchedAt }']);
+  const ps = ent(O + 20, 885, 'PriceSyncRun', ['_id  PK', 'trigger, status', 'startedAt, finishedAt', 'stores [ store, searched,', '   matched, updated,', '   skipped, error ]', 'error']);
+
+  const rel = (pts, a, b, lab) => {
+    line(s, pts, { end: false });
+    const [p0, p1] = [pts[0], pts.at(-1)];
+    text(s, p0[0] + (a.dx || 6), p0[1] + (a.dy || -6), a.t, { anchor: 'start', size: 12, bold: true });
+    text(s, p1[0] + (b.dx || 6), p1[1] + (b.dy || 14), b.t, { anchor: 'start', size: 12, bold: true });
+    if (lab) text(s, lab[0], lab[1], lab[2], { anchor: lab[3] || 'start', size: 11, italic: true, fill: SOFT });
+  };
+  rel([[us.x + 30, us.y], [rt.cx, rt.b]], { t: '1', dx: 4, dy: -6 }, { t: '*', dx: 8, dy: 14 });
+  rel([[us.x + 80, us.y], [nt.cx, nt.b]], { t: '1', dx: 4, dy: -6 }, { t: '*', dx: 8, dy: 14 });
+  rel([[us.x + 130, us.y], [bu.cx, bu.b]], { t: '1', dx: 4, dy: -6 }, { t: '*', dx: 8, dy: 14 });
+  rel([[us.x + 180, us.y], [ca.cx, ca.b]], { t: '1', dx: 4, dy: -6 }, { t: '*', dx: 8, dy: 14 });
+  rel([[us.r, us.y + 20], [sg.cx, sg.b]], { t: '1', dx: 6, dy: -6 }, { t: '*', dx: 8, dy: 14 });
+  text(s, fx.cx, fx.b + 18, 'rate copied into GroupExpense.fx', { size: 11, italic: true, fill: SOFT });
+  rel([[us.x, us.y + 60], [re.r, us.y + 60]], { t: '1', dx: -14, dy: -6 }, { t: '*', dx: 6, dy: -6 }, [re.r + 30, us.y + 52, 'uploads']);
+  rel([[us.r, us.y + 60], [pe.x, us.y + 60]], { t: '1', dx: 6, dy: -6 }, { t: '*', dx: -14, dy: -6 }, [us.r + 40, us.y + 52, 'records']);
+  rel([[us.cx, us.b], [gr.cx, gr.y]], { t: '*', dx: 8, dy: 16 }, { t: '*', dx: 8, dy: -6 }, [us.cx + 10, (us.b + gr.y) / 2 + 4, 'member of (members[ ])']);
+  rel([[gr.x, gr.y + 60], [ge.r, gr.y + 60]], { t: '1', dx: -14, dy: -6 }, { t: '*', dx: 6, dy: -6 });
+  rel([[gr.r, gr.y + 60], [se.x, gr.y + 60]], { t: '1', dx: 6, dy: -6 }, { t: '*', dx: -14, dy: -6 });
+  rel([[gr.cx, gr.b], [au.cx, au.y]], { t: '1', dx: 8, dy: 16 }, { t: '*', dx: 8, dy: -6 });
+  line(s, [[re.x + 20, re.b], [re.x + 20, bp.y]], { end: false, dash: '5 4' });
+  line(s, [[ps.cx, ps.y], [bp.cx, bp.b]], { end: false, dash: '5 4' });
+  text(s, ps.cx + 8, (bp.b + ps.y) / 2 + 4, 'each run updates store prices', { anchor: 'start', size: 11, italic: true, fill: SOFT });
+  text(s, re.x + 28, (re.b + bp.y) / 2 + 40, 'line items matched', { anchor: 'start', size: 11, italic: true, fill: SOFT });
+  text(s, re.x + 28, (re.b + bp.y) / 2 + 54, 'by name / alias', { anchor: 'start', size: 11, italic: true, fill: SOFT });
+}
+
+/* ---------- Fig: settlement flowchart ---------- */
+{
+  const s = figure('settlement-flow', 760, 960);
+  const cx = 300;
+  terminal(s, cx, 30, 160, 'Start');
+  line(s, [[cx, 48], [cx, 78]]);
+  box(s, cx - 160, 78, 320, 50, ['Load non-deleted group expenses', 'and settlements marked paid']);
+  line(s, [[cx, 128], [cx, 158]]);
+  box(s, cx - 160, 158, 320, 66, ['For each member u:', 'net[u] = Σ paid − Σ owed', '+ paid out − received (settlements)']);
+  line(s, [[cx, 224], [cx, 254]]);
+  diamond(s, cx, 304, 220, 100, ['Σ net = 0 ?']);
+  line(s, [[cx + 110, 304], [560, 304]]);
+  text(s, cx + 124, 296, 'no', { anchor: 'start', size: 12, fill: SOFT });
+  box(s, 560, 279, 180, 50, ['Throw error — never', 'invent or lose money'], { stroke: '#9b1c1c' });
+  line(s, [[cx, 354], [cx, 388]]);
+  text(s, cx + 8, 374, 'yes', { anchor: 'start', size: 12, fill: SOFT });
+  box(s, cx - 160, 388, 320, 50, ['Creditors C = { u : net[u] > 0 }', 'Debtors D = { u : net[u] < 0 }, amounts |net|']);
+  line(s, [[cx, 438], [cx, 470]]);
+  diamond(s, cx, 520, 240, 100, ['C and D', 'both non-empty ?']);
+  line(s, [[cx + 120, 520], [600, 520], [600, 878]]);
+  text(s, cx + 134, 512, 'no', { anchor: 'start', size: 12, fill: SOFT });
+  terminal(s, 600, 896, 230, 'Return payments (≤ V − 1)');
+  line(s, [[cx, 570], [cx, 604]]);
+  text(s, cx + 8, 590, 'yes', { anchor: 'start', size: 12, fill: SOFT });
+  box(s, cx - 160, 604, 320, 50, ['Sort C and D by amount, descending', 'c = largest creditor,  d = largest debtor']);
+  line(s, [[cx, 654], [cx, 684]]);
+  box(s, cx - 160, 684, 320, 50, ['amt = min(c.net, d.net)', 'record payment  d → c  of  amt'], { fill: ACCT, stroke: ACC });
+  line(s, [[cx, 734], [cx, 764]]);
+  box(s, cx - 160, 764, 320, 50, ['c.net −= amt;  d.net −= amt', 'remove whoever reached zero']);
+  line(s, [[cx - 160, 789], [40, 789], [40, 520], [cx - 120, 520]]);
+  text(s, 48, 650, 'repeat', { anchor: 'start', size: 12, italic: true, fill: SOFT });
+}
+
+/* ---------- Sequence helper ---------- */
+function sequence(id, w, parts, msgs, rowH = 36, top = 70) {
+  const h = top + msgs.length * rowH + 40;
+  const s = figure(id, w, h);
+  parts.forEach(([x, l]) => {
+    box(s, x - 62, 10, 124, 40, l, { bold: true, size: 12, lh: 14, fill: ACCT, stroke: ACC });
+    line(s, [[x, 50], [x, h - 10]], { end: false, dash: '4 4', stroke: '#9aa5b4' });
+  });
+  msgs.forEach((m, i) => {
+    const y = top + i * rowH + 16;
+    const [from, to, label, o = {}] = m;
+    const x1 = parts[from][0], x2 = parts[to][0];
+    if (from === to) {
+      line(s, [[x1, y - 8], [x1 + 40, y - 8], [x1 + 40, y + 6], [x1 + 4, y + 6]], { dash: o.dash || '' });
+      text(s, x1 + 48, y + 2, label, { anchor: 'start', size: 11.5 });
+    } else {
+      line(s, [[x1, y], [x2 + (x2 > x1 ? -2 : 2), y]], { dash: o.reply ? '5 4' : '' });
+      text(s, (x1 + x2) / 2, y - 6, label, { size: 11.5, fill: o.reply ? SOFT : INK });
+    }
+    text(s, 12, y + 4, String(i + 1), { anchor: 'start', size: 11, fill: SOFT, bold: true });
+    if (o.note) {
+      el('rect', { x: o.note[0], y: y - 13, width: o.note[1], height: 22, rx: 3, fill: '#fff8e6', stroke: '#c9a227' }, s);
+      text(s, o.note[0] + o.note[1] / 2, y + 2, o.note[2], { size: 11, italic: true });
+    }
+  });
+  return s;
+}
+
+/* ---------- Fig: OCR sequence ---------- */
+sequence('ocr-sequence', 980, [[90, ['User']], [250, ['React client']], [450, ['Express API']], [640, ['Cloudinary']], [780, ['Vision LLM', '(Claude)']], [910, ['MongoDB']]], [
+  [0, 1, 'choose or capture photo'],
+  [1, 2, 'POST /receipts/scan (multipart)'],
+  [2, 3, 'upload image (authenticated)'],
+  [2, 5, 'insert Receipt { ocrStatus: processing }'],
+  [2, 1, '202 Accepted { receiptId }', { reply: true }],
+  [2, 4, 'extract → { store, date, items[], total }'],
+  [2, 2, 'on failure: Tesseract.js + line regex', { dash: '5 4' }],
+  [2, 5, 'save lineItems, totalDetected, totalsAgree'],
+  [1, 2, 'GET /receipts/:id  (polling)'],
+  [2, 1, 'line items + 5 % totals check', { reply: true }],
+  [1, 0, 'verification modal (image + editable lines)'],
+  [0, 1, 'correct, add or remove lines; confirm'],
+  [1, 2, 'POST /receipts/:id/commit'],
+  [2, 5, 'insert PersonalExpense  (or return LINE_ITEM draft)'],
+  [2, 1, '201 Created', { reply: true }],
+  [2, 5, 'async: price match → potentialSavings', { dash: '5 4' }],
+], 38);
+
+/* ---------- Fig: auth sequence ---------- */
+sequence('auth-sequence', 900, [[110, ['Browser', '(React)']], [470, ['Express API']], [800, ['MongoDB']]], [
+  [0, 1, 'POST /auth/login { email, password }'],
+  [1, 2, 'find user by email'],
+  [1, 1, 'bcrypt.compare (cost 12)'],
+  [1, 2, 'store sha256(refresh token), 7-day expiry'],
+  [1, 0, '200 { accessToken (15 min) } + Set-Cookie rt (HttpOnly, SameSite=Strict)', { reply: true }],
+  [0, 1, 'GET /groups  Authorization: Bearer <access>'],
+  [1, 0, '401 access token expired', { reply: true }],
+  [0, 1, 'POST /auth/refresh  (cookie sent automatically)'],
+  [1, 2, 'revoke old token, set replacedBy, issue new one'],
+  [1, 0, '200 { new accessToken } + rotated cookie', { reply: true }],
+  [0, 1, 'retry GET /groups  →  200 OK'],
+  [0, 1, 'replay of an already-rotated cookie', { note: [560, 320, 'reuse detected → revoke every session for the user'] }],
+], 40);
+
+/* ---------- Fig: development phases ---------- */
+{
+  const s = figure('phases', 960, 300);
+  const ph = [['Phase 0', 'Monorepo scaffold'], ['Phase 1', 'Authentication'], ['Phase 2', 'Groups & membership'], ['Phase 3', 'Group expenses'], ['Phase 4', 'Settlement engine'], ['Phase 5', 'Personal hub'], ['Phase 6', 'Receipt OCR'], ['Phase 7', 'Savings recommender'], ['Phase 8', 'Reports & exports'], ['Phase 9', 'Hardening & deploy']];
+  ph.forEach((p, i) => {
+    const row = Math.floor(i / 5), col = row ? 4 - (i % 5) : i % 5;
+    const x = 20 + col * 188, y = 30 + row * 140;
+    box(s, x, y, 160, 64, p, { bold: true, fill: i === 4 ? ACCT : '#fff', stroke: i === 4 ? ACC : INK });
+    if (i % 5 < 4) {
+      if (row === 0) line(s, [[x + 160, y + 32], [x + 188, y + 32]]);
+      else line(s, [[x, y + 32], [x - 28, y + 32]]);
+    }
+  });
+  line(s, [[20 + 4 * 188 + 80, 94], [20 + 4 * 188 + 80, 170]]);
+  text(s, 480, 270, 'Each phase: requirements → implementation → automated tests → phase report, before the next phase starts', { size: 12.5, italic: true, fill: SOFT });
+}
+</script>
+</body></html>
