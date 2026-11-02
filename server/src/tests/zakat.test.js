@@ -1,16 +1,35 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { makeUser, makeGroup } from './helpers.js';
 import { calculateZakat } from '../services/zakat.js';
+import { clearRateCache } from '../services/fx.js';
+import { clearMetalCache } from '../services/metalRates.js';
 
 const api = '/api/v1';
 const as = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
 // Silver Rs 3,000 a tola puts the silver nisab at 52.5 × 3,000 = Rs 157,500.
 const RATES = { goldPerTola: 250000, silverPerTola: 3000 };
 
+// Rs 250 per USD; gold $3,110.35 and silver $31.1035 an ounce → Rs 291,600 and Rs 2,916 a tola.
+const replies = {
+  'open.er-api.com': { result: 'success', time_last_update_unix: 1793318400, rates: { PKR: 1, USD: 0.004 } },
+  '/price/XAU': { currency: 'USD', price: 3110.35, symbol: 'XAU' },
+  '/price/XAG': { currency: 'USD', price: 31.1035, symbol: 'XAG' },
+};
+const providersUp = () =>
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => Response.json(replies[Object.keys(replies).find((key) => String(url).includes(key))]));
+const providersDown = () => vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'));
+
+beforeEach(() => {
+  clearRateCache();
+  clearMetalCache();
+  providersDown(); // no test reaches the real internet
+});
+
 afterEach(() => {
   delete process.env.ADMIN_EMAILS;
+  vi.restoreAllMocks();
 });
 
 describe('calculateZakat', () => {
@@ -95,6 +114,41 @@ describe('zakat API', () => {
     // A price typed on the form wins over the saved one.
     const own = await request(app).post(`${api}/zakat/calculate`).use(as(plain)).send({ cash: 400000, silverPerTola: 10000 });
     expect(own.body.data.result).toMatchObject({ nisab: 525000, due: false, zakat: 0 });
+  });
+
+  it('fills the prices from the international rate, keeps the last copy when it is down', async () => {
+    vi.restoreAllMocks();
+    providersUp();
+    const user = await makeUser();
+
+    const live = await request(app).get(`${api}/zakat`).use(as(user));
+    expect(live.body.data.rates).toMatchObject({ goldPerTola: 291600, silverPerTola: 2916, source: 'international', stale: false });
+    expect(live.body.data.source.name).toBe('Gold API');
+
+    const calc = await request(app).post(`${api}/zakat/calculate`).use(as(user)).send({ cash: 200000 });
+    expect(calc.body.data.result).toMatchObject({ nisab: 153090, due: true, zakat: 5000 }); // 52.5 × 2,916
+
+    vi.restoreAllMocks();
+    clearRateCache();
+    clearMetalCache();
+    providersDown();
+    const saved = await request(app).get(`${api}/zakat`).use(as(user));
+    expect(saved.body.data.rates).toMatchObject({ goldPerTola: 291600, silverPerTola: 2916, source: 'international', stale: true });
+  });
+
+  it('uses an admin bazaar price while it is newer than the international one', async () => {
+    vi.restoreAllMocks();
+    providersUp();
+    process.env.ADMIN_EMAILS = 'boss@demo.pk';
+    const boss = await makeUser({ email: 'boss@demo.pk' });
+    await request(app).get(`${api}/zakat`).use(as(boss)); // fetches the international price
+
+    const saved = await request(app).put(`${api}/zakat/rates`).use(as(boss)).send({ goldPerTola: 300000, silverPerTola: 3200 });
+    expect(saved.body.data.rates).toMatchObject({ goldPerTola: 300000, source: 'admin' });
+
+    clearMetalCache(); // the next international refresh is newer, so it takes over again
+    const later = await request(app).get(`${api}/zakat`).use(as(boss));
+    expect(later.body.data.rates).toMatchObject({ goldPerTola: 291600, source: 'international' });
   });
 
   it('rejects bad input and a missing price', async () => {

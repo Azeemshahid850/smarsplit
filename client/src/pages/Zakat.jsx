@@ -42,7 +42,10 @@ function RatesEditor({ rates, onSaved }) {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 ring-1 ring-slate-200" noValidate>
-      <p className="text-sm font-medium text-slate-700">Admin: today&apos;s prices for everyone</p>
+      <div>
+        <p className="text-sm font-medium text-slate-700">Admin: bazaar (sarafa) prices for everyone</p>
+        <p className="text-xs text-slate-400">Used instead of the international rate until it next refreshes, about twice a day.</p>
+      </div>
       <FormError message={error} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Gold, Rs per tola" name="adminGold" type="number" min="1" step="1" value={form.goldPerTola} onChange={set('goldPerTola')} />
@@ -61,7 +64,7 @@ export default function Zakat() {
 }
 
 function ZakatForm({ data, onRatesSaved }) {
-  const { known, rates, canEditRates } = data;
+  const { known, rates, source, canEditRates } = data;
   const confirm = useConfirm();
   // Start with what the app already knows; the user can change any of it.
   const [form, setForm] = useState(() => ({
@@ -175,9 +178,20 @@ function ZakatForm({ data, onRatesSaved }) {
         <section className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <h2 className="font-medium">Gold and silver prices</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {rates
-              ? `Saved prices (${formatDate(rates.updatedAt)}): gold ${formatMoney(rates.goldPerTola)}, silver ${formatMoney(rates.silverPerTola)} per tola.`
-              : 'No prices saved yet — type today’s prices below.'}
+            {!rates && 'Prices could not be fetched right now — type today’s prices below.'}
+            {rates?.source === 'admin' &&
+              `Bazaar rate set by the admin on ${formatDate(rates.updatedAt)}: gold ${formatMoney(rates.goldPerTola)}, silver ${formatMoney(rates.silverPerTola)} per tola.`}
+            {rates?.source === 'international' && (
+              <>
+                International rate, updated {formatDate(rates.updatedAt)}
+                {rates.stale && ' (could not refresh, last saved copy)'}: gold {formatMoney(rates.goldPerTola)}, silver{' '}
+                {formatMoney(rates.silverPerTola)} per tola. Bazaar rates are usually a little higher — type your own below if you like. Prices by{' '}
+                <a href={source.url} target="_blank" rel="noreferrer" className="underline">
+                  {source.name}
+                </a>
+                .
+              </>
+            )}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Gold, Rs per tola" name="goldPerTola" type="number" min="1" step="1" value={form.goldPerTola} onChange={set('goldPerTola')} placeholder={rates ? String(rates.goldPerTola) : 'e.g. 250000'} hint={rates ? 'Leave empty to use the saved price' : ''} />
