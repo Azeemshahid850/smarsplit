@@ -71,12 +71,13 @@ describe('the price book', () => {
     expect(await BenchmarkPrice.distinct('platform')).toEqual(expect.arrayContaining(['daraz', 'metro', 'imtiaz']));
   });
 
-  it('finds a product through an alias and returns the cheapest platform', async () => {
+  it('finds a product through an alias and returns the cheapest live store', async () => {
     const found = await findBenchmark('Cooking Oil 3L');
     expect(found.match.canonicalName).toBe('Cooking Oil 3L');
-    expect(found.match.platform).toBe('daraz'); // 1745 beats metro 1790 and imtiaz 1830
-    expect(found.match.price).toBe(1745);
-    expect(found.alternatives.length).toBeGreaterThan(1);
+    // The bundled daraz 1745 and imtiaz 1830 rows stay in the collection but are not a store the app reads.
+    expect(found.match.platform).toBe('metro');
+    expect(found.match.price).toBe(1790);
+    expect(found.alternatives.map((row) => row.platform)).toEqual(['metro', 'chaseup', 'alfatah']);
   });
 
   it('matches messy receipt text', async () => {
@@ -99,13 +100,13 @@ describe('fresh prices win', () => {
   it('ignores an old figure once a store confirmed the price this week', async () => {
     const old = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     await BenchmarkPrice.insertMany([
-      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 120, platform: 'naheed', updatedAt: old },
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 120, platform: 'chaseup', updatedAt: old },
       { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 158, platform: 'alfatah', updatedAt: new Date() },
     ]);
     expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('alfatah');
 
     await BenchmarkPrice.updateMany({}, { updatedAt: old }); // nothing fresh: every figure counts again
-    expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('naheed');
+    expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('chaseup');
   });
 });
 
@@ -116,16 +117,16 @@ describe('matchLineItems', () => {
 
   it('flags only the lines where something cheaper exists and totals the saving', async () => {
     const { lineItems, potentialSavings, suggestedAlternatives } = await matchLineItems([
-      { name: 'Cooking Oil 3L', qty: 1, price: 1890 }, // daraz 1745 → saves 145
-      { name: 'Basmati Rice 5kg', qty: 1, price: 1900 }, // cheaper than daraz 2050 → no match
+      { name: 'Cooking Oil 3L', qty: 1, price: 1890 }, // metro 1790 → saves 100
+      { name: 'Basmati Rice 5kg', qty: 1, price: 1900 }, // cheaper than metro 2100 → no match
       { name: 'Handmade vase', qty: 1, price: 3000 }, // not in the book
     ]);
 
-    expect(lineItems[0].priceMatch).toMatchObject({ source: 'daraz', onlinePrice: 1745 });
+    expect(lineItems[0].priceMatch).toMatchObject({ source: 'metro', onlinePrice: 1790 });
     expect(lineItems[1].priceMatch).toBeNull();
     expect(lineItems[2].priceMatch).toBeNull();
-    expect(potentialSavings).toBe(145);
-    expect(suggestedAlternatives[0]).toMatchObject({ name: 'Cooking Oil 3L', onlinePrice: 1745, saving: 145 });
+    expect(potentialSavings).toBe(100);
+    expect(suggestedAlternatives[0]).toMatchObject({ name: 'Cooking Oil 3L', onlinePrice: 1790, saving: 100 });
   });
 
   it('multiplies the saving by the quantity', async () => {
@@ -187,12 +188,12 @@ describe('savings land on the committed transaction', () => {
     await applyPriceMatches(receipt._id, res.body.data.transactionId);
 
     const saved = await PersonalExpense.findById(res.body.data.transactionId);
-    expect(saved.potentialSavings).toBe(325); // oil 145 + tea 180
+    expect(saved.potentialSavings).toBe(246); // oil 100 at metro + tea 146 at chaseup
     expect(saved.suggestedAlternatives).toHaveLength(2);
-    expect(saved.suggestedAlternatives[0]).toMatchObject({ name: 'Tea 500g', source: 'daraz', onlinePrice: 1120 });
+    expect(saved.suggestedAlternatives[0]).toMatchObject({ name: 'Tea 500g', source: 'chaseup', onlinePrice: 1154 });
 
     const after = await Receipt.findById(receipt._id);
-    expect(after.potentialSavings).toBe(325);
-    expect(after.lineItems[0].priceMatch.source).toBe('daraz');
+    expect(after.potentialSavings).toBe(246);
+    expect(after.lineItems[0].priceMatch.source).toBe('metro');
   });
 });

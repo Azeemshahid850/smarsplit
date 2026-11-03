@@ -18,7 +18,7 @@ describe('price book', () => {
     member = await makeUser();
     process.env.ADMIN_EMAILS = 'Someone@else.pk, pricebook@demo.pk';
     await BenchmarkPrice.insertMany([
-      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'imtiaz' },
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'grocerapp' },
       { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 168, platform: 'metro' },
     ]);
   });
@@ -30,12 +30,12 @@ describe('price book', () => {
   it('lists products grouped by name with every store, and says who may edit', async () => {
     const res = await request(app).get(`${api}/prices`).use(as(member));
     expect(res.status).toBe(200);
-    expect(res.body.data.stores).toEqual(['imtiaz', 'metro']);
+    expect(res.body.data.stores).toEqual(['grocerapp', 'metro']);
     expect(res.body.data.canEdit).toBe(false);
     expect(res.body.data.products).toHaveLength(1);
     expect(res.body.data.products[0].prices.map((priceRow) => [priceRow.platform, priceRow.price])).toEqual([
       ['metro', 168],
-      ['imtiaz', 175],
+      ['grocerapp', 175],
     ]);
 
     const mine = await request(app).get(`${api}/prices`).use(as(admin));
@@ -43,12 +43,12 @@ describe('price book', () => {
   });
 
   it('refuses writes from anyone not listed as a price admin', async () => {
-    const res = await request(app).post(`${api}/prices`).use(as(member)).send({ canonicalName: 'Sugar 1kg', platform: 'carrefour', price: 160 });
+    const res = await request(app).post(`${api}/prices`).use(as(member)).send({ canonicalName: 'Sugar 1kg', platform: 'chaseup', price: 160 });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('NOT_SUPER_ADMIN');
 
     delete process.env.ADMIN_EMAILS;
-    const nobody = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'Sugar 1kg', platform: 'carrefour', price: 160 });
+    const nobody = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'Sugar 1kg', platform: 'chaseup', price: 160 });
     expect(nobody.status).toBe(403);
   });
 
@@ -56,21 +56,21 @@ describe('price book', () => {
     const first = await request(app)
       .post(`${api}/prices`)
       .use(as(admin))
-      .send({ canonicalName: 'Sugar 1kg', platform: 'Carrefour', price: 165, aliases: ['Cheeni'], size: 1, unit: 'kg' });
+      .send({ canonicalName: 'Sugar 1kg', platform: 'Chaseup', price: 165, aliases: ['Cheeni'], size: 1, unit: 'kg' });
     expect(first.status).toBe(201);
-    expect(first.body.data.price.platform).toBe('carrefour');
+    expect(first.body.data.price.platform).toBe('chaseup');
 
-    const again = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'Sugar 1kg', platform: 'carrefour', price: 150 });
+    const again = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'Sugar 1kg', platform: 'chaseup', price: 150 });
     expect(again.status).toBe(201);
 
     expect(await BenchmarkPrice.countDocuments({ canonicalName: 'Sugar 1kg' })).toBe(3);
     const list = await request(app).get(`${api}/prices`).use(as(member));
-    expect(list.body.data.stores).toEqual(['carrefour', 'imtiaz', 'metro']);
+    expect(list.body.data.stores).toEqual(['chaseup', 'grocerapp', 'metro']);
     expect(list.body.data.products[0].aliases).toEqual(expect.arrayContaining(['sugar', 'cheeni']));
 
     // The new store is now the cheapest, so receipts are compared against it.
     const found = await findBenchmark('Cheeni 1kg');
-    expect(found.match.platform).toBe('carrefour');
+    expect(found.match.platform).toBe('chaseup');
     expect(found.match.price).toBe(150);
   });
 
@@ -90,6 +90,32 @@ describe('price book', () => {
     const res = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'X', platform: 'metro', price: 12.5 });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+});
+
+describe('only the stores the app reads', () => {
+  it('hides rows of other stores and refuses to add one', async () => {
+    const admin = await makeUser({ email: 'boss@demo.pk' });
+    process.env.ADMIN_EMAILS = 'boss@demo.pk';
+    await BenchmarkPrice.create([
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 150, platform: 'daraz' },
+      { canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 168, platform: 'metro' },
+    ]);
+
+    const list = await request(app).get(`${api}/prices`).use(as(admin));
+    expect(list.body.data.stores).toEqual(['metro']);
+    expect((await findBenchmark('Sugar 1kg')).match.platform).toBe('metro'); // daraz is cheaper but not read
+
+    const res = await request(app).post(`${api}/prices`).use(as(admin)).send({ canonicalName: 'Sugar 1kg', platform: 'Daraz', price: 140 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/stores the app reads/);
+    delete process.env.ADMIN_EMAILS;
+  });
+
+  it('lists exactly the stores the daily refresh reads', async () => {
+    const { STORES } = await import('../services/priceSync.js');
+    const { LIVE_STORES } = await import('../models/BenchmarkPrice.js');
+    expect(STORES.map((store) => store.key).sort()).toEqual([...LIVE_STORES].sort());
   });
 });
 
@@ -113,11 +139,11 @@ describe('price book import and export', () => {
   };
 
   it('imports an Excel sheet, updating repeats and reporting bad rows', async () => {
-    await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'imtiaz' });
+    await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'grocerapp' });
 
     const file = await sheet([
-      ['Sugar 1kg', 'Imtiaz', '170', 1, 'kg', 'cheeni', ''],
-      ['Sugar 1kg', 'Carrefour', 'Rs 160', 1, 'kg', '', ''],
+      ['Sugar 1kg', 'GrocerApp', '170', 1, 'kg', 'cheeni', ''],
+      ['Sugar 1kg', 'Chaseup', 'Rs 160', 1, 'kg', '', ''],
       ['Tea 500g', 'metro', '1180', 500, 'g', 'chai, tapal', 'https://metro.pk/tea'],
       ['', 'metro', '5', '', '', '', ''],
       ['Bad Price', 'metro', 'abc', '', '', '', ''],
@@ -129,13 +155,13 @@ describe('price book import and export', () => {
     expect(res.body.data.skipped.map((skippedRow) => skippedRow.row)).toEqual([5, 6]);
 
     const sugar = await BenchmarkPrice.find({ canonicalName: 'Sugar 1kg' }).sort({ price: 1 }).lean();
-    expect(sugar.map((priceRow) => [priceRow.platform, priceRow.price])).toEqual([['carrefour', 160], ['imtiaz', 170]]);
+    expect(sugar.map((priceRow) => [priceRow.platform, priceRow.price])).toEqual([['chaseup', 160], ['grocerapp', 170]]);
     expect(sugar[1].aliases).toEqual(expect.arrayContaining(['sugar', 'cheeni']));
     expect((await BenchmarkPrice.findOne({ canonicalName: 'Tea 500g' })).url).toBe('https://metro.pk/tea');
   });
 
   it('imports CSV too and rejects other files', async () => {
-    const csv = Buffer.from('product,store,price\nEggs Dozen,metro,330\nEggs Dozen,daraz,360\n');
+    const csv = Buffer.from('product,store,price\nEggs Dozen,metro,330\nEggs Dozen,alfatah,360\n');
     const res = await request(app).post(`${api}/prices/import`).use(as(admin)).attach('file', csv, 'prices.csv');
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ added: 2, updated: 0, skipped: [] });
@@ -147,7 +173,7 @@ describe('price book import and export', () => {
 
   it('exports the book as a spreadsheet anyone can download', async () => {
     const member = await makeUser();
-    await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'imtiaz' });
+    await BenchmarkPrice.create({ canonicalName: 'Sugar 1kg', aliases: ['sugar'], size: 1, unit: 'kg', price: 175, platform: 'grocerapp' });
 
     const res = await request(app).get(`${api}/prices/export`).use(as(member)).buffer().parse((response, cb) => {
       const chunks = [];
@@ -162,7 +188,7 @@ describe('price book import and export', () => {
     await workbook.xlsx.load(res.body);
     const ws = workbook.worksheets[0];
     expect(ws.getRow(1).values.slice(1, 4)).toEqual(['Product', 'Store', 'Price (Rs)']);
-    expect(ws.getRow(2).values.slice(1, 4)).toEqual(['Sugar 1kg', 'imtiaz', 175]);
+    expect(ws.getRow(2).values.slice(1, 4)).toEqual(['Sugar 1kg', 'grocerapp', 175]);
   });
 });
 

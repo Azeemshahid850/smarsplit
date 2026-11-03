@@ -1,4 +1,4 @@
-import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
+import { BenchmarkPrice, liveStoresOnly } from '../models/BenchmarkPrice.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { isSuperAdmin } from '../config/env.js';
 import { seedBenchmarkPrices } from '../scripts/seedPrices.js';
@@ -11,7 +11,7 @@ import { buildPriceWorkbook, parsePriceSheet, importPriceRows } from '../service
  * enough (a few hundred rows) to send at once and filter in the browser.
  */
 export async function listPrices(req, res) {
-  const rows = await BenchmarkPrice.find().sort({ canonicalName: 1, price: 1 }).lean();
+  const rows = await BenchmarkPrice.find(liveStoresOnly()).sort({ canonicalName: 1, price: 1 }).lean();
 
   const byProduct = new Map();
   for (const row of rows) {

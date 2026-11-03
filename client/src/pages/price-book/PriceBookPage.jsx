@@ -72,7 +72,7 @@ function AddPriceForm({ products, stores, onSaved }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Product" name="canonicalName" list="pricebook-products" required value={form.canonicalName} onChange={pickProduct} placeholder="Cooking Oil 3L" />
-        <Field label="Store" name="platform" list="pricebook-stores" required value={form.platform} onChange={change} placeholder="Metro, Imtiaz, Daraz, Carrefour…" />
+        <Field label="Store" name="platform" list="pricebook-stores" required value={form.platform} onChange={change} placeholder="Metro, Alfatah, Grocerapp, Jalal sons, Chaseup" />
       </div>
       <datalist id="pricebook-products">
         {products.map((productRow) => (

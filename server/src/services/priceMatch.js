@@ -1,4 +1,4 @@
-import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
+import { BenchmarkPrice, liveStoresOnly } from '../models/BenchmarkPrice.js';
 
 /**
  * Receipt text → a comparable product key.
@@ -88,7 +88,7 @@ export async function findBenchmark(rawName, catalogue = null) {
   const key = normalize(rawName);
   if (!key) return null;
 
-  const all = catalogue ?? (await BenchmarkPrice.find().lean());
+  const all = catalogue ?? (await BenchmarkPrice.find(liveStoresOnly()).lean());
   const wantedSize = parseSize(rawName);
   const rows = all.filter((priceRow) => sizeCompatible(wantedSize, priceRow));
   if (!rows.length) return null;
@@ -136,7 +136,7 @@ function cheapest(rows, score) {
  * exists, plus the total saving and the 2-3 best alternatives.
  */
 export async function matchLineItems(lineItems = []) {
-  const catalogue = await BenchmarkPrice.find().lean();
+  const catalogue = await BenchmarkPrice.find(liveStoresOnly()).lean();
 
   let potentialSavings = 0;
   const suggestedAlternatives = [];

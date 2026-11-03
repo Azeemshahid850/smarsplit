@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import ExcelJS from 'exceljs';
 
-import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
+import { BenchmarkPrice, liveStoresOnly } from '../models/BenchmarkPrice.js';
 import { upsertPriceSchema } from '../routes/prices.schemas.js';
 import { seedBenchmarkPrices } from '../scripts/seedPrices.js';
 import { normalize } from './priceMatch.js';
@@ -46,7 +46,7 @@ export async function ensurePriceBook() {
 
 /** The current book as a workbook — or a one-row example when it is empty, so it doubles as the template. */
 export async function buildPriceWorkbook() {
-  const rows = await BenchmarkPrice.find().sort({ canonicalName: 1, platform: 1 }).lean();
+  const rows = await BenchmarkPrice.find(liveStoresOnly()).sort({ canonicalName: 1, platform: 1 }).lean();
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Prices');
   sheet.columns = COLUMNS;

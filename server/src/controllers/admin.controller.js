@@ -3,7 +3,7 @@ import { Group } from '../models/Group.js';
 import { GroupExpense } from '../models/GroupExpense.js';
 import { PersonalExpense } from '../models/PersonalExpense.js';
 import { Receipt } from '../models/Receipt.js';
-import { BenchmarkPrice } from '../models/BenchmarkPrice.js';
+import { BenchmarkPrice, liveStoresOnly } from '../models/BenchmarkPrice.js';
 import { ok } from '../utils/ok.js';
 import { isMailConfigured } from '../services/mailer.js';
 import { PriceSyncRun } from '../models/PriceSyncRun.js';
@@ -21,8 +21,8 @@ export async function overview(req, res) {
     GroupExpense.countDocuments({ deletedAt: null }),
     PersonalExpense.countDocuments(),
     Receipt.countDocuments(),
-    BenchmarkPrice.countDocuments(),
-    BenchmarkPrice.distinct('platform'),
+    BenchmarkPrice.countDocuments(liveStoresOnly()),
+    BenchmarkPrice.distinct('platform', liveStoresOnly()),
     User.find().sort({ createdAt: -1 }).limit(50).select('name email avatarUrl createdAt googleId').lean(),
     Group.find().sort({ createdAt: -1 }).limit(50).populate('createdBy', 'name email').lean(),
   ]);

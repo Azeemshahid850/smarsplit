@@ -20,4 +20,10 @@ const benchmarkPriceSchema = new mongoose.Schema(
 
 benchmarkPriceSchema.index({ canonicalName: 1, platform: 1 }, { unique: true });
 
+// The stores the daily refresh reads (STORES in services/priceSync.js). Only their
+// prices are shown and compared against; rows for any other store stay in the
+// collection but are left out, so widening this list brings them back.
+export const LIVE_STORES = ['alfatah', 'grocerapp', 'metro', 'jalal sons', 'chaseup'];
+export const liveStoresOnly = () => ({ platform: { $in: LIVE_STORES } });
+
 export const BenchmarkPrice = mongoose.model('BenchmarkPrice', benchmarkPriceSchema);
