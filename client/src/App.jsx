@@ -2,33 +2,33 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext.jsx';
-import { ConfirmProvider } from './components/ConfirmDialog.jsx';
+import { ConfirmProvider } from './components/ui/ConfirmDialog.jsx';
 import { CategoriesProvider } from './context/CategoriesContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-import AppLayout from './components/AppLayout.jsx';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import ResetPassword from './pages/ResetPassword.jsx';
-import Join from './pages/Join.jsx';
-import JoinRequest from './pages/JoinRequest.jsx';
-import Home from './pages/Home.jsx';
-import Groups from './pages/Groups.jsx';
-import Personal from './pages/Personal.jsx';
-import Goals from './pages/Goals.jsx';
-import Zakat from './pages/Zakat.jsx';
-import Scan from './pages/Scan.jsx';
-import Profile from './pages/Profile.jsx';
-import PriceBook from './pages/PriceBook.jsx';
-import Admin from './pages/Admin.jsx';
+import AppLayout from './components/layout/AppLayout.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
+import RegisterPage from './pages/auth/RegisterPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.jsx';
+import JoinInvitePage from './pages/join/JoinInvitePage.jsx';
+import JoinRequestPage from './pages/join/JoinRequestPage.jsx';
+import DashboardPage from './pages/dashboard/DashboardPage.jsx';
+import GroupsPage from './pages/groups/GroupsPage.jsx';
+import PersonalPage from './pages/personal/PersonalPage.jsx';
+import GoalsPage from './pages/goals/GoalsPage.jsx';
+import ZakatPage from './pages/zakat/ZakatPage.jsx';
+import ScanPage from './pages/scan/ScanPage.jsx';
+import ProfilePage from './pages/profile/ProfilePage.jsx';
+import PriceBookPage from './pages/price-book/PriceBookPage.jsx';
+import AdminPage from './pages/admin/AdminPage.jsx';
 
 // Recharts is heavy — only the Reports route pays for it.
-const Reports = lazy(() => import('./pages/Reports.jsx'));
-import CreateGroup from './pages/CreateGroup.jsx';
-import GroupDetail from './pages/GroupDetail.jsx';
-import AddExpense from './pages/AddExpense.jsx';
-import SettleUp from './pages/SettleUp.jsx';
+const ReportsPage = lazy(() => import('./pages/reports/ReportsPage.jsx'));
+import GroupFormPage from './pages/groups/GroupFormPage.jsx';
+import GroupDetailPage from './pages/group-detail/GroupDetailPage.jsx';
+import AddExpensePage from './pages/add-expense/AddExpensePage.jsx';
+import SettleUpPage from './pages/settle-up/SettleUpPage.jsx';
 
 export default function App() {
   return (
@@ -38,12 +38,12 @@ export default function App() {
         <ConfirmProvider>
           <Toaster position="bottom-right" richColors closeButton />
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/join/:inviteToken" element={<Join />} />
-            <Route path="/join-request/:joinCode" element={<JoinRequest />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/join/:inviteToken" element={<JoinInvitePage />} />
+            <Route path="/join-request/:joinCode" element={<JoinRequestPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route
@@ -53,29 +53,29 @@ export default function App() {
                   </CategoriesProvider>
                 }
               >
-                <Route path="/" element={<Home />} />
-                <Route path="/groups" element={<Groups />} />
-                <Route path="/personal" element={<Personal />} />
-                <Route path="/goals" element={<Goals />} />
-                <Route path="/zakat" element={<Zakat />} />
-                <Route path="/scan" element={<Scan />} />
-                <Route path="/prices" element={<PriceBook />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/groups" element={<GroupsPage />} />
+                <Route path="/personal" element={<PersonalPage />} />
+                <Route path="/goals" element={<GoalsPage />} />
+                <Route path="/zakat" element={<ZakatPage />} />
+                <Route path="/scan" element={<ScanPage />} />
+                <Route path="/prices" element={<PriceBookPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route
                   path="/reports"
                   element={
                     <Suspense fallback={<div className="py-12 text-center text-sm text-slate-400">Loading reports…</div>}>
-                      <Reports />
+                      <ReportsPage />
                     </Suspense>
                   }
                 />
-                <Route path="/groups/new" element={<CreateGroup />} />
-                <Route path="/groups/:id" element={<GroupDetail />} />
-                <Route path="/groups/:id/edit" element={<CreateGroup />} />
-                <Route path="/groups/:id/settle" element={<SettleUp />} />
-                <Route path="/expenses/new" element={<AddExpense />} />
-                <Route path="/expenses/:expenseId/edit" element={<AddExpense />} />
+                <Route path="/groups/new" element={<GroupFormPage />} />
+                <Route path="/groups/:id" element={<GroupDetailPage />} />
+                <Route path="/groups/:id/edit" element={<GroupFormPage />} />
+                <Route path="/groups/:id/settle" element={<SettleUpPage />} />
+                <Route path="/expenses/new" element={<AddExpensePage />} />
+                <Route path="/expenses/:expenseId/edit" element={<AddExpensePage />} />
               </Route>
             </Route>
 
