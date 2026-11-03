@@ -42,13 +42,16 @@ export default function CreateGroup() {
 
   const submit = async (event) => {
     event.preventDefault();
+    // An address typed but never "Add"-ed still counts, rather than vanishing.
+    const draft = emailDraft.trim().toLowerCase();
+    if (draft && !emailRe.test(draft)) return setError('That does not look like an email');
     setError('');
     setLoading(true);
     try {
       const { group } = await createGroup({
         ...form,
         startDate: form.startDate || null,
-        memberEmails: emails,
+        memberEmails: draft && !emails.includes(draft) ? [...emails, draft] : emails,
         settings,
       });
       toast.success(`"${group.title}" created`);
