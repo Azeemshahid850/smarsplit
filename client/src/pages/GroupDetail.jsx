@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { getGroup } from '../api/groups.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAsync } from '../hooks/useAsync.js';
@@ -10,11 +10,13 @@ import Avatar from '../components/Avatar.jsx';
 import MembersTab from '../components/MembersTab.jsx';
 import ExpensesTab from '../components/ExpensesTab.jsx';
 import BalancesTab from '../components/BalancesTab.jsx';
+import GroupActions from '../components/GroupActions.jsx';
 
 const TABS = ['Expenses', 'Balances', 'Members'];
 
 export default function GroupDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [tab, setTab] = useState('Expenses');
   // Set when the user jumps here to invite someone, so the email box takes focus.
@@ -55,14 +57,7 @@ export default function GroupDetail() {
             ))}
           </div>
 
-          {view.iAmAdmin && (
-            <Link
-              to={`/groups/${group.id}/edit`}
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
-            >
-              <Pencil className="h-4 w-4 text-slate-400" /> Edit group
-            </Link>
-          )}
+          <GroupActions group={group} isAdmin={view.iAmAdmin} onDeleted={() => navigate('/groups', { replace: true })} />
 
           {view.iAmAdmin && (
             <button

@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 
 import { Group } from '../models/Group.js';
+import { GroupExpense } from '../models/GroupExpense.js';
+import { Settlement } from '../models/Settlement.js';
+import { Notification } from '../models/Notification.js';
+import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
@@ -146,6 +150,29 @@ export async function updateGroup(req, res) {
   await req.group.save();
   await req.group.populate('members.user', 'name avatarUrl');
   ok(res, { group: publicGroup(req.group) });
+}
+
+// Only a group nothing has been spent in can go: money history is never thrown away.
+export async function deleteGroup(req, res) {
+  const groupId = req.group._id;
+  const [expenses, settlements] = await Promise.all([
+    GroupExpense.countDocuments({ groupId, deletedAt: null }),
+    Settlement.countDocuments({ groupId }),
+  ]);
+  if (expenses || settlements) {
+    throw ApiError.conflict(
+      'This group has expenses, so it cannot be deleted. Settle up instead and it is marked settled.',
+      'GROUP_HAS_EXPENSES',
+    );
+  }
+
+  await Promise.all([
+    GroupExpense.deleteMany({ groupId }), // expenses deleted earlier, kept only for the history
+    Notification.deleteMany({ groupId }),
+    AuditLog.deleteMany({ groupId }),
+  ]);
+  await req.group.deleteOne();
+  ok(res, { deleted: true });
 }
 
 export async function inviteMember(req, res) {

@@ -6,6 +6,8 @@ import { useAsync } from '../hooks/useAsync.js';
 import { formatMoney, formatSigned } from '../utils/format.js';
 import Avatar from '../components/Avatar.jsx';
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
+import GroupActions from '../components/GroupActions.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useConfirm } from '../components/ConfirmDialog.jsx';
 
 /** Invites sent to my email, and requests I am waiting on. */
@@ -96,6 +98,7 @@ function Invitations({ invites, onChange }) {
 const balanceTone = (netAmount) => (netAmount > 0 ? 'text-emerald-600' : netAmount < 0 ? 'text-red-600' : 'text-slate-400');
 
 export default function Groups() {
+  const { user } = useAuth();
   const { data, loading, error, reload } = useAsync(listGroups);
   const invites = useAsync(listInvites);
 
@@ -142,6 +145,7 @@ export default function Groups() {
                   <th className="px-4 py-3 font-medium">Total spent</th>
                   <th className="px-4 py-3 font-medium">My balance</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -177,6 +181,14 @@ export default function Groups() {
                       >
                         {groupRow.status.toLowerCase()}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <GroupActions
+                        group={groupRow}
+                        isAdmin={groupRow.members.some((memberRow) => String(memberRow.userId) === user.id && memberRow.role === 'admin')}
+                        onDeleted={reload}
+                        showOpen
+                      />
                     </td>
                   </tr>
                 ))}

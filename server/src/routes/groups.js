@@ -47,6 +47,15 @@ router.patch(
   asyncHandler(ctrl.updateGroup),
 );
 
+router.delete(
+  '/groups/:id',
+  requireAuth,
+  validate(groupParamsSchema, 'params'),
+  asyncHandler(requireMember),
+  requireAdmin,
+  asyncHandler(ctrl.deleteGroup),
+);
+
 router.post(
   '/groups/:id/members',
   requireAuth,

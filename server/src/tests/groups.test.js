@@ -254,6 +254,42 @@ describe('PATCH /groups/:id', () => {
   });
 });
 
+describe('DELETE /groups/:id', () => {
+  const auth = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
+
+  it('lets an admin delete a group nothing was spent in', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner);
+
+    const res = await request(app).delete(`${api}/groups/${group.id}`).use(auth(owner));
+    expect(res.status).toBe(200);
+    expect((await request(app).get(`${api}/groups/${group.id}`).use(auth(owner))).status).toBe(404);
+  });
+
+  it('keeps a group that has expenses', async () => {
+    const owner = await makeUser();
+    const group = await makeGroup(owner);
+    await request(app).post(`${api}/groups/${group.id}/expenses`).use(auth(owner)).send({
+      title: 'Tea', totalAmount: 300, category: 'Food', splitType: 'EQUAL',
+      paidBy: [{ userId: owner.id, amount: 300 }], participants: [owner.id],
+    }).expect(201);
+
+    const res = await request(app).delete(`${api}/groups/${group.id}`).use(auth(owner));
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('GROUP_HAS_EXPENSES');
+    expect((await request(app).get(`${api}/groups/${group.id}`).use(auth(owner))).status).toBe(200);
+  });
+
+  it('refuses a member who is not an admin', async () => {
+    const owner = await makeUser();
+    const friend = await makeUser();
+    const group = await makeGroup(owner, { memberEmails: [friend.email] });
+
+    const res = await request(app).delete(`${api}/groups/${group.id}`).use(auth(friend));
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('invitations inbox', () => {
   const auth = (user) => (req) => req.set('Authorization', `Bearer ${user.accessToken}`);
 
