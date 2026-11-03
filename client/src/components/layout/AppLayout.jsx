@@ -1,68 +1,49 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import ErrorBoundary from '../ErrorBoundary.jsx';
-import { Wallet, LayoutDashboard, Users, LogOut, PiggyBank, ScanLine, BarChart3, ShieldCheck, Target } from 'lucide-react';
 import NotificationBell from './NotificationBell.jsx';
+import Sidebar from './Sidebar.jsx';
+import MobileTabBar from './MobileTabBar.jsx';
+import BrandMark from './BrandMark.jsx';
+import { ADMIN_ITEM } from './navItems.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import Avatar from '../ui/Avatar.jsx';
 
-const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/groups', label: 'Groups', icon: Users },
-  { to: '/personal', label: 'Personal', icon: PiggyBank },
-  { to: '/goals', label: 'Goals', icon: Target },
-  { to: '/scan', label: 'Scan', icon: ScanLine },
-  { to: '/reports', label: 'Reports', icon: BarChart3 },
-];
-// Only people listed in ADMIN_EMAILS on the server get this one.
-const adminNav = { to: '/admin', label: 'Admin', icon: ShieldCheck };
-
 export default function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { pathname } = useLocation();
+  const AdminIcon = ADMIN_ITEM.icon;
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:gap-6">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900 hover:opacity-80">
-            <Wallet className="h-5 w-5 text-emerald-600" /> <span className="hidden sm:inline">SmartSplit</span>
-          </Link>
+      <Sidebar />
 
-          <nav className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto sm:gap-1">
-            {[...nav, ...(user.isAdmin ? [adminNav] : [])].map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  `flex shrink-0 items-center gap-2 rounded-lg px-1.5 py-1.5 text-sm transition sm:px-3 ${
-                    isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-                  }`
-                }
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden lg:inline">{label}</span>
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <div className="lg:pl-64">
+        {/* Top bar: brand and profile on a phone; on a desktop only the activity bell. */}
+        <header className="sticky top-0 z-10 border-b border-rule bg-white/95 backdrop-blur lg:border-0 lg:bg-transparent lg:backdrop-blur-none">
+          <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6 lg:justify-end lg:px-10 lg:pt-5">
+            <Link to="/" className="mr-auto lg:hidden">
+              <BrandMark />
+            </Link>
+            {user.isAdmin && (
+              <Link to={ADMIN_ITEM.to} title="Admin" aria-label="Admin" className="text-slate-500 hover:text-ink lg:hidden">
+                <AdminIcon className="h-5 w-5" strokeWidth={1.75} />
+              </Link>
+            )}
             <NotificationBell />
-            <Link to="/profile" title="Your profile">
+            <Link to="/profile" title="Your profile" className="lg:hidden">
               <Avatar name={user.name} avatarUrl={user.avatarUrl} />
             </Link>
-            <button onClick={logout} title="Sign out" className="text-slate-400 hover:text-slate-700">
-              <LogOut className="h-4 w-4" />
-            </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <ErrorBoundary resetKey={pathname}>
-          <Outlet />
-        </ErrorBoundary>
-      </main>
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-2">
+          <ErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
+      </div>
+
+      <MobileTabBar />
     </div>
   );
 }

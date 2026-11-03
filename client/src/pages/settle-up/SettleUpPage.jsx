@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles, Check, TrendingDown } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowRight, Sparkles, Check, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getGroup } from '../../api/groups.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -11,6 +11,7 @@ import { formatMoney, formatDate } from '../../utils/format.js';
 import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 
 function PaymentCard({ payment, onPay, faded }) {
   return (
@@ -103,11 +104,11 @@ export default function SettleUpPage() {
 
   return (
     <>
-      <Link to={`/groups/${id}`} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> {g.title}
-      </Link>
-      <h1 className="mt-3 text-2xl font-semibold">Settle up</h1>
-      <p className="text-sm text-slate-500">Min-Cash-Flow finds the fewest payments that clear every debt.</p>
+      <PageHeader
+        back={{ to: `/groups/${id}`, label: g.title }}
+        title="Settle up"
+        description="Min-Cash-Flow finds the fewest payments that clear every debt."
+      />
 
       <div className="mt-6">
         <FormError message={error} />
@@ -128,7 +129,7 @@ export default function SettleUpPage() {
           </ul>
 
           {recorded.data.auditTrail.length > 0 && (
-            <div className="mt-4 border-t border-slate-700 pt-3 text-xs text-slate-400">
+            <div className="mt-4 border-t border-slate-700 pt-3 text-xs text-slate-500">
               <p className="font-medium text-slate-300">Audit trail</p>
               <ul className="mt-1 space-y-0.5">
                 {recorded.data.auditTrail.map((entry, index) => (
@@ -152,11 +153,11 @@ export default function SettleUpPage() {
           {/* Raw debts */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Who owes whom right now</h2>
-            <p className="text-xs text-slate-400">Straight from the expenses, before optimisation.</p>
+            <p className="text-xs text-slate-500">Straight from the expenses, before optimisation.</p>
 
             <ul className="mt-3 space-y-2">
               {(preview?.rawDebts ?? []).length === 0 && !preview && (
-                <li className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-400">
+                <li className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
                   Run the optimiser to see the raw debts alongside the result.
                 </li>
               )}
@@ -169,7 +170,7 @@ export default function SettleUpPage() {
           {/* Optimized */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Optimized payments</h2>
-            <p className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</p>
+            <p className="text-xs text-slate-500">At most {g.memberCount - 1} payments for {g.memberCount} members.</p>
 
             {!preview && (
               <button
@@ -209,7 +210,7 @@ export default function SettleUpPage() {
                     >
                       {saving ? 'Recording…' : 'Record settlement'}
                     </button>
-                    <p className="mt-2 text-center text-xs text-slate-400">
+                    <p className="mt-2 text-center text-xs text-slate-500">
                       This writes the payments and closes the group. Balances update as each one is marked paid.
                     </p>
                   </>

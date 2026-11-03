@@ -41,12 +41,12 @@ export default function BudgetSettings({ onChanged }) {
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
   return (
-    <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
+    <div className="p-5 panel">
       <h3 className="font-medium">Monthly budgets</h3>
-      <p className="text-xs text-slate-400">Bars turn amber at 80% and red once you pass the cap.</p>
+      <p className="text-xs text-slate-500">Bars turn amber at 80% and red once you pass the cap.</p>
 
       {data.budgets.length > 0 && (
-        <ul className="mt-3 divide-y divide-slate-100">
+        <ul className="mt-3 divide-y divide-rule">
           {data.budgets.map((budgetRow) => (
             <li key={budgetRow.id} className="flex items-center justify-between py-2 text-sm">
               <span className="text-slate-700">{budgetRow.category}</span>

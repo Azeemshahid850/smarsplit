@@ -57,7 +57,7 @@ export default function AddTransactionForm({ onAdded }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-5 ring-1 ring-slate-200" noValidate>
+    <form onSubmit={submit} className="space-y-4 p-5 panel" noValidate>
       <FormError message={error} />
 
       <div className="flex gap-1 rounded-lg bg-slate-100 p-1">

@@ -18,7 +18,7 @@ export default function JoinRequestPage() {
 
   const preview = useAsync(() => (user ? previewJoinCode(joinCode) : Promise.resolve(null)), [joinCode, user]);
 
-  if (booting) return <div className="grid min-h-screen place-items-center text-sm text-slate-400">…</div>;
+  if (booting) return <div className="grid min-h-screen place-items-center text-sm text-slate-500">…</div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   // Opened while already signed in: for one render after boot the null pre-login result is still in data.
   if (preview.loading || (!preview.data && !preview.error)) return <Loading label="Looking up that group…" />;
@@ -63,7 +63,7 @@ export default function JoinRequestPage() {
 
   return (
     <div className="grid min-h-screen place-items-center p-6">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200">
+      <div className="w-full max-w-sm p-6 text-center panel">
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-700">
           <Users className="h-5 w-5" />
         </span>
@@ -91,7 +91,7 @@ export default function JoinRequestPage() {
           </button>
         )}
 
-        <button onClick={() => navigate('/groups')} className="mt-3 text-xs text-slate-400 hover:text-slate-700">
+        <button onClick={() => navigate('/groups')} className="mt-3 text-xs text-slate-500 hover:text-slate-700">
           Back to my groups
         </button>
       </div>

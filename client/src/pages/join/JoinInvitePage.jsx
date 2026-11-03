@@ -9,7 +9,7 @@ import { useAsync } from '../../hooks/useAsync.js';
 function Card({ children }) {
   return (
     <div className="grid min-h-screen place-items-center p-6">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-200">{children}</div>
+      <div className="w-full max-w-sm p-6 text-center panel">{children}</div>
     </div>
   );
 }
@@ -43,7 +43,7 @@ export default function JoinInvitePage() {
 
   // Signed out, the preview is the page — wait for it (data is null for a render after boot).
   if (booting || (!user && !preview.data && !preview.error)) {
-    return <div className="grid min-h-screen place-items-center text-sm text-slate-400">…</div>;
+    return <div className="grid min-h-screen place-items-center text-sm text-slate-500">…</div>;
   }
 
   if (error || (!user && preview.error)) {
@@ -82,7 +82,7 @@ export default function JoinInvitePage() {
         <Link to="/login" state={next} className="mt-3 block text-sm font-medium text-emerald-700 hover:underline">
           I already have an account
         </Link>
-        <p className="mt-4 text-xs text-slate-400">This invite was sent to {email}</p>
+        <p className="mt-4 text-xs text-slate-500">This invite was sent to {email}</p>
       </Card>
     );
   }

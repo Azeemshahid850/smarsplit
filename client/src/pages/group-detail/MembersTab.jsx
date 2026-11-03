@@ -28,7 +28,7 @@ function RequestRow({ request, onApprove, onReject }) {
       <Avatar name={request.name} avatarUrl={request.avatarUrl} size="md" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-slate-800">{request.name}</p>
-        <p className="truncate text-xs text-slate-400">{request.email}</p>
+        <p className="truncate text-xs text-slate-500">{request.email}</p>
       </div>
       <button
         onClick={() => onApprove(request)}
@@ -214,7 +214,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
             Waiting for your approval
             <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{requests.length}</span>
           </h3>
-          <ul className="mt-2 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-amber-200">
+          <ul className="mt-2 divide-y divide-rule rounded-xl bg-white ring-1 ring-amber-200">
             {requests.map((requestRow) => (
               <RequestRow key={requestRow.id} request={requestRow} onApprove={approve} onReject={reject} />
             ))}
@@ -223,13 +223,13 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
       )}
 
       {/* The roster */}
-      <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
+      <ul className="divide-y divide-rule panel">
         {roster.map((memberRow) => (
           <li key={memberRow.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
             <Avatar name={memberRow.name} avatarUrl={memberRow.avatarUrl} size="md" muted={memberRow.status === 'pending'} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-800">{memberRow.name}</p>
-              <p className="truncate text-xs text-slate-400">{memberRow.email}</p>
+              <p className="truncate text-xs text-slate-500">{memberRow.email}</p>
             </div>
 
             {memberRow.role === 'admin' && (
@@ -242,7 +242,7 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
               <button
                 onClick={() => changeRole(memberRow)}
                 title={memberRow.role === 'admin' ? 'Remove admin' : 'Make admin'}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
               >
                 {memberRow.role === 'admin' ? <ShieldOff className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                 {memberRow.role === 'admin' ? 'Remove admin' : 'Make admin'}
@@ -296,10 +296,10 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
           {/* Way 1 — pick someone you have travelled with */}
           <section className="rounded-xl bg-slate-50 p-4">
             <label className="text-sm font-medium text-slate-700">Add someone you have shared a group with</label>
-            <p className="text-xs text-slate-400">They are added straight away — no invite needed.</p>
+            <p className="text-xs text-slate-500">They are added straight away — no invite needed.</p>
 
             <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -309,10 +309,10 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
             </div>
 
             {query.trim().length >= 2 && (
-              <ul className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
-                {searching && <li className="px-3 py-2 text-xs text-slate-400">Searching…</li>}
+              <ul className="mt-2 divide-y divide-rule overflow-hidden panel">
+                {searching && <li className="px-3 py-2 text-xs text-slate-500">Searching…</li>}
                 {!searching && results.length === 0 && (
-                  <li className="px-3 py-2 text-xs text-slate-400">
+                  <li className="px-3 py-2 text-xs text-slate-500">
                     Nobody found. Use their exact email address below to invite them.
                   </li>
                 )}
@@ -321,9 +321,9 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
                     <Avatar name={userRow.name} avatarUrl={userRow.avatarUrl} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm text-slate-800">{userRow.name}</span>
-                      <span className="block truncate text-xs text-slate-400">{userRow.email}</span>
+                      <span className="block truncate text-xs text-slate-500">{userRow.email}</span>
                     </span>
-                    {userRow.known && <span className="text-xs text-slate-400">travelled with</span>}
+                    {userRow.known && <span className="text-xs text-slate-500">travelled with</span>}
                     <button
                       disabled={busy}
                       onClick={() => addPerson({ userId: userRow.id }, userRow.name)}
@@ -340,9 +340,9 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
           {/* Way 2 — invite a new email address */}
           <section className="rounded-xl bg-slate-50 p-4">
             <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-              <Mail className="h-4 w-4 text-slate-400" /> Invite by email
+              <Mail className="h-4 w-4 text-slate-500" /> Invite by email
             </label>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Has an account already? They join straight away. Otherwise you get a link to share.
             </p>
 
@@ -383,13 +383,13 @@ export default function MembersTab({ group, onChange, autoFocus = false }) {
           {group.shareLink && (
             <section className="rounded-xl bg-slate-50 p-4">
               <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                <Link2 className="h-4 w-4 text-slate-400" /> Share link
+                <Link2 className="h-4 w-4 text-slate-500" /> Share link
               </label>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Post this anywhere. Whoever opens it asks to join, and you approve them here first.
               </p>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-white p-2 ring-1 ring-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 p-2 panel">
                 <code className="min-w-0 flex-1 truncate text-xs text-slate-500">{group.shareLink}</code>
                 <CopyButton value={group.shareLink} label="Copy share link" />
                 <WhatsAppButton text={`Join "${group.title}" on SmartSplit: ${group.shareLink}`} />

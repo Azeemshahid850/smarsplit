@@ -53,6 +53,10 @@ smartsplit/
 - React: function components + hooks only. Pages fetch via src/api functions,
   never inline axios. Loading, empty, and error states required on every list.
 - Currency display: "Rs 4,200" with thousands separators, PKR default.
+- UI ("khata" ledger look): tokens and the `ledger` / `panel` / `amount` /
+  `total-rule` utilities live in client/src/index.css; every page opens with
+  components/ui/PageHeader; buttons take `btn.*` from components/ui/buttonStyles.js.
+  A page's own sections sit beside it in pages/<route>/, named after their heading.
 - Categories: Food, Utilities, Travel, Shopping, Healthcare, Housing, Misc.
 - Payment methods: Cash, Bank Transfer, Card, JazzCash, Easypaisa, Raast.
 

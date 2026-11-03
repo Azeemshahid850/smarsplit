@@ -30,7 +30,7 @@ export default function BalancesTab({ group }) {
         </Link>
       </div>
 
-      <ul className="mt-4 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
+      <ul className="mt-4 divide-y divide-rule panel">
         {data.balances.map((balanceRow) => (
           <li key={balanceRow.userId} className="flex items-center gap-3 px-4 py-3">
             <Avatar name={balanceRow.name} avatarUrl={balanceRow.avatarUrl} size="md" />
@@ -44,16 +44,16 @@ export default function BalancesTab({ group }) {
               </div>
             </div>
             <div className="text-right">
-              <p className={`text-sm font-semibold ${balanceRow.net > 0 ? 'text-emerald-600' : balanceRow.net < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+              <p className={`text-sm font-semibold ${balanceRow.net > 0 ? 'text-emerald-600' : balanceRow.net < 0 ? 'text-red-600' : 'text-slate-500'}`}>
                 {balanceRow.net === 0 ? 'settled' : formatSigned(balanceRow.net)}
               </p>
-              <p className="text-xs text-slate-400">{balanceRow.net > 0 ? 'is owed' : balanceRow.net < 0 ? 'owes' : ''}</p>
+              <p className="text-xs text-slate-500">{balanceRow.net > 0 ? 'is owed' : balanceRow.net < 0 ? 'owes' : ''}</p>
             </div>
           </li>
         ))}
       </ul>
 
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-slate-500">
         {data.netsToZero ? 'Balances net to zero — the ledger is consistent.' : 'Warning: balances do not net to zero.'}
       </p>
     </div>

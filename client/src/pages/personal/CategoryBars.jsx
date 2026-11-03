@@ -21,14 +21,14 @@ export default function CategoryBars({ categories, currency = 'PKR' }) {
               <span className="font-medium text-slate-700">{categoryRow.category}</span>
               <span className="text-slate-500">
                 {formatMoney(categoryRow.total, currency)}
-                {categoryRow.cap != null && <span className="text-slate-400"> / {formatMoney(categoryRow.cap, currency)}</span>}
+                {categoryRow.cap != null && <span className="text-slate-500"> / {formatMoney(categoryRow.cap, currency)}</span>}
               </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div className={`h-full rounded-full transition-all ${toneFor(categoryRow.consumed)}`} style={{ width: `${width}%` }} />
             </div>
             {categoryRow.consumed != null && (
-              <p className={`mt-0.5 text-xs ${categoryRow.consumed >= 100 ? 'text-red-600' : categoryRow.consumed >= 80 ? 'text-amber-600' : 'text-slate-400'}`}>
+              <p className={`mt-0.5 text-xs ${categoryRow.consumed >= 100 ? 'text-red-600' : categoryRow.consumed >= 80 ? 'text-amber-600' : 'text-slate-500'}`}>
                 {categoryRow.consumed}% of budget{categoryRow.consumed >= 100 ? ' — over' : ''}
               </p>
             )}

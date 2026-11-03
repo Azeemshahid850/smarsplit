@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { X, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { createGroup, getGroup, updateGroup } from '../../api/groups.js';
 import { getRates } from '../../api/fx.js';
@@ -9,6 +9,7 @@ import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { Loading, ErrorState } from '../../components/ui/States.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const TYPES = ['trip', 'home', 'event', 'other'];
 const emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -81,10 +82,10 @@ function GroupForm({ group }) {
 
   return (
     <div className="mx-auto max-w-xl">
-      <Link to={group ? `/groups/${group.id}` : '/groups'} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> {group ? group.title : 'Groups'}
-      </Link>
-      <h1 className="mt-3 text-2xl font-semibold">{group ? 'Edit group' : 'New group'}</h1>
+      <PageHeader
+        back={{ to: group ? `/groups/${group.id}` : '/groups', label: group ? group.title : 'Groups' }}
+        title={group ? 'Edit group' : 'New group'}
+      />
 
       <form onSubmit={submit} className="mt-6 space-y-5" noValidate>
         <FormError message={error} />
@@ -124,7 +125,7 @@ function GroupForm({ group }) {
                 </option>
               ))}
             </select>
-            <span className="mt-1 block text-xs text-slate-400">New expenses start in this currency. Balances stay in rupees.</span>
+            <span className="mt-1 block text-xs text-slate-500">New expenses start in this currency. Balances stay in rupees.</span>
           </label>
           <Field label="Start date" name="startDate" type="date" value={form.startDate} onChange={change} />
         </div>
@@ -157,14 +158,14 @@ function GroupForm({ group }) {
                 {emails.map((event) => (
                   <span key={event} className="flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-xs text-slate-700">
                     {event}
-                    <button type="button" onClick={() => setEmails((currentList) => currentList.filter((entry) => entry !== event))} className="text-slate-400 hover:text-slate-700">
+                    <button type="button" onClick={() => setEmails((currentList) => currentList.filter((entry) => entry !== event))} className="text-slate-500 hover:text-slate-700">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </span>
                 ))}
               </div>
             )}
-            <p className="mt-1 text-xs text-slate-400">People without an account get a join link you can share.</p>
+            <p className="mt-1 text-xs text-slate-500">People without an account get a join link you can share.</p>
           </div>
         )}
 
@@ -181,7 +182,7 @@ function GroupForm({ group }) {
               />
               <span>
                 <span className="font-medium text-slate-700">{label}</span>
-                <span className="block text-xs text-slate-400">{hint}</span>
+                <span className="block text-xs text-slate-500">{hint}</span>
               </span>
             </label>
           ))}

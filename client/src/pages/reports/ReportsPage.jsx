@@ -9,6 +9,7 @@ import StatCard from '../../components/ui/StatCard.jsx';
 import CategoryDonut from '../../components/charts/CategoryDonut.jsx';
 import TrendLines from '../../components/charts/TrendLines.jsx';
 import GroupedBars from '../../components/charts/GroupedBars.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -39,7 +40,7 @@ function ExportButtons({ params }) {
           disabled={Boolean(busy)}
           className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50"
         >
-          <Icon className="h-4 w-4 text-slate-400" />
+          <Icon className="h-4 w-4 text-slate-500" />
           {busy === format ? '…' : label}
         </button>
       ))}
@@ -81,17 +82,17 @@ function PersonalReport({ month, setMonth }) {
         <StatCard label="Savings rate" value={`${r.savingsRate}%`} tone={r.savingsRate >= 0 ? 'emerald' : 'red'} />
       </div>
 
-      <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <section className="mt-6 p-5 panel">
         <h2 className="font-medium">Category distribution</h2>
-        <p className="text-xs text-slate-400">Where {r.month} went</p>
+        <p className="text-xs text-slate-500">Where {r.month} went</p>
         <div className="mt-4">
           <CategoryDonut categories={r.topCategories} />
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <section className="mt-6 p-5 panel">
         <h2 className="font-medium">Inflow vs outflow</h2>
-        <p className="text-xs text-slate-400">Last six months</p>
+        <p className="text-xs text-slate-500">Last six months</p>
         <div className="mt-4">
           {trends.loading && <Loading />}
           {trends.error && <ErrorState message={trends.error} onRetry={trends.reload} />}
@@ -99,9 +100,9 @@ function PersonalReport({ month, setMonth }) {
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <section className="mt-6 p-5 panel">
         <h2 className="font-medium">Budget vs actual</h2>
-        <p className="text-xs text-slate-400">This month, for the categories you capped</p>
+        <p className="text-xs text-slate-500">This month, for the categories you capped</p>
         <div className="mt-4">
           {trends.data && (
             <GroupedBars
@@ -160,9 +161,9 @@ function GroupReport({ groups }) {
         <StatCard label="Transfers saved" value={String(eff.transfersSaved)} tone="emerald" />
       </div>
 
-      <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <section className="mt-6 p-5 panel">
         <h2 className="font-medium">Paid vs consumed</h2>
-        <p className="text-xs text-slate-400">How fairly the spending landed</p>
+        <p className="text-xs text-slate-500">How fairly the spending landed</p>
         <div className="mt-4">
           <GroupedBars
             data={r.members.map((memberRow) => ({ name: memberRow.name.split(' ')[0], paid: memberRow.paid, consumed: memberRow.consumed }))}
@@ -176,7 +177,7 @@ function GroupReport({ groups }) {
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <section className="mt-6 p-5 panel">
         <h2 className="font-medium">Category split</h2>
         <div className="mt-4">
           <CategoryDonut categories={r.byCategory} />
@@ -193,8 +194,7 @@ export default function ReportsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Reports</h1>
-      <p className="text-sm text-slate-500">Charts, trends and exports for both workspaces.</p>
+      <PageHeader title="Reports" description="Charts, trends and exports for both workspaces." />
 
       <nav className="mt-6 flex gap-1 border-b border-slate-200">
         {['Personal', 'Group'].map((tabName) => (
@@ -202,7 +202,7 @@ export default function ReportsPage() {
             key={tabName}
             onClick={() => setTab(tabName)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm transition ${
-              tab === tabName ? 'border-slate-900 font-medium text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
+              tab === tabName ? 'border-haldi font-medium text-ink' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             {tabName}

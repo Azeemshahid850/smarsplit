@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Search, Store, Plus, X, Lock, ExternalLink, Upload, Download, FileSpreadsheet, Database } from 'lucide-react';
+import { Search, Store, Plus, X, Lock, ExternalLink, Upload, Download, FileSpreadsheet, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { listPrices, upsertPrice, deletePrice, importPrices, downloadPriceBook, seedDefaultPrices } from '../../api/prices.js';
 import { useAsync } from '../../hooks/useAsync.js';
@@ -10,6 +9,7 @@ import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const UNITS = ['', 'g', 'kg', 'ml', 'L', 'pcs'];
 export const storeLabel = (name = '') => name.charAt(0).toUpperCase() + name.slice(1);
@@ -59,12 +59,12 @@ function AddPriceForm({ products, stores, onSaved }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-5 ring-1 ring-slate-200" noValidate>
+    <form onSubmit={submit} className="space-y-4 p-5 panel" noValidate>
       <div>
         <h2 className="flex items-center gap-2 font-medium">
-          <Plus className="h-4 w-4 text-slate-400" /> Add a price
+          <Plus className="h-4 w-4 text-slate-500" /> Add a price
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Same product and store again? It updates the existing price. A store name nobody has used yet creates that store.
         </p>
       </div>
@@ -163,11 +163,11 @@ function SheetTools({ canEdit, onImported, isEmpty }) {
   };
 
   return (
-    <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
+    <div className="p-5 panel">
       <h2 className="flex items-center gap-2 font-medium">
-        <FileSpreadsheet className="h-4 w-4 text-slate-400" /> Excel
+        <FileSpreadsheet className="h-4 w-4 text-slate-500" /> Excel
       </h2>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         {canEdit
           ? 'Download the book, edit or add rows in Excel, upload it back. Columns: Product, Store, Price, Pack size, Unit, Also known as, Link. CSV works too.'
           : 'Download the whole book as a spreadsheet.'}
@@ -175,7 +175,7 @@ function SheetTools({ canEdit, onImported, isEmpty }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button onClick={download} className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100">
-          <Download className="h-4 w-4 text-slate-400" /> Download Excel
+          <Download className="h-4 w-4 text-slate-500" /> Download Excel
         </button>
         {canEdit && (
           <>
@@ -192,7 +192,7 @@ function SheetTools({ canEdit, onImported, isEmpty }) {
               disabled={busy}
               className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100 disabled:opacity-60"
             >
-              <Database className="h-4 w-4 text-slate-400" /> {isEmpty ? 'Load default catalogue' : 'Reset to default catalogue'}
+              <Database className="h-4 w-4 text-slate-500" /> {isEmpty ? 'Load default catalogue' : 'Reset to default catalogue'}
             </button>
           </>
         )}
@@ -258,22 +258,18 @@ export default function PriceBookPage() {
 
   return (
     <>
-      <Link to="/scan" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> Scan
-      </Link>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Price book</h1>
-          <p className="text-sm text-slate-500">
-            What ExpenseAI compares your receipts against — {data.products.length} products across {data.stores.length} stores.
-          </p>
-        </div>
-        {!data.canEdit && (
-          <p className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-600">
-            <Lock className="h-3.5 w-3.5" /> Read-only · a price-book admin can add stores and prices
-          </p>
-        )}
-      </div>
+      <PageHeader
+        back={{ to: '/scan', label: 'Scan' }}
+        title="Price book"
+        description={`What ExpenseAI compares your receipts against: ${data.products.length} products across ${data.stores.length} stores.`}
+        actions={
+          !data.canEdit && (
+            <p className="flex items-center gap-1.5 rounded-md bg-slate-100 px-3 py-1.5 text-xs text-slate-600">
+              <Lock className="h-3.5 w-3.5" /> Read-only. A price-book admin can add stores and prices.
+            </p>
+          )
+        }
+      />
 
       <div className={`mt-6 grid gap-4 ${data.canEdit ? 'lg:grid-cols-[1fr_minmax(0,22rem)]' : ''}`}>
         {data.canEdit && <AddPriceForm products={data.products} stores={data.stores} onSaved={reload} />}
@@ -282,7 +278,7 @@ export default function PriceBookPage() {
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="relative min-w-56 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -314,14 +310,14 @@ export default function PriceBookPage() {
             hint={data.products.length === 0 ? 'Add the first product and store above, or load the default catalogue.' : 'Try another spelling, or clear the store filter.'}
           />
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
+          <ul className="divide-y divide-rule panel">
             {products.map((productRow) => {
               const cheapest = productRow.prices[0]; // server sorts each product by price
               return (
                 <li key={productRow.canonicalName} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
                   <div className="min-w-48 flex-1">
                     <p className="text-sm font-medium text-slate-800">{productRow.canonicalName}</p>
-                    <p className="truncate text-xs text-slate-400">{productRow.aliases.slice(0, 4).join(' · ') || '—'}</p>
+                    <p className="truncate text-xs text-slate-500">{productRow.aliases.slice(0, 4).join(' · ') || '—'}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {productRow.prices.map((priceRow) => (
@@ -335,7 +331,7 @@ export default function PriceBookPage() {
                         <span className="font-medium">{storeLabel(priceRow.platform)}</span>
                         {formatMoney(priceRow.price)}
                         {priceRow.url && (
-                          <a href={priceRow.url} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-slate-700" title="Open listing">
+                          <a href={priceRow.url} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-slate-700" title="Open listing">
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         )}

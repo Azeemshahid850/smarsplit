@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { listGroups, getGroup } from '../../api/groups.js';
 import { createExpense, getExpense, updateExpense } from '../../api/expenses.js';
@@ -12,6 +12,7 @@ import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { Loading } from '../../components/ui/States.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const SPLIT_TYPES = [
   { key: 'EQUAL', label: 'Equally' },
@@ -221,10 +222,7 @@ export default function AddExpensePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to={groupId ? `/groups/${groupId}` : '/groups'} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> Back
-      </Link>
-      <h1 className="mt-3 text-2xl font-semibold">{editing ? 'Edit expense' : 'Add expense'}</h1>
+      <PageHeader back={{ to: groupId ? `/groups/${groupId}` : '/groups', label: 'Back' }} title={editing ? 'Edit expense' : 'Add expense'} />
 
       <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
         <FormError message={error} />
@@ -352,7 +350,7 @@ export default function AddExpensePage() {
                   className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 />
                 {payers.length > 1 && (
-                  <button type="button" onClick={() => setPayers((list) => list.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-400 hover:text-red-600">
+                  <button type="button" onClick={() => setPayers((list) => list.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-500 hover:text-red-600">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -389,7 +387,7 @@ export default function AddExpensePage() {
             ))}
           </div>
 
-          <div className="mt-4 space-y-2 rounded-xl ring-1 ring-slate-200">
+          <div className="mt-4 space-y-2 panel">
             {splitType !== 'LINE_ITEM' &&
               members.map((memberRow) => {
                 const on = participants.includes(memberRow.userId);
@@ -427,7 +425,7 @@ export default function AddExpensePage() {
                           onChange={(event) => setPercentages((entry) => ({ ...entry, [memberRow.userId]: event.target.value }))}
                           className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-sm"
                         />
-                        <span className="text-xs text-slate-400">%</span>
+                        <span className="text-xs text-slate-500">%</span>
                       </div>
                     )}
                   </div>
@@ -462,7 +460,7 @@ export default function AddExpensePage() {
                         onChange={(event) => setItems((currentList) => currentList.map((entry, rowIndex) => (rowIndex === index ? { ...entry, price: event.target.value } : entry)))}
                         className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                       />
-                      <button type="button" onClick={() => setItems((currentList) => currentList.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-400 hover:text-red-600">
+                      <button type="button" onClick={() => setItems((currentList) => currentList.filter((_, rowIndex) => rowIndex !== index))} className="text-slate-500 hover:text-red-600">
                         <X className="h-4 w-4" />
                       </button>
                     </div>

@@ -9,6 +9,8 @@ import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx'
 import GroupActions from './GroupActions.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
+import { btn } from '../../components/ui/buttonStyles.js';
 
 /** Invites sent to my email, and requests I am waiting on. */
 function Invitations({ invites, onChange }) {
@@ -49,15 +51,15 @@ function Invitations({ invites, onChange }) {
   return (
     <section className="mt-6">
       <h2 className="flex items-center gap-2 text-sm font-medium text-slate-700">
-        <Mail className="h-4 w-4 text-slate-400" /> Invitations
+        <Mail className="h-4 w-4 text-slate-500" /> Invitations
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{invites.length}</span>
       </h2>
-      <ul className="mt-2 divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-amber-200">
+      <ul className="mt-2 divide-y divide-rule rounded-xl bg-white ring-1 ring-amber-200">
         {invites.map((invite) => (
           <li key={invite.groupId} className="flex flex-wrap items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-800">{invite.title}</p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 <span className="capitalize">{invite.type}</span> · {invite.memberCount} members
                 {invite.status === 'pending' && invite.invitedBy && ` · ${invite.invitedBy} invited you`}
               </p>
@@ -68,7 +70,7 @@ function Invitations({ invites, onChange }) {
                 <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
                   <Clock className="h-3 w-3" /> waiting for approval
                 </span>
-                <button onClick={() => decline(invite)} className="text-xs text-slate-400 hover:text-slate-700">
+                <button onClick={() => decline(invite)} className="text-xs text-slate-500 hover:text-slate-700">
                   Withdraw
                 </button>
               </>
@@ -95,7 +97,7 @@ function Invitations({ invites, onChange }) {
   );
 }
 
-const balanceTone = (netAmount) => (netAmount > 0 ? 'text-emerald-600' : netAmount < 0 ? 'text-red-600' : 'text-slate-400');
+const balanceTone = (netAmount) => (netAmount > 0 ? 'text-emerald-600' : netAmount < 0 ? 'text-red-600' : 'text-slate-500');
 
 export default function GroupsPage() {
   const { user } = useAuth();
@@ -104,18 +106,15 @@ export default function GroupsPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Groups</h1>
-          <p className="text-sm text-slate-500">Trips, flats and events you split with others</p>
-        </div>
-        <Link
-          to="/groups/new"
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
-        >
-          <Plus className="h-4 w-4" /> New group
-        </Link>
-      </div>
+      <PageHeader
+        title="Groups"
+        description="Trips, flats and events you split with others."
+        actions={
+          <Link to="/groups/new" className={btn.primary}>
+            <Plus className="h-4 w-4" /> New group
+          </Link>
+        }
+      />
 
       {invites.data && <Invitations invites={invites.data.invites} onChange={() => Promise.all([invites.reload(), reload()])} />}
 
@@ -136,28 +135,31 @@ export default function GroupsPage() {
         )}
 
         {data && data.groups.length > 0 && (
-          <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+          <div className="overflow-x-auto panel">
             <table className="w-full bg-white text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-slate-50 text-left text-xs text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Group</th>
-                  <th className="px-4 py-3 font-medium">Members</th>
-                  <th className="px-4 py-3 font-medium">Total spent</th>
+                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Members</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">Total spent</th>
                   <th className="px-4 py-3 font-medium">My balance</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Status</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-rule">
                 {data.groups.map((groupRow) => (
                   <tr key={groupRow.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <Link to={`/groups/${groupRow.id}`} className="font-medium text-slate-900 hover:underline">
                         {groupRow.title}
                       </Link>
-                      <p className="text-xs capitalize text-slate-400">{groupRow.type}</p>
+                      <p className="text-xs capitalize text-slate-500">
+                        {groupRow.type}
+                        <span className="normal-case md:hidden">, {formatMoney(groupRow.totalSpent)} spent</span>
+                      </p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 sm:table-cell">
                       <div className="flex -space-x-2">
                         {groupRow.members.filter((memberRow) => memberRow.status !== 'requested').slice(0, 5).map((memberRow) => (
                           <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
@@ -169,11 +171,11 @@ export default function GroupsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{formatMoney(groupRow.totalSpent)}</td>
-                    <td className={`px-4 py-3 font-medium ${balanceTone(groupRow.myBalance)}`}>
+                    <td className="amount hidden whitespace-nowrap px-4 py-3 font-medium text-slate-700 md:table-cell">{formatMoney(groupRow.totalSpent)}</td>
+                    <td className={`amount whitespace-nowrap px-4 py-3 ${balanceTone(groupRow.myBalance)}`}>
                       {groupRow.myBalance === 0 ? 'settled up' : formatSigned(groupRow.myBalance)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 sm:table-cell">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
                           groupRow.status === 'SETTLED' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'

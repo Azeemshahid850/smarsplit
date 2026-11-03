@@ -44,7 +44,7 @@ export default function GoogleButton({ onCredential, onError }) {
 
   return (
     <div>
-      <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
+      <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
         <span className="h-px flex-1 bg-slate-200" /> or <span className="h-px flex-1 bg-slate-200" />
       </div>
       <div ref={slot} className="flex justify-center" />
