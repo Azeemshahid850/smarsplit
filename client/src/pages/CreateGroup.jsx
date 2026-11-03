@@ -21,7 +21,7 @@ export default function CreateGroup() {
     startDate: '',
     description: '',
   });
-  const [settings, setSettings] = useState({ simplifyDebts: true, anyoneCanEdit: false });
+  const [settings, setSettings] = useState({ anyoneCanEdit: false });
   const [emails, setEmails] = useState([]);
   const [emailDraft, setEmailDraft] = useState('');
   const [error, setError] = useState('');
@@ -149,7 +149,6 @@ export default function CreateGroup() {
 
         <div className="space-y-3 rounded-xl bg-slate-50 p-4">
           {[
-            { key: 'simplifyDebts', label: 'Simplify debts', hint: 'Use Min-Cash-Flow when settling up' },
             { key: 'anyoneCanEdit', label: 'Anyone can edit expenses', hint: 'Otherwise only the payer or an admin' },
           ].map(({ key, label, hint }) => (
             <label key={key} className="flex cursor-pointer items-start gap-3 text-sm">
