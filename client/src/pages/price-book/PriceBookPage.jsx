@@ -4,12 +4,13 @@ import { ArrowLeft, Search, Store, Plus, X, Lock, ExternalLink, Upload, Download
 import { toast } from 'sonner';
 import { listPrices, upsertPrice, deletePrice, importPrices, downloadPriceBook, seedDefaultPrices } from '../../api/prices.js';
 import { useAsync } from '../../hooks/useAsync.js';
-import { formatMoney, formatDate } from '../../utils/format.js';
+import { formatMoney, formatDate, tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx';
 import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
+import PriceRefresh from './PriceRefresh.jsx';
 
 const UNITS = ['', 'g', 'kg', 'ml', 'L', 'pcs'];
 export const storeLabel = (name = '') => name.charAt(0).toUpperCase() + name.slice(1);
@@ -36,6 +37,7 @@ function AddPriceForm({ products, stores, onSaved }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (tooManyDecimals(form.price)) return setError(WHOLE_RUPEES);
     setError('');
     setSaving(true);
     try {
@@ -65,7 +67,7 @@ function AddPriceForm({ products, stores, onSaved }) {
           <Plus className="h-4 w-4 text-slate-400" /> Add a price
         </h2>
         <p className="text-xs text-slate-400">
-          Same product and store again? It updates the existing price. A store name nobody has used yet creates that store.
+          Same product and store again? It updates the existing price. Prices can be added for the five stores the app reads.
         </p>
       </div>
       <FormError message={error} />
@@ -268,11 +270,14 @@ export default function PriceBookPage() {
             What ExpenseAI compares your receipts against — {data.products.length} products across {data.stores.length} stores.
           </p>
         </div>
-        {!data.canEdit && (
-          <p className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-600">
-            <Lock className="h-3.5 w-3.5" /> Read-only · a price-book admin can add stores and prices
-          </p>
-        )}
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          {!data.canEdit && (
+            <p className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-600">
+              <Lock className="h-3.5 w-3.5" /> Read-only · a price-book admin can add stores and prices
+            </p>
+          )}
+          <PriceRefresh refresh={data.refresh} canEdit={data.canEdit} onUpdated={reload} />
+        </div>
       </div>
 
       <div className={`mt-6 grid gap-4 ${data.canEdit ? 'lg:grid-cols-[1fr_minmax(0,22rem)]' : ''}`}>

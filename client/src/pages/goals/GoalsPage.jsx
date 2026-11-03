@@ -9,7 +9,7 @@ import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx'
 import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
-import { formatMoney, formatDate } from '../../utils/format.js';
+import { formatMoney, formatDate, tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 
 const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -28,6 +28,7 @@ function GoalForm({ initial, onSave, onCancel, submitLabel }) {
     const targetAmount = Math.round(Number(form.targetAmount));
     if (form.title.trim().length < 2) return setError('Give the goal a name');
     if (!(targetAmount > 0)) return setError('Enter a target above zero');
+    if (tooManyDecimals(form.targetAmount)) return setError(WHOLE_RUPEES);
 
     setError('');
     setSaving(true);
@@ -73,6 +74,7 @@ function GoalCard({ goal, onChanged, onRemoved }) {
   const move = async (sign) => {
     const rupees = Math.round(Number(amount));
     if (!(rupees > 0)) return toast.error('Enter an amount above zero');
+    if (tooManyDecimals(amount)) return toast.error(WHOLE_RUPEES);
     setBusy(true);
     try {
       const { goal: updated } = await addContribution(goal.id, { amount: sign * rupees, note: note.trim() });

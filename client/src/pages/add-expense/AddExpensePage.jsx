@@ -7,7 +7,7 @@ import { createExpense, getExpense, updateExpense } from '../../api/expenses.js'
 import { getRates } from '../../api/fx.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCategories } from '../../context/CategoriesContext.jsx';
-import { formatMoney } from '../../utils/format.js';
+import { formatMoney, tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
@@ -146,6 +146,15 @@ export default function AddExpensePage() {
     if (!groupId) return 'Pick a group';
     if (form.title.trim().length < 2) return 'Give the expense a title';
     if (!rate) return 'Live exchange rates are unavailable right now — enter this expense in PKR';
+    const typed = [
+      form.totalAmount,
+      ...payers.map((payerEntry) => payerEntry.amount),
+      ...(splitType === 'EXACT' ? participants.map((id) => exact[id]) : []),
+      ...(splitType === 'LINE_ITEM' ? items.map((rowIndex) => rowIndex.price) : []),
+    ];
+    if (typed.some((fieldValue) => tooManyDecimals(fieldValue, scale === 1 ? 0 : 2))) {
+      return scale === 1 ? WHOLE_RUPEES : `${entryCurrency} amounts can have at most 2 decimals`;
+    }
     if (total <= 0) return 'Enter an amount above zero';
     if (covered !== total) {
       const diff = total - covered;
@@ -171,7 +180,7 @@ export default function AddExpensePage() {
     }
     return '';
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId, form.title, total, covered, splitType, participants, exact, percentages, items, entryCurrency, rate]);
+  }, [groupId, form.title, form.totalAmount, payers, total, covered, splitType, participants, exact, percentages, items, entryCurrency, rate]);
 
   const perHead = participants.length ? Math.floor(total / participants.length) : 0;
 

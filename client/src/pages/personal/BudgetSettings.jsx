@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { listBudgets, setBudget, deleteBudget } from '../../api/personal.js';
 import { useAsync } from '../../hooks/useAsync.js';
 import { useCategories } from '../../context/CategoriesContext.jsx';
-import { formatMoney } from '../../utils/format.js';
+import { formatMoney, tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 import { Loading, ErrorState } from '../../components/ui/States.jsx';
 
 
@@ -17,6 +17,7 @@ export default function BudgetSettings({ onChanged }) {
   const save = async (event) => {
     event.preventDefault();
     const cap = Math.round(Number(draft.monthlyCap)) || 0;
+    if (tooManyDecimals(draft.monthlyCap)) return toast.error(WHOLE_RUPEES);
     if (cap <= 0) return;
     setBusy(true);
     try {

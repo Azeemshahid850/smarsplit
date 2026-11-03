@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 import { createTransaction } from '../../api/personal.js';
 import { useCategories } from '../../context/CategoriesContext.jsx';
 import Field from '../../components/ui/Field.jsx';
@@ -32,6 +33,7 @@ export default function AddTransactionForm({ onAdded }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (tooManyDecimals(form.amount)) return setError(WHOLE_RUPEES);
     setError('');
     setSaving(true);
     try {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Plus, AlertTriangle, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateReceiptItem, addReceiptItem, removeReceiptItem, commitReceipt } from '../../api/receipts.js';
-import { formatMoney } from '../../utils/format.js';
+import { formatMoney, tooManyDecimals, WHOLE_RUPEES } from '../../utils/format.js';
 import FormError from '../../components/ui/FormError.jsx';
 import { useCategories } from '../../context/CategoriesContext.jsx';
 
@@ -38,6 +38,7 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
   const addLine = async (event) => {
     event.preventDefault();
     const price = Math.round(Number(draft.price)) || 0;
+    if (tooManyDecimals(draft.price)) return toast.error(WHOLE_RUPEES);
     if (!draft.name.trim() || price <= 0) return;
     setReceipt((await addReceiptItem(receipt.id, { name: draft.name.trim(), qty: Number(draft.qty) || 1, price })).receipt);
     setDraft({ name: '', qty: '1', price: '' });
@@ -114,7 +115,14 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
                     type="number"
                     min="0"
                     defaultValue={item.price}
-                    onBlur={(event) => Number(event.target.value) !== item.price && editLine(index, { price: Math.round(Number(event.target.value)) })}
+                    onBlur={(event) => {
+                      if (tooManyDecimals(event.target.value)) {
+                        toast.error(WHOLE_RUPEES);
+                        event.target.value = item.price;
+                        return;
+                      }
+                      if (Number(event.target.value) !== item.price) editLine(index, { price: Math.round(Number(event.target.value)) });
+                    }}
                     className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                   />
                   {item.corrected && <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" title="edited by you" />}

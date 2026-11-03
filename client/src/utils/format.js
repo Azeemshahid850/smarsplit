@@ -10,6 +10,15 @@ export const formatMoney = (amount, currency = 'PKR') => {
 export const formatSigned = (amount, currency = 'PKR') =>
   `${amount > 0 ? '+' : amount < 0 ? '−' : ''}${formatMoney(Math.abs(amount), currency)}`;
 
+// True when a typed amount has more decimals than allowed (none for rupees), so a
+// form refuses it instead of quietly rounding 100.5 up to 101.
+export const tooManyDecimals = (value, decimals = 0) => {
+  if (value === '' || value == null) return false;
+  const scaled = Number(value) * 10 ** decimals;
+  return Math.abs(scaled - Math.round(scaled)) > 1e-6;
+};
+export const WHOLE_RUPEES = 'Amounts must be whole rupees';
+
 export const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
