@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 import { getGroup } from '../api/groups.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAsync } from '../hooks/useAsync.js';
@@ -54,6 +54,15 @@ export default function GroupDetail() {
               <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
             ))}
           </div>
+
+          {view.iAmAdmin && (
+            <Link
+              to={`/groups/${group.id}/edit`}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+            >
+              <Pencil className="h-4 w-4 text-slate-400" /> Edit group
+            </Link>
+          )}
 
           {view.iAmAdmin && (
             <button

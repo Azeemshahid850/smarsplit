@@ -72,6 +72,7 @@ export default function App() {
                 />
                 <Route path="/groups/new" element={<CreateGroup />} />
                 <Route path="/groups/:id" element={<GroupDetail />} />
+                <Route path="/groups/:id/edit" element={<CreateGroup />} />
                 <Route path="/groups/:id/settle" element={<SettleUp />} />
                 <Route path="/expenses/new" element={<AddExpense />} />
                 <Route path="/expenses/:expenseId/edit" element={<AddExpense />} />
