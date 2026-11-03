@@ -48,7 +48,7 @@ export default function GroupDetail() {
           </p>
           {group.description && <p className="mt-1 text-sm text-slate-600">{group.description}</p>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex -space-x-2">
             {group.members.filter((memberRow) => memberRow.status !== 'requested').slice(0, 5).map((memberRow) => (
               <Avatar key={memberRow.id} name={memberRow.name} avatarUrl={memberRow.avatarUrl} muted={memberRow.status === 'pending'} />
@@ -58,7 +58,7 @@ export default function GroupDetail() {
           {view.iAmAdmin && (
             <Link
               to={`/groups/${group.id}/edit`}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
             >
               <Pencil className="h-4 w-4 text-slate-400" /> Edit group
             </Link>
@@ -67,7 +67,7 @@ export default function GroupDetail() {
           {view.iAmAdmin && (
             <button
               onClick={openInvite}
-              className="relative flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+              className="relative flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
             >
               <UserPlus className="h-4 w-4 text-slate-400" /> Add people
               {group.requestCount > 0 && (

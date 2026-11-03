@@ -44,29 +44,35 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={filters.category}
-          onChange={(expenseRow) => setFilter({ category: expenseRow.target.value })}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
-        >
-          <option value="">All categories</option>
-          {CATEGORIES.map((categoryName) => (
-            <option key={categoryName}>{categoryName}</option>
-          ))}
-        </select>
+        <label className="flex items-center gap-1.5 text-sm text-slate-500">
+          Category
+          <select
+            value={filters.category}
+            onChange={(expenseRow) => setFilter({ category: expenseRow.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900"
+          >
+            <option value="">All</option>
+            {CATEGORIES.map((categoryName) => (
+              <option key={categoryName}>{categoryName}</option>
+            ))}
+          </select>
+        </label>
 
-        <select
-          value={filters.payer}
-          onChange={(expenseRow) => setFilter({ payer: expenseRow.target.value })}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
-        >
-          <option value="">Anyone paid</option>
-          {group.members.filter((memberRow) => memberRow.status === 'active').map((memberRow) => (
-            <option key={memberRow.id} value={memberRow.userId}>
-              {memberRow.name}
-            </option>
-          ))}
-        </select>
+        <label className="flex items-center gap-1.5 text-sm text-slate-500">
+          Paid by
+          <select
+            value={filters.payer}
+            onChange={(expenseRow) => setFilter({ payer: expenseRow.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900"
+          >
+            <option value="">Anyone</option>
+            {group.members.filter((memberRow) => memberRow.status === 'active').map((memberRow) => (
+              <option key={memberRow.id} value={memberRow.userId}>
+                {memberRow.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <Link
           to={`/expenses/new?group=${group.id}`}
