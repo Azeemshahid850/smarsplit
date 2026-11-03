@@ -5,13 +5,18 @@ import { seedBenchmarkPrices } from '../scripts/seedPrices.js';
 import { ok } from '../utils/ok.js';
 import { normalize } from '../services/priceMatch.js';
 import { buildPriceWorkbook, parsePriceSheet, importPriceRows } from '../services/priceBook.js';
+import { PriceSyncRun } from '../models/PriceSyncRun.js';
+import { isPriceSyncRunning } from '../services/priceSync.js';
 
 /**
  * The whole price book, grouped by product with one entry per store. Small
  * enough (a few hundred rows) to send at once and filter in the browser.
  */
 export async function listPrices(req, res) {
-  const rows = await BenchmarkPrice.find(liveStoresOnly()).sort({ canonicalName: 1, price: 1 }).lean();
+  const [rows, lastDone] = await Promise.all([
+    BenchmarkPrice.find(liveStoresOnly()).sort({ canonicalName: 1, price: 1 }).lean(),
+    PriceSyncRun.findOne({ status: 'done' }).sort({ finishedAt: -1 }).select('finishedAt').lean(),
+  ]);
 
   const byProduct = new Map();
   for (const row of rows) {
@@ -27,7 +32,13 @@ export async function listPrices(req, res) {
   }
 
   const stores = [...new Set(rows.map((row) => row.platform))].sort();
-  ok(res, { products: [...byProduct.values()], stores, canEdit: isSuperAdmin(req.user) });
+  ok(res, {
+    products: [...byProduct.values()],
+    stores,
+    canEdit: isSuperAdmin(req.user),
+    // When the store refresh last finished, so the page can say how fresh the prices are.
+    refresh: { running: isPriceSyncRunning(), lastUpdatedAt: lastDone?.finishedAt ?? null },
+  });
 }
 
 /** One price per product per store: adding again updates the existing row. */

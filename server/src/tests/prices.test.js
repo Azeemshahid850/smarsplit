@@ -93,6 +93,24 @@ describe('price book', () => {
   });
 });
 
+describe('how fresh the price book is', () => {
+  it('reports when the store refresh last finished', async () => {
+    const { PriceSyncRun } = await import('../models/PriceSyncRun.js');
+    const user = await makeUser();
+
+    const before = await request(app).get(`${api}/prices`).use(as(user));
+    expect(before.body.data.refresh).toEqual({ running: false, lastUpdatedAt: null });
+
+    const finishedAt = new Date('2026-11-03T04:07:00Z');
+    await PriceSyncRun.create([
+      { trigger: 'schedule', status: 'done', startedAt: new Date('2026-11-03T04:00:00Z'), finishedAt },
+      { trigger: 'manual', status: 'failed', startedAt: new Date('2026-11-03T06:00:00Z'), finishedAt: new Date('2026-11-03T06:01:00Z') },
+    ]);
+    const after = await request(app).get(`${api}/prices`).use(as(user));
+    expect(after.body.data.refresh.lastUpdatedAt).toBe(finishedAt.toISOString()); // a failed run does not count
+  });
+});
+
 describe('only the stores the app reads', () => {
   it('hides rows of other stores and refuses to add one', async () => {
     const admin = await makeUser({ email: 'boss@demo.pk' });
