@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { ChevronDown, Eye, HandCoins, Pencil, Trash2 } from 'lucide-react';
 import { deleteGroup } from '../../api/groups.js';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
-import { btn } from '../../components/ui/buttonStyles.js';
 
 const MENU_WIDTH = 208;
 
@@ -93,9 +92,9 @@ export default function GroupActions({ group, isAdmin, onDeleted, showOpen = fal
         aria-haspopup="menu"
         aria-expanded={Boolean(place)}
         aria-label={`Actions for ${group.title}`}
-        className={btn.secondary}
+        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
       >
-        Actions <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${place ? 'rotate-180' : ''}`} />
+        Actions <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${place ? 'rotate-180' : ''}`} />
       </button>
 
       {place &&
@@ -106,11 +105,11 @@ export default function GroupActions({ group, isAdmin, onDeleted, showOpen = fal
             aria-label={`Actions for ${group.title}`}
             onKeyDown={onMenuKey}
             style={{ position: 'fixed', width: MENU_WIDTH, ...place }}
-            className="z-50 overflow-hidden rounded-lg border border-rule bg-white py-1.5 shadow-lg shadow-ink/10"
+            className="z-50 overflow-hidden rounded-xl bg-white py-1.5 shadow-lg ring-1 ring-slate-200"
           >
             {items.map((item) => (
               <div key={item.key}>
-                {item.danger && <div className="my-1.5 border-t border-rule" />}
+                {item.danger && <div className="my-1.5 border-t border-slate-100" />}
                 <button
                   type="button"
                   role="menuitem"
@@ -119,10 +118,10 @@ export default function GroupActions({ group, isAdmin, onDeleted, showOpen = fal
                     item.run();
                   }}
                   className={`flex w-full items-center gap-3 px-3.5 py-2 text-left text-sm outline-none focus:bg-slate-50 hover:bg-slate-50 ${
-                    item.danger ? 'text-red-700' : 'text-ink'
+                    item.danger ? 'text-red-600' : 'text-slate-700'
                   }`}
                 >
-                  <item.icon className={`h-4 w-4 ${item.danger ? 'text-red-600' : 'text-slate-500'}`} strokeWidth={1.75} />
+                  <item.icon className={`h-4 w-4 ${item.danger ? 'text-red-500' : 'text-slate-400'}`} strokeWidth={1.75} />
                   {item.label}
                 </button>
               </div>
