@@ -141,6 +141,17 @@ describe('LINE_ITEM', () => {
     expect(splits.map((splitEntry) => splitEntry.share).sort()).toEqual([33, 33, 34]);
   });
 
+  it('gives an item\'s leftover rupee to the payer, not to whoever is listed first', () => {
+    const splits = computeSplits({
+      splitType: 'LINE_ITEM',
+      totalAmount: 100,
+      items: [{ name: 'Chai', qty: 1, price: 100, sharedBy: [A, B, C] }],
+      paidBy: [{ userId: C, amount: 100 }],
+    });
+
+    expect(Object.fromEntries(splits.map((splitEntry) => [splitEntry.userId, splitEntry.share]))).toEqual({ [A]: 33, [B]: 33, [C]: 34 });
+  });
+
   it('rejects items that do not add up to the expense total', () => {
     expect(() =>
       computeSplits({

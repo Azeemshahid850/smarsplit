@@ -95,7 +95,7 @@ export function computeSplits({ splitType, totalAmount, participants = [], exact
         if (!isInt(lineTotal) || lineTotal < 0) throw new SplitError(`"${item.name}" has an invalid price`);
         if (!item.sharedBy?.length) throw new SplitError(`Pick who shares "${item.name}"`);
 
-        for (const [userId, share] of distribute(lineTotal, item.sharedBy)) {
+        for (const [userId, share] of distribute(lineTotal, item.sharedBy, payer)) {
           shares.set(userId, (shares.get(userId) || 0) + share);
         }
         allocated += lineTotal;
