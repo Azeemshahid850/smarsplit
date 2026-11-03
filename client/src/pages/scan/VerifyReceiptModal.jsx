@@ -74,14 +74,14 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
               {receipt.store || 'Unknown store'} · read by {receipt.ocrEngine === 'vision' ? 'AI vision' : 'offline OCR'}
             </p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
             <X className="h-5 w-5" />
           </button>
         </header>
 
         <div className="grid flex-1 gap-4 overflow-y-auto p-5 md:grid-cols-2">
           <div>
-            <img src={receipt.imageUrl} alt="Receipt" className="w-full panel" />
+            <img src={receipt.imageUrl} alt="Receipt" className="w-full rounded-xl ring-1 ring-slate-200" />
           </div>
 
           <div className="space-y-3">
@@ -147,7 +147,7 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
                 onChange={(event) => setDraft((current) => ({ ...current, price: event.target.value }))}
                 className="w-24 rounded-lg border border-dashed border-slate-300 px-2 py-1.5 text-sm"
               />
-              <button className="text-slate-500 hover:text-emerald-600">
+              <button className="text-slate-400 hover:text-emerald-600">
                 <Plus className="h-4 w-4" />
               </button>
             </form>
@@ -157,7 +157,7 @@ export default function VerifyReceiptModal({ receipt: initial, groups, onClose, 
               <span className="font-semibold">{formatMoney(receipt.itemsTotal)}</span>
             </div>
             {receipt.totalDetected != null && (
-              <div className="flex items-center justify-between px-3 text-xs text-slate-500">
+              <div className="flex items-center justify-between px-3 text-xs text-slate-400">
                 <span>Printed on receipt</span>
                 <span>{formatMoney(receipt.totalDetected)}</span>
               </div>

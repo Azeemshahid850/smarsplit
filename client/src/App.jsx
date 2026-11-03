@@ -36,7 +36,7 @@ export default function App() {
       <ErrorBoundary>
       <AuthProvider>
         <ConfirmProvider>
-          <Toaster position="bottom-right" richColors closeButton mobileOffset={{ bottom: 84 }} />
+          <Toaster position="bottom-right" richColors closeButton />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

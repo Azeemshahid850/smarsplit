@@ -6,7 +6,7 @@ const compact = (rupees) => (rupees >= 1000 ? `${Math.round(rupees / 1000)}k` : 
 
 /** Inflow vs outflow over N months. Both series are rupees — one axis, always. */
 export default function TrendLines({ series, currency = 'PKR' }) {
-  if (!series?.length) return <p className="py-10 text-center text-sm text-slate-500">No history yet.</p>;
+  if (!series?.length) return <p className="py-10 text-center text-sm text-slate-400">No history yet.</p>;
 
   return (
     <div className="h-64">

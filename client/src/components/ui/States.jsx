@@ -1,7 +1,7 @@
 import { Loader2, AlertCircle, Inbox } from 'lucide-react';
 
 export const Loading = ({ label = 'Loading…' }) => (
-  <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
+  <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
     <Loader2 className="h-4 w-4 animate-spin" /> {label}
   </div>
 );
@@ -22,7 +22,7 @@ export const EmptyState = ({ title, hint, action }) => (
   <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-300 py-12 text-center">
     <Inbox className="h-6 w-6 text-slate-300" />
     <p className="text-sm font-medium text-slate-700">{title}</p>
-    {hint && <p className="max-w-xs text-xs text-slate-500">{hint}</p>}
+    {hint && <p className="max-w-xs text-xs text-slate-400">{hint}</p>}
     {action}
   </div>
 );

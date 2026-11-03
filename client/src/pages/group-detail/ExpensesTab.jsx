@@ -106,23 +106,23 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
 
         {data && data.expenses.length > 0 && (
           <>
-            <div className="overflow-x-auto ledger">
+            <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200">
               <table className="w-full bg-white text-sm">
-                <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Expense</th>
                     <th className="px-4 py-3 font-medium">Paid by</th>
-                    <th className="hidden px-4 py-3 font-medium sm:table-cell">Split</th>
+                    <th className="px-4 py-3 font-medium">Split</th>
                     <th className="px-4 py-3 text-right font-medium">Amount</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rule">
+                <tbody className="divide-y divide-slate-100">
                   {data.expenses.map((expenseRow) => (
                     <tr key={expenseRow.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{expenseRow.title}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-400">
                           {expenseRow.category} · {formatDate(expenseRow.date)}
                         </p>
                       </td>
@@ -133,18 +133,18 @@ export default function ExpensesTab({ group, onChanged, onInvite }) {
                               <Avatar key={payerEntry.userId} name={nameOf(payerEntry.userId)} />
                             ))}
                           </div>
-                          {expenseRow.paidBy.length > 1 && <span className="text-xs text-slate-500">{expenseRow.paidBy.length} payers</span>}
+                          {expenseRow.paidBy.length > 1 && <span className="text-xs text-slate-400">{expenseRow.paidBy.length} payers</span>}
                         </div>
                       </td>
-                      <td className="hidden px-4 py-3 sm:table-cell">
+                      <td className="px-4 py-3">
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                           {SPLIT_LABEL[expenseRow.splitType]}
                         </span>
                       </td>
-                      <td className="amount whitespace-nowrap px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right font-medium">
                         {formatMoney(expenseRow.totalAmount)}
                         {expenseRow.fx && (
-                          <span className="block text-xs font-normal text-slate-500" title={`1 ${expenseRow.fx.currency} = Rs ${expenseRow.fx.rate}`}>
+                          <span className="block text-xs font-normal text-slate-400" title={`1 ${expenseRow.fx.currency} = Rs ${expenseRow.fx.rate}`}>
                             {formatMoney(expenseRow.fx.totalAmount, expenseRow.fx.currency)}
                           </span>
                         )}

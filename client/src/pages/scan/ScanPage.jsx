@@ -9,8 +9,6 @@ import { EmptyState } from '../../components/ui/States.jsx';
 import VerifyReceiptModal from './VerifyReceiptModal.jsx';
 import SavingsCards from '../../components/receipts/SavingsCards.jsx';
 import ReceiptPreview from '../../components/receipts/ReceiptPreview.jsx';
-import PageHeader from '../../components/ui/PageHeader.jsx';
-import { btn } from '../../components/ui/buttonStyles.js';
 
 const STEPS = ['Uploading the image', 'Reading the receipt', 'Matching line items'];
 
@@ -81,15 +79,20 @@ export default function ScanPage() {
 
   return (
     <>
-      <PageHeader
-        title="Scan a receipt"
-        description="ExpenseAI reads the lines; you check them before anything is saved."
-        actions={
-          <Link to="/prices" className={btn.secondary}>
-            <Tag className="h-4 w-4 text-slate-500" /> Price book
-          </Link>
-        }
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Scan a receipt</h1>
+          <p className="text-sm text-slate-500">
+            The AI reads the lines; you check them before anything is saved.
+          </p>
+        </div>
+        <Link
+          to="/prices"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100"
+        >
+          <Tag className="h-4 w-4 text-slate-400" /> Price book
+        </Link>
+      </div>
 
       {error && (
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -99,10 +102,10 @@ export default function ScanPage() {
       )}
 
       {phase === 'working' ? (
-        <div className="mt-6 p-10 text-center panel">
+        <div className="mt-6 rounded-2xl bg-white p-10 text-center ring-1 ring-slate-200">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-500" />
           <p className="mt-4 font-medium text-slate-800">{STEPS[step]}…</p>
-          <p className="mt-1 text-xs text-slate-500">This usually takes a few seconds.</p>
+          <p className="mt-1 text-xs text-slate-400">This usually takes a few seconds.</p>
         </div>
       ) : (
         <div
@@ -123,7 +126,7 @@ export default function ScanPage() {
         >
           <ScanLine className="mx-auto h-8 w-8 text-slate-300" />
           <p className="mt-3 font-medium text-slate-700">Drop a receipt photo here</p>
-          <p className="mt-1 text-xs text-slate-500">or click to choose · JPG or PNG up to 8MB</p>
+          <p className="mt-1 text-xs text-slate-400">or click to choose · JPG or PNG up to 8MB</p>
           <span className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white">
             <Camera className="h-4 w-4" /> Choose image
           </span>
@@ -143,12 +146,12 @@ export default function ScanPage() {
         <div className="mt-3">
           {history.data?.receipts.length === 0 && <EmptyState title="No scans yet" hint="Your scanned receipts will appear here." />}
           {history.data && history.data.receipts.length > 0 && (
-            <ul className="divide-y divide-rule panel">
+            <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200">
               {history.data.receipts.map((receiptRow) => (
                 <li key={receiptRow.id} className="flex items-center justify-between px-4 py-3">
                   <span>
                     <span className="block text-sm font-medium text-slate-800">{receiptRow.store || 'Receipt'}</span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-400">
                       {formatDate(receiptRow.receiptDate || receiptRow.createdAt)} · {receiptRow.lineItems.length} items
                       {receiptRow.committedTo && ' · saved'}
                     </span>

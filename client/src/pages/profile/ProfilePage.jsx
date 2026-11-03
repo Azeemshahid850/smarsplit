@@ -6,7 +6,6 @@ import Avatar from '../../components/ui/Avatar.jsx';
 import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
-import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const TOGGLES = [
   { key: 'email', label: 'Email notifications', hint: 'Invites and password resets always send regardless' },
@@ -47,14 +46,14 @@ function Details() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5 p-5 panel" noValidate>
+    <form onSubmit={submit} className="space-y-5 rounded-xl bg-white p-5 ring-1 ring-slate-200" noValidate>
       <FormError message={error} />
 
       <div className="flex items-center gap-4">
         <Avatar name={form.name || user.name} avatarUrl={form.avatarUrl || null} size="md" />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-slate-800">{user.email}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Email cannot be changed here{user.hasPassword ? '' : ' · signed in with Google'}
           </p>
         </div>
@@ -89,7 +88,7 @@ function Details() {
             />
             <span>
               <span className="font-medium text-slate-700">{label}</span>
-              <span className="block text-xs text-slate-500">{hint}</span>
+              <span className="block text-xs text-slate-400">{hint}</span>
             </span>
           </label>
         ))}
@@ -132,12 +131,12 @@ function Password() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 p-5 panel" noValidate>
+    <form onSubmit={submit} className="space-y-4 rounded-xl bg-white p-5 ring-1 ring-slate-200" noValidate>
       <h2 className="flex items-center gap-2 font-medium">
-        <KeyRound className="h-4 w-4 text-slate-500" />
+        <KeyRound className="h-4 w-4 text-slate-400" />
         {user.hasPassword ? 'Change password' : 'Set a password'}
       </h2>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-400">
         {user.hasPassword
           ? 'Your other devices are signed out when the password changes.'
           : 'You signed in with Google. Setting a password lets you sign in with your email too.'}
@@ -190,7 +189,8 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="Your profile" description="Name, avatar, currency and notifications." />
+      <h1 className="text-2xl font-semibold">Your profile</h1>
+      <p className="text-sm text-slate-500">Name, avatar, currency and notifications.</p>
 
       <div className="mt-6 space-y-6">
         <Details />
@@ -200,7 +200,7 @@ export default function ProfilePage() {
           onClick={logout}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm hover:bg-slate-100"
         >
-          <LogOut className="h-4 w-4 text-slate-500" /> Sign out {user.email}
+          <LogOut className="h-4 w-4 text-slate-400" /> Sign out {user.email}
         </button>
       </div>
     </div>

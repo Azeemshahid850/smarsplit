@@ -6,7 +6,7 @@ const compact = (rupees) => (rupees >= 1000 ? `${Math.round(rupees / 1000)}k` : 
 
 /** Two comparable measures side by side: budget vs actual, or paid vs consumed. */
 export default function GroupedBars({ data, xKey, bars, currency = 'PKR', empty = 'Nothing to chart yet.' }) {
-  if (!data?.length) return <p className="py-10 text-center text-sm text-slate-500">{empty}</p>;
+  if (!data?.length) return <p className="py-10 text-center text-sm text-slate-400">{empty}</p>;
 
   return (
     <div className="h-64">

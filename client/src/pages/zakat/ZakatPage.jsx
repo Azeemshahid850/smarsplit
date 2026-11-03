@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Info } from 'lucide-react';
+import { ArrowLeft, HandCoins, Info } from 'lucide-react';
 import { getZakatOverview, calculateZakat, saveMetalRates } from '../../api/zakat.js';
 import { createTransaction } from '../../api/personal.js';
 import { useAsync } from '../../hooks/useAsync.js';
@@ -10,7 +11,6 @@ import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { formatMoney, formatDate } from '../../utils/format.js';
-import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const BLANK = { cash: '', bank: '', goals: '', goldTola: '', silverTola: '', business: '', investments: '', receivables: '', groupDebts: '', otherDebts: '', goldPerTola: '', silverPerTola: '' };
 const rupees = (value) => Math.round(Number(value) || 0);
@@ -41,10 +41,10 @@ function RatesEditor({ rates, onSaved }) {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-3 bg-slate-50 p-5 panel" noValidate>
+    <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl bg-slate-50 p-5 ring-1 ring-slate-200" noValidate>
       <div>
         <p className="text-sm font-medium text-slate-700">Admin: bazaar (sarafa) prices for everyone</p>
-        <p className="text-xs text-slate-500">Used instead of the international rate until it next refreshes, about twice a day.</p>
+        <p className="text-xs text-slate-400">Used instead of the international rate until it next refreshes, about twice a day.</p>
       </div>
       <FormError message={error} />
       <div className="grid gap-3 sm:grid-cols-2">
@@ -137,16 +137,20 @@ function ZakatForm({ data, onRatesSaved }) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader
-        back={{ to: '/goals', label: 'Goals' }}
-        title="Zakat calculator"
-        description="2.5% of what you own, minus what you owe now, once it reaches the nisab. Figures the app already knows are filled in; change anything."
-      />
+      <Link to="/goals" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+        <ArrowLeft className="h-4 w-4" /> Goals
+      </Link>
+      <h1 className="mt-3 flex items-center gap-2 text-2xl font-semibold">
+        <HandCoins className="h-6 w-6 text-emerald-600" /> Zakat calculator
+      </h1>
+      <p className="text-sm text-slate-500">
+        2.5% of what you own, minus what you owe now, once it reaches the nisab. Figures the app already knows are filled in — change anything.
+      </p>
 
       <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
         <FormError message={error} />
 
-        <section className="p-5 panel">
+        <section className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <h2 className="font-medium">What you own</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Cash at home (Rs)" name="cash" type="number" min="0" step="1" value={form.cash} onChange={set('cash')} placeholder="0" />
@@ -163,7 +167,7 @@ function ZakatForm({ data, onRatesSaved }) {
           </p>
         </section>
 
-        <section className="p-5 panel">
+        <section className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <h2 className="font-medium">What you owe now</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="You owe in groups (Rs)" name="groupDebts" type="number" min="0" step="1" value={form.groupDebts} onChange={set('groupDebts')} placeholder="0" hint="From your group balances" />
@@ -171,7 +175,7 @@ function ZakatForm({ data, onRatesSaved }) {
           </div>
         </section>
 
-        <section className="p-5 panel">
+        <section className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <h2 className="font-medium">Gold and silver prices</h2>
           <p className="mt-1 text-sm text-slate-500">
             {!rates && 'Prices could not be fetched right now — type today’s prices below.'}
@@ -214,7 +218,7 @@ function ZakatForm({ data, onRatesSaved }) {
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Silver gives the lower nisab, which most people in Pakistan use.</p>
+            <p className="mt-1 text-xs text-slate-400">Silver gives the lower nisab, which most people in Pakistan use.</p>
           </div>
         </section>
 
@@ -263,7 +267,7 @@ function ZakatForm({ data, onRatesSaved }) {
       {/* Its own form: forms cannot nest. */}
       {canEditRates && <RatesEditor rates={rates} onSaved={onRatesSaved} />}
 
-      <p className="mt-6 text-xs text-slate-500">This is an estimate — confirm with a scholar, as opinions differ on some assets.</p>
+      <p className="mt-6 text-xs text-slate-400">This is an estimate — confirm with a scholar, as opinions differ on some assets.</p>
     </div>
   );
 }

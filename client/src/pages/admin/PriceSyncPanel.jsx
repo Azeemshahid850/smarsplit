@@ -32,11 +32,11 @@ export default function PriceSyncPanel() {
   const last = data?.runs?.[0];
 
   return (
-    <section className="mt-6 p-5 panel">
+    <section className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-medium">Live store prices</h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Every morning at 9:00 the price book is refreshed from stores whose robots.txt allows it. A store that fails keeps its previous prices.
           </p>
         </div>
@@ -50,7 +50,7 @@ export default function PriceSyncPanel() {
         </button>
       </div>
 
-      {loading && !data && <p className="mt-4 text-sm text-slate-500">Loading…</p>}
+      {loading && !data && <p className="mt-4 text-sm text-slate-400">Loading…</p>}
       {error && <ErrorState message={error} onRetry={reload} />}
 
       {data && (
@@ -66,7 +66,7 @@ export default function PriceSyncPanel() {
               {last.stores.map((store) => (
                 <li key={store.store} className="flex min-w-0 items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
                   {store.skipped ? (
-                    <MinusCircle className="h-4 w-4 shrink-0 text-slate-500" />
+                    <MinusCircle className="h-4 w-4 shrink-0 text-slate-400" />
                   ) : store.error ? (
                     <X className="h-4 w-4 shrink-0 text-red-500" />
                   ) : (
@@ -74,7 +74,7 @@ export default function PriceSyncPanel() {
                   )}
                   <span className="min-w-0">
                     <span className="block font-medium capitalize text-slate-800">{store.store}</span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-slate-400">
                       {store.skipped ?? store.error ?? `${store.updated} prices updated · ${store.matched} products found · ${store.searched} searches`}
                     </span>
                   </span>

@@ -1,135 +1,19 @@
 @import "tailwindcss";
 
-/*
- * SmartSplit design tokens: a modern "khata" (ledger book).
- * Ink on cool paper, ruled rows, a turmeric (haldi) margin line for what is
- * active, and green / red used only for which way money moves.
- *
- * The slate, emerald, red and amber scales are re-pointed at this palette, so
- * every existing `bg-slate-900` or `text-emerald-600` in the app follows it.
- */
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
-
-  --color-ink: #172241;
-  --color-paper: #f3f5f8;
-  --color-rule: #d9dfe8;
-  --color-haldi: #d99a1e;
-  --color-gain: #0f7a55;
-  --color-loss: #be3a2b;
-
-  /* Neutrals tinted toward the ink, paper at the light end */
-  --color-slate-50: #f3f5f8;
-  --color-slate-100: #e8ecf2;
-  --color-slate-200: #d9dfe8;
-  --color-slate-300: #bfc8d6;
-  --color-slate-400: #8893a8;
-  --color-slate-500: #636f87;
-  --color-slate-600: #4b566d;
-  --color-slate-700: #353f56;
-  --color-slate-800: #232d46;
-  --color-slate-900: #172241;
-  --color-slate-950: #0e1630;
-
-  /* Money in / owed to you */
-  --color-emerald-50: #ecf7f2;
-  --color-emerald-100: #d2ede2;
-  --color-emerald-200: #a7dbc6;
-  --color-emerald-300: #6fc2a3;
-  --color-emerald-400: #36a37f;
-  --color-emerald-500: #178a64;
-  --color-emerald-600: #0f7a55;
-  --color-emerald-700: #0c6446;
-  --color-emerald-800: #0a5038;
-  --color-emerald-900: #08402e;
-
-  /* Money out / you owe */
-  --color-red-50: #fbefed;
-  --color-red-100: #f6dcd8;
-  --color-red-200: #edb8b0;
-  --color-red-300: #e08b7f;
-  --color-red-400: #d0604f;
-  --color-red-500: #c4483a;
-  --color-red-600: #be3a2b;
-  --color-red-700: #9d2f23;
-  --color-red-800: #7f271d;
-  --color-red-900: #66211a;
-
-  /* Warnings and waiting things, in the haldi family */
-  --color-amber-50: #fdf6e7;
-  --color-amber-100: #f9e9c4;
-  --color-amber-200: #f2d48a;
-  --color-amber-300: #e9bb52;
-  --color-amber-400: #e0a82f;
-  --color-amber-500: #d99a1e;
-  --color-amber-600: #b67d12;
-  --color-amber-700: #8f600f;
-  --color-amber-800: #6f4b10;
-  --color-amber-900: #5a3d10;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-@layer base {
-  body {
-    @apply bg-paper text-ink antialiased;
-    /* Every rupee figure lines up in columns, like a ledger */
-    font-variant-numeric: tabular-nums;
-  }
-
-  h1,
-  h2 {
-    font-family: var(--font-display);
-    letter-spacing: -0.005em;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--color-ink);
-    outline-offset: 2px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-}
-
-/* A ledger page: white, ruled, with the haldi margin line down its left edge. */
-@utility ledger {
-  background: #fff;
-  border: 1px solid var(--color-rule);
-  border-left: 3px solid var(--color-haldi);
-  border-radius: 8px;
-}
-
-/* A plain panel for everything that is not money. */
-@utility panel {
-  background: #fff;
-  border: 1px solid var(--color-rule);
-  border-radius: 8px;
-}
-
-/* Rupee figures: condensed, tabular, right-aligned in their column. */
-@utility amount {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* An accounting total: the double rule above it. */
-@utility total-rule {
-  border-top: 3px double var(--color-ink);
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
 }
 
 /* Data-viz palette — validated categorical slots (see dataviz reference).
    Colour follows the entity, never its rank: each category owns a slot. */
 :root {
   --viz-surface: #ffffff;
-  --viz-grid: #d9dfe8;
-  --viz-axis: #8893a8;
+  --viz-grid: #e2e8f0;
+  --viz-axis: #94a3b8;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;

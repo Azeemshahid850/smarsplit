@@ -10,7 +10,7 @@ import { formatMoney } from '../../utils/format.js';
  */
 export default function CategoryDonut({ categories, currency = 'PKR' }) {
   const data = categories.filter((categoryRow) => categoryRow.total > 0);
-  if (!data.length) return <p className="py-10 text-center text-sm text-slate-500">Nothing spent this month.</p>;
+  if (!data.length) return <p className="py-10 text-center text-sm text-slate-400">Nothing spent this month.</p>;
 
   const total = data.reduce((runningTotal, categoryRow) => runningTotal + categoryRow.total, 0);
 
@@ -29,7 +29,7 @@ export default function CategoryDonut({ categories, currency = 'PKR' }) {
         </ResponsiveContainer>
 
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-          <p className="text-xs text-slate-500">Total</p>
+          <p className="text-xs text-slate-400">Total</p>
           <p className="text-lg font-semibold text-slate-900">{formatMoney(total, currency)}</p>
         </div>
       </div>

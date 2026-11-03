@@ -14,7 +14,6 @@ import SavingsCards from '../../components/receipts/SavingsCards.jsx';
 import ReceiptPreview from '../../components/receipts/ReceiptPreview.jsx';
 import TypeBadge from '../../components/ui/TypeBadge.jsx';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
-import PageHeader from '../../components/ui/PageHeader.jsx';
 
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -45,19 +44,18 @@ export default function PersonalPage() {
 
   return (
     <>
-      <PageHeader
-        title="Personal"
-        description="Your own income and spending, separate from any group."
-        actions={
-          <input
-            type="month"
-            aria-label="Month"
-            value={month}
-            onChange={(event) => setMonth(event.target.value)}
-            className="rounded-md border border-rule bg-white px-3 py-2 text-sm"
-          />
-        }
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Personal</h1>
+          <p className="text-sm text-slate-500">Your own income and spending, separate from any group.</p>
+        </div>
+        <input
+          type="month"
+          value={month}
+          onChange={(event) => setMonth(event.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+        />
+      </div>
 
       {summary.loading && <Loading />}
       {summary.error && <ErrorState message={summary.error} onRetry={summary.reload} />}
@@ -85,7 +83,7 @@ export default function PersonalPage() {
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             <section className="min-w-0 lg:col-span-2">
               <h2 className="font-medium">Where it went</h2>
-              <div className="mt-3 p-5 panel">
+              <div className="mt-3 rounded-xl bg-white p-5 ring-1 ring-slate-200">
                 {summary.data.byCategory.length === 0 ? (
                   <EmptyState title="Nothing spent this month" hint="Add a transaction to see the breakdown." />
                 ) : (
@@ -115,19 +113,19 @@ export default function PersonalPage() {
                   <EmptyState title="No transactions yet" hint="Everything you add this month shows up here." />
                 )}
                 {transactions.data && transactions.data.transactions.length > 0 && (
-                  <div className="overflow-x-auto ledger">
+                  <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200">
                     <table className="w-full bg-white text-sm">
-                      <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                      <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                           <th className="px-4 py-3 font-medium">Title</th>
-                          <th className="hidden px-4 py-3 font-medium sm:table-cell">Type</th>
-                          <th className="hidden px-4 py-3 font-medium md:table-cell">Category</th>
-                          <th className="hidden px-4 py-3 font-medium lg:table-cell">Method</th>
+                          <th className="px-4 py-3 font-medium">Type</th>
+                          <th className="px-4 py-3 font-medium">Category</th>
+                          <th className="px-4 py-3 font-medium">Method</th>
                           <th className="px-4 py-3 text-right font-medium">Amount</th>
                           <th className="px-4 py-3" />
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-rule">
+                      <tbody className="divide-y divide-slate-100">
                         {transactions.data.transactions.map((transactionRow) => (
                           <tr key={transactionRow.id} className="hover:bg-slate-50">
                             <td className="px-4 py-3">
@@ -135,15 +133,12 @@ export default function PersonalPage() {
                                 {transactionRow.title}
                                 {(transactionRow.isRecurring || transactionRow.generatedFrom) && <Repeat className="h-3.5 w-3.5 text-slate-300" />}
                               </p>
-                              <p className="text-xs text-slate-500">
-                                {formatDate(transactionRow.date)}
-                                <span className="md:hidden">, {transactionRow.category}</span>
-                              </p>
+                              <p className="text-xs text-slate-400">{formatDate(transactionRow.date)}</p>
                             </td>
-                            <td className="hidden px-4 py-3 sm:table-cell"><TypeBadge type={transactionRow.type} /></td>
-                            <td className="hidden px-4 py-3 text-slate-600 md:table-cell">{transactionRow.category}</td>
-                            <td className="hidden px-4 py-3 text-slate-500 lg:table-cell">{transactionRow.paymentMethod}</td>
-                            <td className={`amount whitespace-nowrap px-4 py-3 text-right ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
+                            <td className="px-4 py-3"><TypeBadge type={transactionRow.type} /></td>
+                            <td className="px-4 py-3 text-slate-600">{transactionRow.category}</td>
+                            <td className="px-4 py-3 text-slate-500">{transactionRow.paymentMethod}</td>
+                            <td className={`px-4 py-3 text-right font-medium ${transactionRow.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
                               {transactionRow.type === 'CREDIT' ? '+' : '−'}
                               {formatMoney(transactionRow.amount)}
                             </td>

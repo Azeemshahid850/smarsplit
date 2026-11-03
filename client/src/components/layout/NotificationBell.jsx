@@ -41,10 +41,10 @@ export default function NotificationBell() {
 
   return (
     <div ref={box} className="relative">
-      <button onClick={openFeed} className="relative rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-ink" aria-label="Notifications">
-        <Bell className="h-5 w-5" strokeWidth={1.75} />
+      <button onClick={openFeed} className="relative text-slate-400 hover:text-slate-700" aria-label="Notifications">
+        <Bell className="h-4 w-4" />
         {feed.unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+          <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
             {feed.unreadCount > 9 ? '9+' : feed.unreadCount}
           </span>
         )}
@@ -62,14 +62,14 @@ export default function NotificationBell() {
           </div>
 
           {feed.notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">Nothing here yet.</p>
+            <p className="px-4 py-8 text-center text-sm text-slate-400">Nothing here yet.</p>
           ) : (
-            <ul className="max-h-80 divide-y divide-rule overflow-y-auto">
+            <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
               {feed.notifications.map((notificationRow) => {
                 const body = (
                   <>
                     <span className={`block text-sm ${notificationRow.read ? 'text-slate-500' : 'font-medium text-slate-800'}`}>{notificationRow.message}</span>
-                    <span className="text-xs text-slate-500">{formatDate(notificationRow.createdAt)}</span>
+                    <span className="text-xs text-slate-400">{formatDate(notificationRow.createdAt)}</span>
                   </>
                 );
                 return (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, X, PartyPopper, HandCoins } from 'lucide-react';
+import { Target, Plus, Pencil, Trash2, X, PartyPopper, HandCoins } from 'lucide-react';
 import { listGoals, createGoal, updateGoal, deleteGoal, addContribution, removeContribution } from '../../api/goals.js';
 import { useAsync } from '../../hooks/useAsync.js';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
@@ -10,8 +10,6 @@ import Field from '../../components/ui/Field.jsx';
 import SubmitButton from '../../components/ui/SubmitButton.jsx';
 import FormError from '../../components/ui/FormError.jsx';
 import { formatMoney, formatDate } from '../../utils/format.js';
-import PageHeader from '../../components/ui/PageHeader.jsx';
-import { btn } from '../../components/ui/buttonStyles.js';
 
 const tomorrow = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -119,7 +117,7 @@ function GoalCard({ goal, onChanged, onRemoved }) {
 
   if (editing) {
     return (
-      <div className="p-5 panel">
+      <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
         <GoalForm
           initial={goal}
           submitLabel="Save goal"
@@ -136,11 +134,11 @@ function GoalCard({ goal, onChanged, onRemoved }) {
   }
 
   return (
-    <div className="p-5 panel">
+    <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-medium text-slate-900">{goal.title}</h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             {goal.targetDate ? `By ${formatDate(goal.targetDate)}` : 'No deadline'} · started {formatDate(goal.createdAt)}
           </p>
         </div>
@@ -160,7 +158,7 @@ function GoalCard({ goal, onChanged, onRemoved }) {
       <div className="mt-4 flex items-baseline justify-between text-sm">
         <span>
           <span className="text-lg font-semibold text-slate-900">{formatMoney(goal.saved)}</span>
-          <span className="text-slate-500"> of {formatMoney(goal.targetAmount)}</span>
+          <span className="text-slate-400"> of {formatMoney(goal.targetAmount)}</span>
         </span>
         <span className="font-medium text-slate-600">{goal.percent}%</span>
       </div>
@@ -213,10 +211,10 @@ function GoalCard({ goal, onChanged, onRemoved }) {
       </div>
 
       {goal.contributions.length > 0 && (
-        <ul className="mt-4 divide-y divide-rule border-t border-slate-100 text-sm">
+        <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100 text-sm">
           {entries.map((entry) => (
             <li key={entry.id} className="flex items-center gap-3 py-2">
-              <span className="w-24 text-xs text-slate-500">{formatDate(entry.date)}</span>
+              <span className="w-24 text-xs text-slate-400">{formatDate(entry.date)}</span>
               <span className="flex-1 truncate text-slate-600">{entry.note || (entry.amount > 0 ? 'Deposit' : 'Withdrawal')}</span>
               <span className={entry.amount > 0 ? 'text-emerald-700' : 'text-red-600'}>
                 {entry.amount > 0 ? '+' : '−'}
@@ -255,25 +253,27 @@ export default function GoalsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Savings goals"
-        description="Put money aside for something specific and see if you are on pace."
-        actions={
-          <>
-            <Link to="/zakat" className={btn.secondary}>
-              <HandCoins className="h-4 w-4 text-slate-500" /> Zakat calculator
-            </Link>
-            {!creating && (
-              <button onClick={() => setCreating(true)} className={btn.primary}>
-                <Plus className="h-4 w-4" /> New goal
-              </button>
-            )}
-          </>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+            <Target className="h-6 w-6 text-emerald-600" /> Savings goals
+          </h1>
+          <p className="text-sm text-slate-500">Put money aside for something specific and see if you are on pace.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/zakat" className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">
+            <HandCoins className="h-4 w-4 text-slate-400" /> Zakat calculator
+          </Link>
+          {!creating && (
+            <button onClick={() => setCreating(true)} className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              <Plus className="h-4 w-4" /> New goal
+            </button>
+          )}
+        </div>
+      </div>
 
       {creating && (
-        <div className="mt-6 p-5 panel">
+        <div className="mt-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
           <h2 className="mb-3 font-medium">New goal</h2>
           <GoalForm
             submitLabel="Create goal"
