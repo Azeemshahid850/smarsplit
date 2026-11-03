@@ -84,6 +84,13 @@ async function inRupees({ currency = 'PKR', ...body }, previousFx = null) {
   }
 }
 
+// New money on a closed group opens it again; Settle up closes it once more.
+async function reopenIfSettled(group) {
+  if (group.status !== 'SETTLED') return;
+  group.status = 'ACTIVE';
+  await group.save();
+}
+
 export async function createExpense(req, res) {
   const group = req.group;
   const { body, fx } = await inRupees(req.body);
@@ -98,6 +105,7 @@ export async function createExpense(req, res) {
     splits,
     createdBy: req.user._id,
   });
+  await reopenIfSettled(group);
 
   ok(res, { expense: publicExpense(expense) }, 201);
 
@@ -173,6 +181,7 @@ export async function updateExpense(req, res) {
     : {};
   Object.assign(expense, changes, converted, { category: body.category ?? expense.category, splits, fx });
   await expense.save();
+  await reopenIfSettled(group);
 
   ok(res, { expense: publicExpense(expense) });
 }
@@ -185,6 +194,7 @@ export async function deleteExpense(req, res) {
 
   expense.deletedAt = new Date(); // soft delete — history stays auditable
   await expense.save();
+  await reopenIfSettled(group);
   ok(res, { deleted: true });
 }
 

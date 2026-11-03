@@ -7,6 +7,7 @@ import { formatMoney, formatSigned } from '../../utils/format.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx';
 import GroupActions from './GroupActions.jsx';
+import GroupStatusBadge from './GroupStatusBadge.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useConfirm } from '../../components/ui/ConfirmDialog.jsx';
 
@@ -174,13 +175,7 @@ export default function GroupsPage() {
                       {groupRow.myBalance === 0 ? 'settled up' : formatSigned(groupRow.myBalance)}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs ${
-                          groupRow.status === 'SETTLED' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'
-                        }`}
-                      >
-                        {groupRow.status.toLowerCase()}
-                      </span>
+                      <GroupStatusBadge group={groupRow} />
                     </td>
                     <td className="px-4 py-3">
                       <GroupActions

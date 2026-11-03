@@ -12,12 +12,14 @@ import { Loading, ErrorState, EmptyState } from '../../components/ui/States.jsx'
 import FormError from '../../components/ui/FormError.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
 
+const count = (amount, word) => `${amount} ${word}${amount === 1 ? '' : 's'}`;
+
 function PaymentCard({ payment, onPay, faded }) {
   return (
     <li
-      className={`flex items-center gap-3 rounded-xl bg-white p-4 ring-1 transition-all duration-500 ${
-        faded ? 'scale-95 opacity-30 ring-slate-200' : 'ring-slate-200'
-      } ${payment.isPaid ? 'bg-emerald-50/50' : ''}`}
+      className={`flex items-center gap-3 rounded-xl p-4 text-slate-900 ring-1 transition-all duration-500 ${
+        faded ? 'scale-95 opacity-30' : ''
+      } ${payment.isPaid ? 'bg-emerald-50 ring-emerald-200' : 'bg-white ring-slate-200'}`}
     >
       <Avatar name={payment.fromName} />
       <span className="text-sm font-medium text-slate-700">{payment.fromName}</span>
@@ -29,11 +31,11 @@ function PaymentCard({ payment, onPay, faded }) {
 
       {onPay &&
         (payment.isPaid ? (
-          <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700">
-            <Check className="h-3 w-3" /> paid
+          <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white">
+            <Check className="h-3 w-3" /> Paid
           </span>
         ) : (
-          <button onClick={() => onPay(payment)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs hover:bg-slate-100">
+          <button onClick={() => onPay(payment)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100">
             Mark paid
           </button>
         ))}
@@ -59,7 +61,9 @@ export default function SettleUpPage() {
   const g = group.data.group;
   const iAmAdmin = g.members.some((memberRow) => memberRow.userId === user.id && memberRow.role === 'admin');
   const settled = recorded.data.settlements;
-  const hasRecorded = settled.length > 0;
+  const nothingOwed = balances.data.balances.every((balanceRow) => balanceRow.net === 0);
+  const stillOwed = settled.filter((settlementRow) => !settlementRow.isPaid).length;
+  const hasRecorded = settled.length > 0 && (stillOwed > 0 || nothingOwed);
 
   const simplify = async () => {
     setError('');
@@ -80,7 +84,7 @@ export default function SettleUpPage() {
       const result = await recordSettlement(id);
       setPreview(null);
       await Promise.all([recorded.reload(), balances.reload(), group.reload()]);
-      toast.success(`Settlement recorded — ${result.optimizedCount} payments, ${result.transfersSaved} transfers saved`);
+      toast.success(`Settlement recorded — ${count(result.optimizedCount, 'payment')}, ${count(result.transfersSaved, 'transfer')} saved`);
     } catch (err) {
       setError(err.message || 'Could not record the settlement');
     } finally {
@@ -99,8 +103,6 @@ export default function SettleUpPage() {
     }
   };
 
-  const nothingOwed = balances.data.balances.every((balanceRow) => balanceRow.net === 0);
-
   return (
     <>
       <Link to={`/groups/${id}`} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
@@ -116,10 +118,10 @@ export default function SettleUpPage() {
       {hasRecorded && (
         <section className="mt-4 rounded-xl bg-slate-900 p-5 text-slate-100">
           <p className="flex items-center gap-2 font-medium">
-            <Check className="h-4 w-4 text-emerald-400" /> Settlement recorded
+            <Check className="h-4 w-4 text-emerald-400" /> {stillOwed === 0 ? `Everyone has paid up. ${g.title} is settled.` : 'Settlement recorded'}
           </p>
           <p className="mt-1 text-sm text-slate-300">
-            {settled.filter((settlementRow) => settlementRow.isPaid).length} of {settled.length} payments marked paid.
+            {settled.length - stillOwed} of {count(settled.length, 'payment')} marked paid.
           </p>
           <ul className="mt-4 space-y-2">
             {settled.map((settlementRow) => (
@@ -134,7 +136,7 @@ export default function SettleUpPage() {
                 {recorded.data.auditTrail.map((entry, index) => (
                   <li key={index}>
                     {entry.action.replace(/_/g, ' ').toLowerCase()} · {formatDate(entry.at)}
-                    {entry.detail?.transfersSaved != null && ` · ${entry.detail.transfersSaved} transfers saved`}
+                    {entry.detail?.transfersSaved != null && ` · ${count(entry.detail.transfersSaved, 'transfer')} saved`}
                   </li>
                 ))}
               </ul>
@@ -169,7 +171,7 @@ export default function SettleUpPage() {
           {/* Optimized */}
           <section>
             <h2 className="text-sm font-medium text-slate-700">Optimized payments</h2>
-            <p className="text-xs text-slate-400">At most {g.memberCount - 1} payments for {g.memberCount} members.</p>
+            <p className="text-xs text-slate-400">At most {count(g.memberCount - 1, 'payment')} for {count(g.memberCount, 'member')}.</p>
 
             {!preview && (
               <button
@@ -190,7 +192,7 @@ export default function SettleUpPage() {
                     <span className="text-lg font-semibold">
                       {preview.rawDebtCount} → {preview.optimizedCount}
                     </span>{' '}
-                    payments · {preview.transfersSaved} transfers saved
+                    payments · {count(preview.transfersSaved, 'transfer')} saved
                   </p>
                 </div>
 

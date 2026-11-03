@@ -5,6 +5,7 @@ import { AuditLog } from '../models/AuditLog.js';
 import { ApiError } from '../middleware/ApiError.js';
 import { ok } from '../utils/ok.js';
 import { settlementPreview } from '../services/settlement.js';
+import { groupBalances } from '../services/balances.js';
 import { notify, activeMemberIds } from '../services/notifications.js';
 
 // Names for the UI, resolved once per request.
@@ -167,9 +168,10 @@ export async function markPaid(req, res) {
     detail: { settlementId: settlement._id, amount: settlement.amount },
   });
 
-  // Everything paid means the group is genuinely closed out.
+  // Everything paid, and nobody owing anything (an expense may have come in since), closes it out.
   const outstanding = await Settlement.countDocuments({ groupId: group._id, isPaid: false });
-  if (outstanding === 0 && group.status !== 'SETTLED') {
+  const square = outstanding === 0 && [...(await groupBalances(group._id)).net.values()].every((net) => net === 0);
+  if (square && group.status !== 'SETTLED') {
     group.status = 'SETTLED';
     await group.save();
   }

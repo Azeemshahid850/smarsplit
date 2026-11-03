@@ -38,7 +38,7 @@ function publicMember(memberRow) {
   };
 }
 
-function publicGroup(group, { myBalance = 0, totalSpent = 0 } = {}) {
+function publicGroup(group, { myBalance = 0, totalSpent = 0, unpaidPayments = 0 } = {}) {
   return {
     id: group._id,
     title: group.title,
@@ -59,6 +59,7 @@ function publicGroup(group, { myBalance = 0, totalSpent = 0 } = {}) {
     requestCount: group.members.filter((memberRow) => memberRow.status === 'requested').length,
     totalSpent,
     myBalance,
+    unpaidPayments,
   };
 }
 

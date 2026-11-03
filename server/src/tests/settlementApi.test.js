@@ -178,6 +178,39 @@ describe('PATCH /settlements/:id/pay', () => {
     expect(preview.body.data.payments).toEqual([]); // nothing left to move
   });
 
+  it('shows payments still owed, settles when all are paid, and reopens on a new expense', async () => {
+    const { sara, everyone, group } = await murreeTrip();
+    const { settlements } = (await post(sara, `${api}/groups/${group.id}/settle`)).body.data;
+    const groupNow = async () => (await get(sara, `${api}/groups/${group.id}`)).body.data.group;
+
+    expect(await groupNow()).toMatchObject({ status: 'SETTLED', unpaidPayments: settlements.length });
+
+    for (const settlementRow of settlements) {
+      await request(app).patch(`${api}/settlements/${settlementRow.id}/pay`).set('Authorization', `Bearer ${sara.accessToken}`).send({ isPaid: true });
+    }
+    expect(await groupNow()).toMatchObject({ status: 'SETTLED', unpaidPayments: 0 });
+
+    await post(sara, `${api}/groups/${group.id}/expenses`, {
+      title: 'One more chai', totalAmount: 500, category: 'Food', splitType: 'EQUAL',
+      paidBy: [{ userId: sara.id, amount: 500 }], participants: everyone,
+    }).expect(201);
+    expect((await groupNow()).status).toBe('ACTIVE');
+  });
+
+  it('stays open when the last payment is marked but an expense came in after recording', async () => {
+    const { sara, everyone, group } = await murreeTrip();
+    const { settlements } = (await post(sara, `${api}/groups/${group.id}/settle`)).body.data;
+    await post(sara, `${api}/groups/${group.id}/expenses`, {
+      title: 'Late taxi', totalAmount: 1000, category: 'Travel', splitType: 'EQUAL',
+      paidBy: [{ userId: sara.id, amount: 1000 }], participants: everyone,
+    }).expect(201);
+
+    for (const settlementRow of settlements) {
+      await request(app).patch(`${api}/settlements/${settlementRow.id}/pay`).set('Authorization', `Bearer ${sara.accessToken}`).send({ isPaid: true });
+    }
+    expect((await get(sara, `${api}/groups/${group.id}`)).body.data.group.status).toBe('ACTIVE');
+  });
+
   it('403s a non-member trying to mark a payment paid', async () => {
     const { sara, group } = await murreeTrip();
     const { settlements } = (await post(sara, `${api}/groups/${group.id}/settle`)).body.data;

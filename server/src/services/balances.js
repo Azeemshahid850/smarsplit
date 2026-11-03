@@ -52,7 +52,7 @@ export async function summariseGroupsFor(userId, groupIds) {
   const ids = groupIds.map(oid);
   const me = oid(userId);
 
-  const [spend, paid, owed, settled] = await Promise.all([
+  const [spend, paid, owed, settled, unpaid] = await Promise.all([
     GroupExpense.aggregate([
       { $match: { groupId: { $in: ids }, deletedAt: null } },
       { $group: { _id: '$groupId', totalSpent: { $sum: '$totalAmount' } } },
@@ -78,6 +78,11 @@ export async function summariseGroupsFor(userId, groupIds) {
         },
       },
     ]),
+    // Recorded payments nobody has marked paid yet: the group is closed but not done.
+    Settlement.aggregate([
+      { $match: { groupId: { $in: ids }, isPaid: false } },
+      { $group: { _id: '$groupId', count: { $sum: 1 } } },
+    ]),
   ]);
 
   const index = (rows, key = 'amount') => Object.fromEntries(rows.map((aggregateRow) => [String(aggregateRow._id), aggregateRow[key]]));
@@ -85,6 +90,7 @@ export async function summariseGroupsFor(userId, groupIds) {
   const paidBy = index(paid);
   const owedBy = index(owed);
   const settledBy = index(settled);
+  const unpaidBy = index(unpaid, 'count');
 
   return Object.fromEntries(
     groupIds.map((id) => {
@@ -94,6 +100,7 @@ export async function summariseGroupsFor(userId, groupIds) {
         {
           totalSpent: spendBy[key] ?? 0,
           myBalance: (paidBy[key] ?? 0) - (owedBy[key] ?? 0) + (settledBy[key] ?? 0),
+          unpaidPayments: unpaidBy[key] ?? 0,
         },
       ];
     }),

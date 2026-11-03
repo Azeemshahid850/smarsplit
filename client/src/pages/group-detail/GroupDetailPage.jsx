@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserPlus, CheckCircle2, Clock } from 'lucide-react';
 import { getGroup } from '../../api/groups.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useAsync } from '../../hooks/useAsync.js';
@@ -11,6 +11,7 @@ import MembersTab from './MembersTab.jsx';
 import ExpensesTab from './ExpensesTab.jsx';
 import BalancesTab from './BalancesTab.jsx';
 import GroupActions from '../groups/GroupActions.jsx';
+import GroupStatusBadge from '../groups/GroupStatusBadge.jsx';
 
 const TABS = ['Expenses', 'Balances', 'Members'];
 
@@ -73,11 +74,28 @@ export default function GroupDetailPage() {
             </button>
           )}
 
-          {group.status === 'SETTLED' && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">settled</span>
-          )}
+          {group.status === 'SETTLED' && <GroupStatusBadge group={group} />}
         </div>
       </header>
+
+      {group.status === 'SETTLED' && (
+        <Link
+          to={`/groups/${group.id}/settle`}
+          className={`mt-4 flex items-center gap-3 rounded-xl p-4 text-sm ring-1 ${
+            group.unpaidPayments > 0 ? 'bg-amber-50 text-amber-900 ring-amber-200 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-900 ring-emerald-200 hover:bg-emerald-100'
+          }`}
+        >
+          {group.unpaidPayments > 0 ? <Clock className="h-5 w-5 shrink-0 text-amber-600" /> : <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />}
+          <span>
+            <span className="block font-medium">
+              {group.unpaidPayments > 0 ? 'Settlement recorded' : `This ${group.type === 'trip' ? 'trip' : 'group'} is settled`}
+            </span>
+            {group.unpaidPayments > 0
+              ? `${group.unpaidPayments} payment${group.unpaidPayments === 1 ? '' : 's'} still to be marked paid. Open Settle up when the money has been sent.`
+              : 'Everyone has paid up and nobody owes anything. Adding a new expense opens it again.'}
+          </span>
+        </Link>
+      )}
 
       <nav className="mt-6 flex gap-1 border-b border-slate-200">
         {TABS.map((tabName) => (
