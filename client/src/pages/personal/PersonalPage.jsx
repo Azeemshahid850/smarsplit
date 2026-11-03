@@ -80,6 +80,12 @@ export default function PersonalPage() {
             <StatCard label="Left" value={formatMoney(summary.data.net)} icon={Wallet} hint={`${summary.data.month}`} />
           </div>
 
+          {/* Budgets and categories first: they shape the "Where it went" bars below. */}
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+            <BudgetSettings onChanged={refresh} />
+            <CategorySettings />
+          </div>
+
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
             <section className="min-w-0 lg:col-span-2">
               <h2 className="font-medium">Where it went</h2>
@@ -165,8 +171,6 @@ export default function PersonalPage() {
 
             <aside className="space-y-6">
               <AddTransactionForm onAdded={refresh} />
-              <BudgetSettings onChanged={refresh} />
-              <CategorySettings />
             </aside>
           </div>
         </>
