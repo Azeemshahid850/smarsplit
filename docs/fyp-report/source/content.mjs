@@ -5,7 +5,7 @@ export const meta = {
   members: [
     { name: 'Muhammad Azeem', roll: 'BSCSvb-f24152' },
     { name: 'Chanda Safdar', roll: 'BSCS-vb-f24-133' },
-    { name: 'Saba', roll: 'BSITM-f24-25' },
+    { name: 'Saba', roll: 'BSITM(V)-F24-25' },
   ],
   degree: 'Bachelor of Science degree (BSCS and BSITM programmes)',
   department: 'Department of Computer Science',
